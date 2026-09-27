@@ -1,5 +1,5 @@
 import { BadgeCheck, Bot, CircleDashed } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { cn } from "./cn.ts";
 
 interface TrustBadgeProps {
   tier: string;

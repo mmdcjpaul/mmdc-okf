@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { getNote, noteCommit } from "@lore/db";
-import { Banner } from "@/components/Banner";
+import { Banner } from "@lore/ui";
 import { hidden, requireContext } from "@/lib/context";
 import { db } from "@/lib/db";
 import { diffNote, type DiffLine } from "@/lib/diff";

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { NoteCard } from "@lore/db";
 import { shortDate } from "@/lib/format";
 import { noteHref } from "@/lib/urls";
-import { TrustBadge } from "./TrustBadge";
+import { TrustBadge } from "@lore/ui";
 
 interface NoteTableProps {
   notes: NoteCard[];

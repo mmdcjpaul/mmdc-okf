@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { NoteCard } from "@lore/db";
-import { TrustBadge } from "@/components/TrustBadge";
+import { TrustBadge } from "@lore/ui";
 import { timeAgo } from "@/lib/format";
 import { noteHref } from "@/lib/urls";
 

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { AlertTriangle, Archive, Clock, Info, Sparkles } from "lucide-react";
-import { cn } from "@/lib/cn";
+import { cn } from "./cn.ts";
 
 export type BannerKind = "draft" | "deprecated" | "stale" | "reported" | "changed" | "info";
 

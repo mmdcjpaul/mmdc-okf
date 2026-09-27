@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { cn } from "@/lib/cn";
+import { cn } from "@lore/ui";
 
 export type View = "table" | "cards";
 export type Sort = "updated" | "title" | "health";

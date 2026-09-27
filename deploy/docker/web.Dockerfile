@@ -16,6 +16,7 @@ COPY packages/auth/package.json packages/auth/
 COPY packages/db/package.json packages/db/
 COPY packages/ingest/package.json packages/ingest/
 COPY packages/search/package.json packages/search/
+COPY packages/ui/package.json packages/ui/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
   pnpm install --frozen-lockfile --filter web...
 COPY apps/web apps/web
@@ -24,6 +25,7 @@ COPY packages/auth packages/auth
 COPY packages/db packages/db
 COPY packages/ingest packages/ingest
 COPY packages/search packages/search
+COPY packages/ui packages/ui
 RUN NEXT_OUTPUT=standalone pnpm --filter web build
 
 FROM node:24-bookworm-slim

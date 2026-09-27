@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Check } from "lucide-react";
 import type { Facet } from "@lore/search";
-import { cn } from "@/lib/cn";
+import { cn } from "@lore/ui";
 
 type Params = Record<string, string | string[] | undefined>;
 

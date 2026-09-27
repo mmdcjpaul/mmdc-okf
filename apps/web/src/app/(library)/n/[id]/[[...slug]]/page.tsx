@@ -20,14 +20,14 @@ import {
   type NoteRow,
 } from "@lore/db";
 import { similarNotes } from "@lore/search";
-import { Banner } from "@/components/Banner";
+import { Banner } from "@lore/ui";
 import { Chip } from "@/components/Chip";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { LinkList, type LinkListItem } from "@/components/LinkList";
 import { LocalGraph, type GraphNodeInput } from "@/components/LocalGraph";
 import { NoteBody } from "@/components/NoteBody";
-import { PanelSection } from "@/components/PanelSection";
-import { TrustBadge } from "@/components/TrustBadge";
+import { PanelSection } from "@lore/ui";
+import { TrustBadge } from "@lore/ui";
 import { TypeIcon } from "@/components/TypeIcon";
 import { currentVault, hidden, requireContext } from "@/lib/context";
 import { db, meili } from "@/lib/db";

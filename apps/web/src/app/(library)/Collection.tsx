@@ -1,5 +1,5 @@
 import type { NoteCard } from "@lore/db";
-import { EmptyState } from "@/components/EmptyState";
+import { EmptyState } from "@lore/ui";
 import { NoteTable } from "@/components/NoteTable";
 import { CollectionControls, type Sort, type View } from "./CollectionControls";
 import { NoteCards } from "./NoteCards";

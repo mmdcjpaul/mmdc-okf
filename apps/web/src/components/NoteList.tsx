@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { NoteCard } from "@lore/db";
 import { timeAgo } from "@/lib/format";
 import { noteHref } from "@/lib/urls";
-import { TrustBadge } from "./TrustBadge";
+import { TrustBadge } from "@lore/ui";
 import { TypeIcon } from "./TypeIcon";
 
 interface NoteListProps {

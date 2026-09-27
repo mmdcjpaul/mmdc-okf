@@ -8,9 +8,9 @@ import {
   processChangesSince,
   recentlyChanged,
 } from "@lore/db";
-import { EmptyState } from "@/components/EmptyState";
+import { EmptyState } from "@lore/ui";
 import { NoteList } from "@/components/NoteList";
-import { Section } from "@/components/Section";
+import { Section } from "@lore/ui";
 import { TypeIcon } from "@/components/TypeIcon";
 import { requireContext } from "@/lib/context";
 import { db } from "@/lib/db";
