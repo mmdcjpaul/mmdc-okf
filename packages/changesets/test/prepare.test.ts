@@ -1,6 +1,6 @@
 import { gitBlobSha, lint, loadVault, OverlaySource, parseNote, type FileOp } from "@lore/okf";
 import { beforeAll, describe, expect, it } from "vitest";
-import { prepareChangeset, type Prepared } from "../src/index.ts";
+import { prepareChangeset, type ChangesetIntent, type Prepared } from "../src/index.ts";
 import { acme, context, input, NOW } from "./helpers.ts";
 
 const RETURNING = "kb/admissions/enroll-a-returning-student-in-salesforce.md";
@@ -700,5 +700,50 @@ describe("prepareChangeset: edits from the form", () => {
     );
     expect(p.status).toBe("invalid");
     expect(p.refusal).toMatch(why);
+  });
+});
+
+describe("prepareChangeset: namespaces and teams", () => {
+  it("an admin changes a namespace's settings, as one commit to the registry", async () => {
+    const p = await prepareChangeset(
+      input({
+        actor: "human:dana",
+        intents: [{ type: "set_namespace", slug: "finance", patch: { visibility: "restricted" } }],
+      }),
+      context("dana", src),
+    );
+    expect(p.status).toBe("ready");
+    expect(p.decision.review).toBe(false);
+    expect(p.finalOps.map((o) => o.path)).toEqual([".kb/namespaces.yaml"]);
+    expect(p.title).toBe('change the settings of namespace "finance"');
+    expect(p.facts.namespaces).toEqual([]);
+  });
+
+  it("a new namespace is reviewed, like any new term", async () => {
+    const p = await prepareChangeset(
+      input({
+        actor: "human:dana",
+        intents: [{ type: "set_namespace", slug: "legal", patch: { title: "Legal" } }],
+      }),
+      context("dana", src),
+    );
+    expect(p.status).toBe("ready");
+    expect(p.title).toBe('add namespace "legal"');
+    expect(p.decision.reasons.map((r) => r.code)).toEqual(["new-term"]);
+  });
+
+  const adminOnly: ChangesetIntent[] = [
+    { type: "set_namespace", slug: "finance", patch: { visibility: "company" } },
+    { type: "set_teams", teams: ["a-team"] },
+  ];
+  it.each(adminOnly)("only admins can: %j", async (intent) => {
+    for (const who of ["alice", "bob"] as const) {
+      const p = await prepareChangeset(
+        input({ actor: `human:${who}`, intents: [intent] }),
+        context(who, src),
+      );
+      expect(p.status).toBe("forbidden");
+      expect(p.refusal).toBe("Only admins change namespaces and teams");
+    }
   });
 });

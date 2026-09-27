@@ -35,9 +35,13 @@ export class FakeModelProvider implements ModelProvider {
     return this;
   }
 
-  /** Answers any call the queue has nothing for. */
+  /**
+   * Answers any call the queue has nothing for. Called again, the new script is tried first
+   * and the earlier one answers what it declines.
+   */
   otherwise(script: ScriptFor): this {
-    this.fallbackScript = script;
+    const earlier = this.fallbackScript;
+    this.fallbackScript = earlier ? (call) => script(call) ?? earlier(call) : script;
     return this;
   }
 

@@ -20,6 +20,8 @@ const Env = z.object({
   /** Slug of the vault to show. The data model supports several; the picker is phase 3. */
   LORE_VAULT: z.string().optional(),
   APP_SECRET: z.string().min(16),
+  /** Encrypts provider keys saved in Admin. 32 bytes, as 64 hex characters or base64. */
+  APP_ENCRYPTION_KEY: z.string().optional(),
   AUTH_DEV_LOGIN: z.enum(["true", "false"]).default("false"),
   /** `local` runs a model on this machine with transformers.js. */
   EMBEDDINGS: z.enum(["hash", "local", "off", "fail"]).default("hash"),

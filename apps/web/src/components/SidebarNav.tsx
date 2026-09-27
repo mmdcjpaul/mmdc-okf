@@ -14,6 +14,7 @@ import {
   Plus,
   Search,
   Server,
+  Settings,
   Shapes,
 } from "lucide-react";
 import Link from "next/link";
@@ -33,6 +34,8 @@ export interface SidebarCounts {
   unread: number;
   /** Their own changes that came back to them. */
   mine: number;
+  /** Whether to show Admin. */
+  admin: boolean;
 }
 
 interface SidebarNavProps {
@@ -105,6 +108,15 @@ export function SidebarNav({ namespaces, counts, onNavigate }: SidebarNavProps) 
         >
           My changes
         </NavLink>
+        {counts.admin ? (
+          <NavLink
+            href="/admin"
+            icon={<Settings size={ICON} aria-hidden />}
+            onNavigate={onNavigate}
+          >
+            Admin
+          </NavLink>
+        ) : null}
         {counts.review === null ? null : (
           <NavLink
             href="/review"

@@ -37,6 +37,7 @@ export default async function LibraryLayout({ children }: { children: ReactNode 
     review: approves ? inReview.filter((c) => canApproveChangeset(principal, c)).length : null,
     unread,
     mine: mine.length,
+    admin: principal.isAdmin,
   };
   const countOf = new Map(counts.map((c) => [c.key, c.count]));
   const readable = new Set(scope.namespaces);

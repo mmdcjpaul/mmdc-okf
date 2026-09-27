@@ -76,6 +76,9 @@ export interface GitProvider {
   ): Promise<{ content: Uint8Array; blobSha: string } | null>;
   diff(vault: VaultRef, from: string, to: string): Promise<DiffEntry[]>;
   commit(vault: VaultRef, input: CommitInput): Promise<CommitResult>;
+  /** Tags a commit, for audit snapshots such as `vault-2026-09`. */
+  tag?(vault: VaultRef, name: string, sha: string, message: string): Promise<void>;
+  listTags?(vault: VaultRef): Promise<{ name: string; sha: string; taggedAt: Date | null }[]>;
   openPullRequest?(
     vault: VaultRef,
     input: { branch: string; title: string; body: string },

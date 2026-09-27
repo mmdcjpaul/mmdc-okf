@@ -85,6 +85,23 @@ test.describe("accessibility (WCAG 2.2 AA)", () => {
         }
       });
 
+      test("Admin", async ({ page }) => {
+        await signIn(page, "dana");
+        for (const path of [
+          "/admin",
+          "/admin/teams",
+          "/admin/namespaces",
+          "/admin/ai",
+          "/admin/settings",
+          "/admin/audit",
+          "/admin/snapshots",
+        ]) {
+          await page.goto(path);
+          await expect(page.getByRole("heading", { level: 1, name: "Admin" })).toBeVisible();
+          await expectNoViolations(page);
+        }
+      });
+
       test("a change in note history", async ({ page }) => {
         await signIn(page, "alice");
         const note = await noteAt("kb/finance/refund-policy.md");

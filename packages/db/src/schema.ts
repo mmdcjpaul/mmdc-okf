@@ -346,7 +346,22 @@ export type ChangesetIntent =
   | { type: "verify"; path: string }
   | { type: "rename_term"; kind: "theme" | "system" | "tag"; from: string; to: string }
   | { type: "merge_terms"; kind: "theme" | "system" | "tag"; from: string[]; into: string }
-  | { type: "add_term"; kind: "theme" | "system" | "tag"; slug: string; description: string };
+  | { type: "add_term"; kind: "theme" | "system" | "tag"; slug: string; description: string }
+  | {
+      /** Registers a namespace or changes its settings. Admins only. */
+      type: "set_namespace";
+      slug: string;
+      patch: {
+        title?: string;
+        description?: string;
+        owner?: string | null;
+        visibility?: "company" | "restricted";
+        publishing?: "auto" | "manual";
+        ai_processing?: boolean;
+      };
+    }
+  /** Sets the team slugs the vault knows, for checking owners offline. Admins only. */
+  | { type: "set_teams"; teams: string[] };
 
 export type ChangesetState =
   | "draft"

@@ -6,7 +6,7 @@
 import { timingSafeEqual } from "node:crypto";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { getVault, type Db } from "@lore/db";
-import type { Mirror } from "@lore/git";
+import type { GitProvider, Mirror } from "@lore/git";
 import { stripMembers } from "./indexer/derive.ts";
 
 export interface ApiDeps {
@@ -20,6 +20,9 @@ export interface ApiDeps {
   onIngest?: (id: string) => Promise<void>;
   /** Calls the scripted model has received, when AI_MODE=fake. Null otherwise. */
   fakeCalls?: () => { count: number; last: string | null } | null;
+  /** Makes one small call with a provider's stored key. */
+  testKey?: (provider: string) => Promise<unknown>;
+  providerFor?: (repository: string) => GitProvider;
   /** Recomputes health for notes whose feedback changed. */
   onFeedback?: (vaultId: string, noteIds: string[]) => Promise<void>;
 }
@@ -57,6 +60,33 @@ export function createApi(deps: ApiDeps) {
           await deps.onIngest(item[1]!);
           return send(res, 202, { queued: item[1] });
         }
+        // POST /ai/test?provider=<name>
+        if (url.pathname === "/ai/test" && deps.testKey) {
+          const name = url.searchParams.get("provider") ?? "";
+          if (!/^[a-z][a-z0-9-]*$/.test(name)) return send(res, 400, { error: "No provider" });
+          return send(res, 200, await deps.testKey(name));
+        }
+        // POST /vaults/:id/tags?name=<tag>&message=<text>: a snapshot of the branch head.
+        const tag = /^\/vaults\/([^/]+)\/tags$/.exec(url.pathname);
+        if (tag && deps.providerFor) {
+          const vault = await getVault(deps.db, decodeURIComponent(tag[1]!));
+          if (!vault) return send(res, 404, { error: "Unknown vault" });
+          const provider = deps.providerFor(vault.repository);
+          const ref = { id: vault.id, repository: vault.repository, branch: vault.branch };
+          const head = await provider.head(ref);
+          if (!head || !provider.tag) return send(res, 409, { error: "Nothing to tag" });
+          try {
+            await provider.tag(
+              ref,
+              url.searchParams.get("name") ?? "",
+              head,
+              (url.searchParams.get("message") ?? "Snapshot").slice(0, 500),
+            );
+          } catch (err) {
+            return send(res, 400, { error: (err as Error).message });
+          }
+          return send(res, 201, { name: url.searchParams.get("name"), sha: head });
+        }
         // POST /vaults/:id/health?note=<id>&note=<id>
         const health = /^\/vaults\/([^/]+)\/health$/.exec(url.pathname);
         const notes = url.searchParams.getAll("note").slice(0, 100);
@@ -92,6 +122,19 @@ export function createApi(deps: ApiDeps) {
           ...change,
           before: change.before === null ? null : stripMembers(change.before),
           after: change.after === null ? null : stripMembers(change.after),
+        });
+      }
+
+      // GET /vaults/:id/tags
+      const tags = /^\/vaults\/([^/]+)\/tags$/.exec(url.pathname);
+      if (tags && deps.providerFor) {
+        const vault = await getVault(deps.db, decodeURIComponent(tags[1]!));
+        if (!vault) return send(res, 404, { error: "Unknown vault" });
+        const provider = deps.providerFor(vault.repository);
+        const ref = { id: vault.id, repository: vault.repository, branch: vault.branch };
+        return send(res, 200, {
+          head: await provider.head(ref),
+          tags: (await provider.listTags?.(ref)) ?? [],
         });
       }
 

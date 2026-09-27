@@ -21,6 +21,8 @@ import {
   parseNote,
   renameTerm,
   serializeNote,
+  setNamespace,
+  setProfileTeams,
   slugify,
   str,
   verifications,
@@ -206,6 +208,10 @@ function applyIntent(vault: Vault, intent: ChangesetIntent, actor: string, now: 
       return renameTerm(vault, intent.kind, intent.from, intent.to, now);
     case "merge_terms":
       return mergeTerms(vault, intent.kind, intent.from, intent.into, now);
+    case "set_namespace":
+      return setNamespace(vault, intent.slug, intent.patch);
+    case "set_teams":
+      return setProfileTeams(vault, intent.teams);
     case "add_term":
       return addTerm(
         vault,
@@ -249,6 +255,12 @@ export function describeChangeset(facts: ChangesetFacts, intents: ChangesetInten
   if (term?.type === "merge_terms")
     return `merge ${term.kind} ${term.from.map((f) => `"${f}"`).join(", ")} into "${term.into}"`;
   if (term?.type === "add_term") return `add ${term.kind} "${term.slug}"`;
+  const ns = intents.find((i) => i.type === "set_namespace");
+  if (ns?.type === "set_namespace")
+    return facts.terms.some((t) => t.kind === "namespace" && t.change === "added")
+      ? `add namespace "${ns.slug}"`
+      : `change the settings of namespace "${ns.slug}"`;
+  if (intents.some((i) => i.type === "set_teams")) return "update the list of teams";
 
   const main = facts.notes.filter((n) => n.primary || n.kind !== "updated");
   const verb = (n: NoteChange) =>
@@ -308,6 +320,9 @@ export async function prepareChangeset(
   if (bad) return refuse("forbidden", bad);
   if (input.ops.length === 0 && input.intents.length === 0)
     return refuse("invalid", "The changeset changes nothing");
+  const adminOnly = input.intents.find((i) => i.type === "set_namespace" || i.type === "set_teams");
+  if (adminOnly && !ctx.isAdmin)
+    return refuse("forbidden", "Only admins change namespaces and teams");
 
   // 2. The submitter's changes, then each intent in order.
   let ops = compactOps(input.ops);

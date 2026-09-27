@@ -32,6 +32,8 @@ const config: NextConfig = {
     "jszip",
   ],
   poweredByHeader: false,
+  // `forbidden()` answers 403 for Admin pages opened by people who are not admins.
+  experimental: { authInterrupts: true },
   // The repository has its own agent instructions; Next should not write more into apps/web.
   agentRules: false,
 };

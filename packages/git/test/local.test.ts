@@ -153,6 +153,28 @@ describe("LocalGitProvider", () => {
     await expect(m.fileChange("HEAD; rm -rf /", "kb/b.md")).rejects.toThrow(/Invalid commit/);
   });
 
+  it("tags a commit as a snapshot, once", async () => {
+    const first = await provider.commit(vault, {
+      ops: [{ op: "put", path: "kb/a.md", content: "one\n" }],
+      message: "add",
+      expectedHead: null,
+    });
+    if (!("sha" in first)) throw new Error("commit failed");
+    await provider.tag(vault, "vault-2026-09", first.sha, "Snapshot for the September audit");
+    const tags = await provider.listTags(vault);
+    expect(tags).toHaveLength(1);
+    expect(tags[0]).toMatchObject({ name: "vault-2026-09", sha: first.sha });
+    expect(tags[0]!.taggedAt).toBeInstanceOf(Date);
+    await expect(provider.tag(vault, "vault-2026-09", first.sha, "again")).rejects.toThrow(
+      /already exists/,
+    );
+    for (const bad of ["../x", "a b", "-rf", "x..y", ""])
+      await expect(provider.tag(vault, bad, first.sha, "m"), bad).rejects.toThrow(
+        /not a valid tag/,
+      );
+    await expect(provider.tag(vault, "ok", "HEAD", "m")).rejects.toThrow(/Invalid commit/);
+  });
+
   it("serves a commit as a FileSource", async () => {
     await provider.commit(vault, {
       ops: [

@@ -3,9 +3,10 @@ import { generateIndexes } from "../src/indexes.ts";
 import { lint } from "../src/lint/index.ts";
 import { noteLinks } from "../src/links.ts";
 import { bump, moveNote, newNote, verify } from "../src/ops/notes.ts";
+import { setNamespace, setProfileTeams } from "../src/ops/config.ts";
 import { addTerm, mergeTerms, renameTerm } from "../src/ops/taxonomy.ts";
 import { parseNote } from "../src/note.ts";
-import { MemorySource } from "../src/source.ts";
+import { MemorySource, OverlaySource } from "../src/source.ts";
 import type { FileOp } from "../src/types.ts";
 import { contentNotes, loadVault, type Vault } from "../src/vault.ts";
 import { hubKindOf } from "../src/paths.ts";
@@ -22,6 +23,8 @@ async function applyAndIndex(
   next = next.apply(await generateIndexes(await loadVault(next), { now: NOW }));
   return { src: next, vault: await loadVault(next) };
 }
+
+const loadAcme = async () => loadVault(await acmeSource());
 
 async function errors(vault: Vault): Promise<string[]> {
   const report = await lint(vault, { now: NOW });
@@ -322,5 +325,59 @@ describe("taxonomy", () => {
     expect(() => renameTerm(vault, "tag", "nope", "x")).toThrow(/Unknown tag/);
     expect(() => renameTerm(vault, "tag", "refunds", "payroll")).toThrow(/use merge/);
     expect(() => renameTerm(vault, "tag", "refunds", "Not A Slug")).toThrow(/kebab-case/);
+  });
+});
+
+describe("setNamespace and setProfileTeams", () => {
+  it("changes one namespace and leaves the rest of the file alone", async () => {
+    const vault = await loadAcme();
+    const before = vault.aux.get(".kb/namespaces.yaml")!;
+    const ops = setNamespace(vault, "finance", { visibility: "restricted", publishing: "auto" });
+    expect(ops).toHaveLength(1);
+    const after = (ops[0] as { content: string }).content;
+    const block = (text: string, ns: string) =>
+      text.slice(text.indexOf(`${ns}:`)).split(/\n(?=\S)/)[0]!;
+    expect(block(after, "finance")).toContain("visibility: restricted");
+    expect(block(after, "finance")).toContain("publishing: auto");
+    expect(block(after, "finance")).toContain("owner: finance-systems");
+    // The other namespaces are byte for byte what they were.
+    for (const ns of ["admissions", "it-support", "people-ops"])
+      expect(block(after, ns)).toBe(block(before, ns));
+    const next = await loadVault(new OverlaySource(vault.src, ops));
+    expect(next.namespaces.finance).toMatchObject({ visibility: "restricted", publishing: "auto" });
+    expect((await lint(next, { now: NOW })).errors).toBe(0);
+  });
+
+  it("registers a new namespace, manual by default", async () => {
+    const vault = await loadAcme();
+    const ops = setNamespace(vault, "legal", { title: "Legal", owner: "people-ops" });
+    const next = await loadVault(new OverlaySource(vault.src, ops));
+    expect(next.namespaces.legal).toMatchObject({
+      title: "Legal",
+      publishing: "manual",
+      visibility: "company",
+    });
+    expect(() => setNamespace(vault, "Legal Team", { title: "x" })).toThrow(
+      /not a valid namespace/,
+    );
+    expect(() => setNamespace(vault, "_themes", { title: "x" })).toThrow(/not a valid namespace/);
+    expect(() => setNamespace(vault, "legal", {})).toThrow(/needs a title/);
+  });
+
+  it("changes nothing when nothing changes", async () => {
+    const vault = await loadAcme();
+    expect(setNamespace(vault, "finance", { visibility: "company" })).toEqual([]);
+    expect(setProfileTeams(vault, [...vault.profile.teams])).toEqual([]);
+  });
+
+  it("keeps the profile's comments when teams change", async () => {
+    const vault = await loadAcme();
+    const ops = setProfileTeams(vault, [...vault.profile.teams, "legal"]);
+    const after = (ops[0] as { content: string }).content;
+    const before = vault.aux.get(".kb/profile.yaml")!;
+    expect(after.split("\n").filter((l) => l.trim().startsWith("#"))).toEqual(
+      before.split("\n").filter((l) => l.trim().startsWith("#")),
+    );
+    expect((await loadVault(new OverlaySource(vault.src, ops))).profile.teams).toContain("legal");
   });
 });

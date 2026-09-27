@@ -90,3 +90,46 @@ export async function requestIngest(itemId: string): Promise<boolean> {
   const res = await call(`/ingest/${encodeURIComponent(itemId)}/process`, { method: "POST" });
   return res?.ok ?? false;
 }
+
+export interface KeyTest {
+  ok: boolean;
+  model: string | null;
+  message: string;
+  latencyMs: number;
+}
+
+/** Makes one small call with a provider's stored key. */
+export async function testProviderKey(provider: string): Promise<KeyTest> {
+  const res = await call(`/ai/test?provider=${encodeURIComponent(provider)}`, { method: "POST" });
+  if (!res?.ok)
+    return { ok: false, model: null, message: "The worker could not be reached", latencyMs: 0 };
+  return (await res.json()) as KeyTest;
+}
+
+export interface Snapshot {
+  name: string;
+  sha: string;
+  taggedAt: string | null;
+}
+
+export async function listSnapshots(
+  vaultId: string,
+): Promise<{ head: string | null; tags: Snapshot[] } | null> {
+  const res = await call(`/vaults/${encodeURIComponent(vaultId)}/tags`);
+  return res?.ok ? ((await res.json()) as { head: string | null; tags: Snapshot[] }) : null;
+}
+
+/** Tags the branch head. Returns an error message, or null when it worked. */
+export async function createSnapshot(
+  vaultId: string,
+  name: string,
+  message: string,
+): Promise<string | null> {
+  const q = new URLSearchParams({ name, message });
+  const res = await call(`/vaults/${encodeURIComponent(vaultId)}/tags?${q}`, { method: "POST" });
+  if (res?.ok) return null;
+  return (
+    ((await res?.json().catch(() => ({}))) as { error?: string } | undefined)?.error ??
+    "The worker could not be reached"
+  );
+}

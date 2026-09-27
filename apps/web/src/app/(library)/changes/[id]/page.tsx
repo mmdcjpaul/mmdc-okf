@@ -5,6 +5,7 @@ import { getChangeset } from "@lore/db";
 import { Banner } from "@lore/ui";
 import { StateBadge } from "@/components/ChangesetState";
 import { DiffSummary, DiffTable } from "@/components/DiffTable";
+import { RefreshWhile } from "@/components/RefreshWhile";
 import { ReviewControls, WithdrawButton } from "@/components/ReviewControls";
 import { canApproveChangeset, canSeeChangeset } from "@/lib/changesets";
 import {
@@ -83,6 +84,11 @@ export default async function ChangesetPage({ params }: Props) {
             {cs.title || "A change being processed"}
           </h1>
           <StateBadge state={cs.state} />
+          <RefreshWhile
+            active={
+              cs.state === "submitted" || cs.state === "committing" || cs.state === "approved"
+            }
+          />
         </div>
         <p className="mt-2 text-[13.5px] text-muted">
           {people.submitter?.name ?? "Lore"} · {SOURCE[cs.source]} · {CLASS[cs.changeClass]} ·{" "}
@@ -274,7 +280,7 @@ export default async function ChangesetPage({ params }: Props) {
         {files.length === 0 ? (
           <p className="text-[14px] text-muted">
             {cs.state === "submitted" || cs.state === "committing"
-              ? "Being prepared. Reload in a moment."
+              ? "Being prepared. This page updates by itself."
               : "The change was not prepared, so there is nothing to show."}
           </p>
         ) : null}

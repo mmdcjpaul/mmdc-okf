@@ -6,6 +6,12 @@ a test fails when they change without a version bump and an entry here.
 Versions follow semantic versioning: a major version removes or changes an export, a minor
 version adds one, a patch changes behaviour without changing a signature.
 
+## 1.2.0 (2026-09-27)
+
+- Added `setNamespace` and `setProfileTeams`, so changes made in Admin to namespaces and
+  teams reach `.kb/namespaces.yaml` and `.kb/profile.yaml` as ordinary commits, keeping the
+  comments and formatting of everything they do not touch.
+
 ## 1.1.0 (2026-09-27)
 
 - Added `templateBody`, so the Library's new-note form starts from the same sections as

@@ -1,7 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
-import { notFound, redirect } from "next/navigation";
+import { forbidden, notFound, redirect } from "next/navigation";
 import {
   loadPrincipal,
   readScope,
@@ -57,4 +57,22 @@ export async function apiContext(): Promise<RequestContext | null> {
 /** Unreadable and missing notes both 404, so a note's existence is not revealed. */
 export function hidden(): never {
   notFound();
+}
+
+/**
+ * For Admin pages and actions: the request context, for admins and owners only. Anyone else
+ * gets 403. Every route under /admin starts here, and a test checks that they do.
+ */
+export const requireAdmin = cache(async (): Promise<RequestContext> => {
+  const ctx = await requireContext();
+  if (!ctx.principal.isAdmin) forbidden();
+  return ctx;
+});
+
+/** Same as {@link requireAdmin}, for route handlers: a response to return instead of data. */
+export async function apiAdmin(): Promise<RequestContext | Response> {
+  const ctx = await apiContext();
+  if (!ctx) return Response.json({ error: "Sign in required" }, { status: 401 });
+  if (!ctx.principal.isAdmin) return Response.json({ error: "Admins only" }, { status: 403 });
+  return ctx;
 }

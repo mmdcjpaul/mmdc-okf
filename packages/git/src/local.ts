@@ -63,6 +63,44 @@ export class LocalGitProvider implements GitProvider {
     return this.mirror(vault).diff(from, to);
   }
 
+  async tag(vault: VaultRef, name: string, sha: string, message: string): Promise<void> {
+    if (!/^[A-Za-z0-9][A-Za-z0-9._-]{0,80}$/.test(name) || name.includes(".."))
+      throw new Error(`"${name}" is not a valid tag name`);
+    if (!/^[0-9a-f]{40,64}$/.test(sha)) throw new Error(`Invalid commit ${sha}`);
+    const env = {
+      GIT_COMMITTER_NAME: LORE_IDENTITY.name,
+      GIT_COMMITTER_EMAIL: LORE_IDENTITY.email,
+    };
+    try {
+      await git(localRepoPath(vault), ["tag", "-a", name, sha, "-F", "-"], { input: message, env });
+    } catch (err) {
+      if (/already exists/.test((err as Error).message))
+        throw new Error(`The tag ${name} already exists`, { cause: err });
+      throw err;
+    }
+  }
+
+  async listTags(vault: VaultRef) {
+    const out = await git(localRepoPath(vault), [
+      "for-each-ref",
+      "--sort=-creatordate",
+      "--format=%(refname:short)%09%(*objectname)%(objectname)%09%(creatordate:iso-strict)",
+      "refs/tags",
+    ]);
+    return out
+      .split("\n")
+      .filter(Boolean)
+      .map((line) => {
+        const [name, shas, date] = line.split("\t");
+        // An annotated tag lists the commit first, then the tag object.
+        return {
+          name: name!,
+          sha: shas!.slice(0, 40),
+          taggedAt: date ? new Date(date) : null,
+        };
+      });
+  }
+
   async commit(vault: VaultRef, input: CommitInput): Promise<CommitResult> {
     const gitDir = localRepoPath(vault);
     const ref = `refs/heads/${vault.branch}`;

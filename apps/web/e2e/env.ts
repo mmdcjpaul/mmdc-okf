@@ -33,6 +33,8 @@ export const WORKER_ENV: Record<string, string> = {
   GIT_PROVIDER: "local",
   WORKER_PORT: String(WORKER_PORT),
   INTERNAL_API_TOKEN: "lore-e2e-internal-token",
+  // A throwaway key: the suite saves provider keys to check they never come back.
+  APP_ENCRYPTION_KEY: "e2e0".repeat(16),
   LOG_LEVEL: "warn",
   // Pushes are indexed inline by the tests; the poller only needs to exist.
   POLL_SECONDS: "3600",

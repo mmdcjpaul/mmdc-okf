@@ -125,6 +125,8 @@ const api = createApi({
   mirrorFor,
   onChangeset: (id) => enqueueChangeset(boss, id),
   onIngest: (id) => enqueueIngest(boss, id),
+  testKey: (provider) => rt.ai.testKey(provider),
+  providerFor: (repository) => providerFor(repository),
   fakeCalls: () =>
     rt.ai.fake && config.AI_MODE === "fake"
       ? {
