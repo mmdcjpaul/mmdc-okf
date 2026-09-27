@@ -8,3 +8,4 @@ export { closeDb, createDb, type Db, type DbOptions } from "./client.ts";
 export * from "./repos/identity.ts";
 export * from "./repos/library.ts";
 export * from "./repos/indexing.ts";
+export * from "./repos/changesets.ts";

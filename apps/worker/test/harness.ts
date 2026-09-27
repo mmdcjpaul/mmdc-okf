@@ -12,10 +12,25 @@ import { commitWorkingTree, initBareRepo } from "@lore/git";
 import { dropIndexes, indexNames, Meilisearch } from "@lore/search";
 import pino from "pino";
 import postgres from "postgres";
+import { newRecordId, toStoredOps, type ChangesetIntent } from "@lore/changesets";
+import {
+  addReview,
+  createChangeset,
+  getChangeset,
+  transitionChangeset,
+  type ChangesetRow,
+} from "@lore/db";
+import { gitBlobSha, type FileOp } from "@lore/okf";
+import { applyIndexEffects } from "../src/changesets/effects.ts";
+import {
+  processChangeset,
+  type ChangesetDeps,
+  type ProcessOutcome,
+} from "../src/changesets/process.ts";
 import { indexVault, type IndexDeps } from "../src/indexer/index-vault.ts";
 import { FsObjectStore } from "@lore/ingest";
 import { loadPrincipals } from "../src/principals.ts";
-import { mirrorFor } from "../src/runtime.ts";
+import { mirrorFor, providerFor } from "../src/runtime.ts";
 
 export const REPO = resolve(import.meta.dirname, "../../..");
 export const FIXTURE = join(REPO, "fixtures/vault-acme");
@@ -65,8 +80,34 @@ export interface Harness {
   work: string;
   push(message: string, author?: { name: string; email: string }): Promise<string | null>;
   index(): ReturnType<typeof indexVault>;
+  /** Indexes and applies the effects of process changes, as the worker's index job does. */
+  indexWithEffects(): Promise<Awaited<ReturnType<typeof applyIndexEffects>>>;
+  changesets: ChangesetDeps;
+  /** Text of a file at the branch head. */
+  read(path: string): Promise<string | null>;
+  /** Saves a changeset the way the web app does, without processing it. */
+  save(input: SaveInput): Promise<ChangesetRow>;
+  /** Saves a changeset and runs the worker's job on it. */
+  submit(input: SaveInput): Promise<{ cs: ChangesetRow; outcome: ProcessOutcome }>;
+  /** Records a reviewer's approval and runs the job again. */
+  approve(id: string, reviewerId: string): Promise<{ cs: ChangesetRow; outcome: ProcessOutcome }>;
   rebuild(): ReturnType<typeof indexVault>;
   close(): Promise<void>;
+}
+
+export interface SaveInput {
+  by: string;
+  source?: ChangesetRow["source"];
+  changeClass?: ChangesetRow["changeClass"];
+  /** Edits to files that exist: the base blob SHA is taken from the head. */
+  edit?: Record<string, (text: string) => string>;
+  ops?: FileOp[];
+  intents?: ChangesetIntent[];
+  verify?: boolean;
+  reason?: string;
+  summary?: string;
+  aiDrafted?: boolean;
+  actor?: string;
 }
 
 export async function createHarness(name: string): Promise<Harness> {
@@ -108,7 +149,66 @@ export async function createHarness(name: string): Promise<Harness> {
     log: pino({ level: "silent" }),
     now: () => clock.now,
   };
+  const changesets: ChangesetDeps = {
+    db,
+    log: deps.log,
+    mirrorFor,
+    providerFor: (repository) => providerFor(repository),
+    now: () => clock.now,
+  };
+  const read = async (path: string) => {
+    const mirror = mirrorFor(`local:${bare}`);
+    const head = await mirror.resolve("refs/heads/main");
+    const entry = head ? (await mirror.listTree(head)).find((e) => e.path === path) : undefined;
+    if (!entry) return null;
+    const bytes = (await mirror.readBlobs([entry.blobSha])).get(entry.blobSha);
+    return bytes ? new TextDecoder().decode(bytes) : null;
+  };
+  const save = async (input: SaveInput) => {
+    const ops: FileOp[] = [...(input.ops ?? [])];
+    const baseShas: Record<string, string | null> = {};
+    for (const [path, fn] of Object.entries(input.edit ?? {})) {
+      const text = await read(path);
+      if (text === null) throw new Error(`No file at ${path}`);
+      baseShas[path] = gitBlobSha(text);
+      ops.push({ op: "put", path, content: fn(text) });
+    }
+    return createChangeset(db, {
+      id: newRecordId("cs", clock.now),
+      vaultId: slug,
+      submitterId: input.by,
+      actor: input.actor ?? `human:${input.by}`,
+      source: input.source ?? "editor",
+      aiDrafted: input.aiDrafted ?? false,
+      changeClass: input.changeClass ?? "fix",
+      state: "submitted",
+      title: "",
+      reason: input.reason ?? null,
+      summary: input.summary ?? null,
+      verify: input.verify ?? false,
+      ops: toStoredOps(ops),
+      intents: input.intents ?? [],
+      baseShas,
+      submittedAt: clock.now,
+    });
+  };
+  const run = async (id: string) => {
+    const outcome = await processChangeset(changesets, id);
+    return { cs: (await getChangeset(db, id))!, outcome };
+  };
   return {
+    changesets,
+    read,
+    save,
+    submit: async (input) => run((await save(input)).id),
+    async approve(id, reviewerId) {
+      await addReview(db, { changesetId: id, reviewerId, decision: "approve", comment: null });
+      await transitionChangeset(db, id, ["in_review"], "approved");
+      return run(id);
+    },
+    async indexWithEffects() {
+      return applyIndexEffects(db, await indexVault(deps, slug));
+    },
     clock,
     db,
     meili,

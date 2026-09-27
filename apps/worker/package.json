@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@lore/ai": "workspace:*",
+    "@lore/changesets": "workspace:*",
     "@lore/db": "workspace:*",
     "@lore/git": "workspace:*",
     "@lore/ingest": "workspace:*",

@@ -3,17 +3,22 @@
  * and serves /health and the internal API. Shuts down gracefully on SIGINT and SIGTERM.
  */
 import { createServer } from "node:http";
-import { listVaults } from "@lore/db";
+import { changesetsToProcess, listVaults } from "@lore/db";
 import { createApi } from "./api.ts";
+import { applyIndexEffects } from "./changesets/effects.ts";
+import { processChangeset, type ChangesetDeps } from "./changesets/process.ts";
 import { loadConfig } from "./config.ts";
 import { indexVault } from "./indexer/index-vault.ts";
 import {
   createRuntime,
+  enqueueChangeset,
   enqueueIndex,
   mirrorFor,
+  providerFor,
   QUEUES,
   startBoss,
   VAULT_INDEXED,
+  type ChangesetJobData,
   type IndexJobData,
 } from "./runtime.ts";
 
@@ -26,6 +31,8 @@ await boss.work<IndexJobData>(QUEUES.index, async ([job]) => {
   if (!job) return;
   const result = await indexVault(rt.deps, job.data.vaultId);
   lastIndex = { at: new Date().toISOString(), vaultId: result.vaultId, head: result.head };
+  const effects = await applyIndexEffects(rt.db, result);
+  if (effects.notified || effects.flagged) rt.log.info(effects, "process change effects");
   if (!result.skipped) {
     await boss.publish(VAULT_INDEXED, {
       vaultId: result.vaultId,
@@ -35,6 +42,29 @@ await boss.work<IndexJobData>(QUEUES.index, async ([job]) => {
     });
   }
 });
+
+const changesetDeps: ChangesetDeps = {
+  db: rt.db,
+  log: rt.log,
+  mirrorFor,
+  providerFor: (repository) =>
+    providerFor(repository, (vaultId) => enqueueIndex(boss, { vaultId, reason: "push" })),
+};
+await boss.work<ChangesetJobData>(QUEUES.changeset, async ([job]) => {
+  if (job) await processChangeset(changesetDeps, job.data.changesetId);
+});
+
+/** Picks up changesets whose job was never queued or was lost, so no write is dropped. */
+async function sweepChangesets(): Promise<void> {
+  const stuckBefore = new Date(Date.now() - 2 * 60_000);
+  for (const cs of await changesetsToProcess(rt.db, stuckBefore))
+    await enqueueChangeset(boss, cs.id);
+}
+await sweepChangesets();
+const sweeper = setInterval(
+  () => void sweepChangesets().catch((err) => rt.log.error({ err }, "changeset sweep failed")),
+  15_000,
+);
 
 async function pollAll(): Promise<void> {
   for (const v of await listVaults(rt.db))
@@ -49,6 +79,7 @@ const poller = setInterval(
 const api = createApi({
   db: rt.db,
   mirrorFor,
+  onChangeset: (id) => enqueueChangeset(boss, id),
   token: config.INTERNAL_API_TOKEN,
   health: () => ({ lastIndex }),
 });
@@ -60,6 +91,7 @@ server.listen(config.WORKER_PORT, config.WORKER_HOST, () =>
 async function shutdown(signal: string) {
   rt.log.info({ signal }, "shutting down");
   clearInterval(poller);
+  clearInterval(sweeper);
   server.close();
   await boss.stop({ graceful: true, timeout: 30_000 });
   await rt.close();

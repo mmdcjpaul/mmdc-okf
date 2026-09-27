@@ -15,6 +15,13 @@
       "when": 1790494701398,
       "tag": "0001_note_stale",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790498144631,
+      "tag": "0002_changesets_feedback_usage",
+      "breakpoints": true
     }
   ]
 }

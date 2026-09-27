@@ -158,6 +158,9 @@ importers:
       '@lore/ai':
         specifier: workspace:*
         version: link:../../packages/ai
+      '@lore/changesets':
+        specifier: workspace:*
+        version: link:../../packages/changesets
       '@lore/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -211,6 +214,15 @@ importers:
       yaml:
         specifier: ^2.9.1
         version: 2.9.1
+
+  packages/changesets:
+    dependencies:
+      '@lore/okf':
+        specifier: workspace:*
+        version: link:../okf
+      ulid:
+        specifier: ^3.0.2
+        version: 3.0.2
 
   packages/cli:
     dependencies:

@@ -70,8 +70,10 @@ describe.skipIf(!available)("worker internal API", () => {
     expect((await call(`/vaults/${h.vaultId}/changes/${head}`)).status).toBe(404);
   });
 
-  it("only answers GET", async () => {
-    const res = await fetch(base + "/health", { method: "POST" });
-    expect(res.status).toBe(405);
+  it("refuses methods it does not serve, and POST without the token", async () => {
+    expect((await fetch(base + "/health", { method: "DELETE" })).status).toBe(405);
+    expect((await fetch(base + "/health", { method: "POST" })).status).toBe(401);
+    const id = "cs_01K0000000000000000000000A";
+    expect((await fetch(`${base}/changesets/${id}/process`, { method: "POST" })).status).toBe(401);
   });
 });

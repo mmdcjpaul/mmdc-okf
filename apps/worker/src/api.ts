@@ -14,6 +14,8 @@ export interface ApiDeps {
   mirrorFor: (repository: string) => Mirror;
   token: string;
   health: () => Record<string, unknown>;
+  /** Queues a changeset for processing. The web app calls this right after it saves one. */
+  onChangeset?: (id: string) => Promise<void>;
 }
 
 /** Notes are capped at 2,500 words; anything far beyond that is not a note worth diffing. */
@@ -35,6 +37,16 @@ export function createApi(deps: ApiDeps) {
   return async (req: IncomingMessage, res: ServerResponse): Promise<void> => {
     try {
       const url = new URL(req.url ?? "/", "http://worker");
+      if (req.method === "POST") {
+        if (!authorized(req, deps.token)) return send(res, 401, { error: "Unauthorized" });
+        // POST /changesets/:id/process
+        const cs = /^\/changesets\/(cs_[0-9A-HJKMNP-TV-Z]{26})\/process$/.exec(url.pathname);
+        if (cs && deps.onChangeset) {
+          await deps.onChangeset(cs[1]!);
+          return send(res, 202, { queued: cs[1] });
+        }
+        return send(res, 404, { error: "Not found" });
+      }
       if (req.method !== "GET") return send(res, 405, { error: "Method not allowed" });
       if (url.pathname === "/health") return send(res, 200, { ok: true, ...deps.health() });
       if (!authorized(req, deps.token)) return send(res, 401, { error: "Unauthorized" });

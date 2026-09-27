@@ -2,7 +2,7 @@ import { join } from "node:path";
 import { embedderFor } from "@lore/ai";
 import { createDb, type Db } from "@lore/db";
 import { migrateDb } from "@lore/db/migrate";
-import { Mirror } from "@lore/git";
+import { LocalGitProvider, Mirror, type GitProvider } from "@lore/git";
 import { Meilisearch } from "@lore/search";
 import { PgBoss } from "pg-boss";
 import pino, { type Logger } from "pino";
@@ -13,7 +13,13 @@ import { FsObjectStore, S3ObjectStore, type ObjectStore } from "@lore/ingest";
 export const QUEUES = {
   /** One pending and one running index job per vault; extra pushes coalesce. */
   index: "index",
+  /** One job per changeset: prepare, lint, review rules, commit. */
+  changeset: "changeset",
 } as const;
+
+export interface ChangesetJobData {
+  changesetId: string;
+}
 
 /** Published after every index run. Plan 4 subscribes the Desk. */
 export const VAULT_INDEXED = "vault.indexed";
@@ -36,6 +42,19 @@ export interface Runtime {
 export function mirrorFor(repository: string): Mirror {
   if (repository.startsWith("local:")) return new Mirror(repository.slice("local:".length));
   throw new Error(`Mirrors for ${repository} arrive with GitHubProvider (Plan 4)`);
+}
+
+/**
+ * The provider that commits to a vault. `onPush` stands in for the push webhook: a local
+ * repository has nobody to call us, so the provider does it after each commit.
+ */
+export function providerFor(
+  repository: string,
+  onPush?: (vaultId: string) => Promise<void> | void,
+): GitProvider {
+  if (repository.startsWith("local:"))
+    return new LocalGitProvider(onPush ? { onPush: (e) => onPush(e.vaultId) } : {});
+  throw new Error(`Commits to ${repository} arrive with GitHubProvider`);
 }
 
 export async function objectStoreFor(config: Config): Promise<ObjectStore> {
@@ -94,7 +113,13 @@ export async function startBoss(config: Config, log: Logger): Promise<PgBoss> {
   boss.on("error", (err) => log.error({ err }, "pg-boss error"));
   await boss.start();
   await boss.createQueue(QUEUES.index, { policy: "stately", retryLimit: 3, retryDelay: 5 });
+  await boss.createQueue(QUEUES.changeset, { retryLimit: 3, retryDelay: 5, retryBackoff: true });
   return boss;
+}
+
+export async function enqueueChangeset(boss: PgBoss, changesetId: string): Promise<void> {
+  // One job per changeset at a time; a second request while it runs is dropped.
+  await boss.send(QUEUES.changeset, { changesetId }, { singletonKey: changesetId });
 }
 
 export async function enqueueIndex(boss: PgBoss, data: IndexJobData): Promise<void> {
