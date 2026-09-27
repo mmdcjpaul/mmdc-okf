@@ -408,6 +408,16 @@ export async function noteHistory(db: Db, vaultId: string, noteId: string, limit
 }
 
 /** One entry of a note's history, or null when the commit did not touch the note. */
+/** True once the indexer has seen the commit. */
+export async function commitIndexed(db: Db, vaultId: string, sha: string): Promise<boolean> {
+  const rows = await db
+    .select({ sha: commits.sha })
+    .from(commits)
+    .where(and(eq(commits.vaultId, vaultId), eq(commits.sha, sha)))
+    .limit(1);
+  return rows.length > 0;
+}
+
 export async function noteCommit(db: Db, vaultId: string, noteId: string, sha: string) {
   const [row] = await db
     .select({

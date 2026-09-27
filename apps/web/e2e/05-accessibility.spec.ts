@@ -85,6 +85,14 @@ test.describe("accessibility (WCAG 2.2 AA)", () => {
         }
       });
 
+      test("Taxonomy", async ({ page }) => {
+        await signIn(page, "bob");
+        await page.goto("/taxonomy");
+        await expect(page.getByRole("heading", { level: 1, name: "Taxonomy" })).toBeVisible();
+        await page.locator("summary", { hasText: "Merge tags" }).click();
+        await expectNoViolations(page);
+      });
+
       test("Hygiene and notifications", async ({ page }) => {
         await signIn(page, "bob");
         for (const path of ["/hygiene", "/hygiene?problem=stale&mine=1", "/notifications"]) {

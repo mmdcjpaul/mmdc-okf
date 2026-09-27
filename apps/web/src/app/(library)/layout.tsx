@@ -6,13 +6,15 @@ import { MobileNav } from "@/components/MobileNav";
 import { SidebarNav, type SidebarCounts, type SidebarNamespace } from "@/components/SidebarNav";
 import { UserMenu } from "@/components/UserMenu";
 import { getBranding } from "@/lib/branding";
-import { canApproveChangeset } from "@/lib/changesets";
-import { requireContext } from "@/lib/context";
+import { proposedTerms } from "@lore/changesets";
+import { canApproveChangeset, canSeeChangeset } from "@/lib/changesets";
+import { maintainsVocabulary, requireContext } from "@/lib/context";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 
 export default async function LibraryLayout({ children }: { children: ReactNode }) {
-  const { vault, principal, scope } = await requireContext();
+  const ctx = await requireContext();
+  const { vault, principal, scope } = ctx;
   const [namespaces, counts, branding, inReview, mine, unread] = await Promise.all([
     listNamespaces(db(), vault.id),
     countBy(db(), scope, "namespace"),
@@ -38,6 +40,11 @@ export default async function LibraryLayout({ children }: { children: ReactNode 
     unread,
     mine: mine.length,
     admin: principal.isAdmin,
+    taxonomy: maintainsVocabulary(ctx)
+      ? inReview
+          .filter((c) => canSeeChangeset(principal, c))
+          .flatMap((c) => proposedTerms(c.intents).filter((t) => !t.acceptedBy)).length
+      : null,
   };
   const countOf = new Map(counts.map((c) => [c.key, c.count]));
   const readable = new Set(scope.namespaces);

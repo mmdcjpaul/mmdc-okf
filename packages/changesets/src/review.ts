@@ -62,7 +62,7 @@ export function decideReview(cs: ChangesetDraft, ctx: ReviewContext): ReviewDeci
       message: `The submitter cannot write to ${unwritable.join(", ")}`,
       level: "write",
     });
-  } else if (taxonomy && !holdsAnywhere(ctx, "maintain")) {
+  } else if (taxonomy && !cs.vocabularyDecided && !holdsAnywhere(ctx, "maintain")) {
     reasons.push({
       rule: 1,
       code: "no-write-access",
@@ -105,7 +105,11 @@ export function decideReview(cs: ChangesetDraft, ctx: ReviewContext): ReviewDeci
   }
 
   // 4. It introduces a new namespace, theme, system, or tag.
-  const added = cs.facts.terms.filter((t) => t.change === "added");
+  // A term a maintainer accepted in the taxonomy queue has had its review.
+  const accepted = new Set(cs.acceptedTerms ?? []);
+  const added = cs.facts.terms.filter(
+    (t) => t.change === "added" && !accepted.has(`${t.kind}:${t.slug}`),
+  );
   if (added.length) {
     reasons.push({
       rule: 4,

@@ -15,7 +15,7 @@ const PUBLIC = new Set(["login/page.tsx", "api/auth/[...all]/route.ts", "api/hea
 /** Routes under these folders must also pass the admin guard. */
 const ADMIN_PREFIXES = ["(library)/admin/", "api/admin/"];
 
-const READ_GUARD = /\b(requireContext|apiContext|requireAdmin|apiAdmin)\(/;
+const READ_GUARD = /\b(requireContext|apiContext|requireAdmin|apiAdmin|requireMaintainer)\(/;
 const ADMIN_GUARD = /\b(requireAdmin|apiAdmin)\(/;
 
 function walk(dir: string): string[] {

@@ -69,6 +69,18 @@ export const requireAdmin = cache(async (): Promise<RequestContext> => {
   return ctx;
 });
 
+/** True for admins and for people who maintain at least one namespace. */
+export function maintainsVocabulary(ctx: RequestContext): boolean {
+  return ctx.principal.isAdmin || [...ctx.principal.access.values()].includes("maintain");
+}
+
+/** For the Taxonomy screen: the vocabulary belongs to maintainers (PRD 6.4). */
+export const requireMaintainer = cache(async (): Promise<RequestContext> => {
+  const ctx = await requireContext();
+  if (!maintainsVocabulary(ctx)) forbidden();
+  return ctx;
+});
+
 /** Same as {@link requireAdmin}, for route handlers: a response to return instead of data. */
 export async function apiAdmin(): Promise<RequestContext | Response> {
   const ctx = await apiContext();

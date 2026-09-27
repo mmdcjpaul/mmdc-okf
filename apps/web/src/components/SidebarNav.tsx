@@ -17,6 +17,7 @@ import {
   Server,
   Settings,
   Shapes,
+  Tags,
 } from "lucide-react";
 import Link from "next/link";
 import { NavLink } from "./NavLink";
@@ -37,6 +38,8 @@ export interface SidebarCounts {
   mine: number;
   /** Whether to show Admin. */
   admin: boolean;
+  /** Proposed terms waiting for a decision. Null hides Taxonomy: they maintain nothing. */
+  taxonomy: number | null;
 }
 
 interface SidebarNavProps {
@@ -146,6 +149,16 @@ export function SidebarNav({ namespaces, counts, onNavigate }: SidebarNavProps) 
         <NavLink href="/tags" icon={<Hash size={ICON} aria-hidden />} onNavigate={onNavigate}>
           Tags
         </NavLink>
+        {counts.taxonomy === null ? null : (
+          <NavLink
+            href="/taxonomy"
+            icon={<Tags size={ICON} aria-hidden />}
+            count={counts.taxonomy || undefined}
+            onNavigate={onNavigate}
+          >
+            Taxonomy
+          </NavLink>
+        )}
         <NavLink
           href="/hygiene"
           icon={<HeartPulse size={ICON} aria-hidden />}

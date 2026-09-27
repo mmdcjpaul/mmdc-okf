@@ -38,3 +38,11 @@ export {
   type PrepareContext,
 } from "./prepare.ts";
 export { canApprove, decideReview } from "./review.ts";
+export {
+  decideTerm,
+  proposedTerms,
+  TermDecisionError,
+  vocabularyDecided,
+  type ProposedTerm,
+  type TermDecision,
+} from "./terms.ts";

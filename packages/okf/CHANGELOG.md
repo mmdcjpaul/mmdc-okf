@@ -6,6 +6,10 @@ a test fails when they change without a version bump and an entry here.
 Versions follow semantic versioning: a major version removes or changes an export, a minor
 version adds one, a patch changes behaviour without changing a signature.
 
+## 1.3.0 (2026-09-27)
+
+- Added `addAlias`, so the taxonomy queue can map a proposed term to an existing one.
+
 ## 1.2.0 (2026-09-27)
 
 - Added `setNamespace` and `setProfileTeams`, so changes made in Admin to namespaces and

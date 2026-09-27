@@ -4,7 +4,7 @@ import { lint } from "../src/lint/index.ts";
 import { noteLinks } from "../src/links.ts";
 import { bump, moveNote, newNote, verify } from "../src/ops/notes.ts";
 import { setNamespace, setProfileTeams } from "../src/ops/config.ts";
-import { addTerm, mergeTerms, renameTerm } from "../src/ops/taxonomy.ts";
+import { addAlias, addTerm, mergeTerms, renameTerm } from "../src/ops/taxonomy.ts";
 import { parseNote } from "../src/note.ts";
 import { MemorySource, OverlaySource } from "../src/source.ts";
 import type { FileOp } from "../src/types.ts";
@@ -325,6 +325,39 @@ describe("taxonomy", () => {
     expect(() => renameTerm(vault, "tag", "nope", "x")).toThrow(/Unknown tag/);
     expect(() => renameTerm(vault, "tag", "refunds", "payroll")).toThrow(/use merge/);
     expect(() => renameTerm(vault, "tag", "refunds", "Not A Slug")).toThrow(/kebab-case/);
+  });
+});
+
+describe("addAlias", () => {
+  it("adds another name for a tag, keeping the rest of tags.yaml as it was", async () => {
+    const src = acmeSource();
+    const vault = await loadVault(src);
+    const ops = addAlias(vault, "tag", "refunds", "cheque-refunds", NOW);
+    expect(ops.map((o) => o.path).sort()).toEqual([".kb/tags.yaml", "kb/log.md"]);
+    const { vault: after } = await applyAndIndex(src, ops);
+    expect(after.tags.refunds!.aliases).toContain("cheque-refunds");
+    expect(Object.keys(after.tags)).toEqual(Object.keys(vault.tags));
+    expect(await errors(after)).toEqual([]);
+  });
+
+  it("adds another name for a theme on its hub", async () => {
+    const src = acmeSource();
+    const vault = await loadVault(src);
+    const ops = addAlias(vault, "theme", "month-end-close", "financial-close", NOW);
+    const { vault: after } = await applyAndIndex(src, ops);
+    expect(after.themes.get("month-end-close")!.aliases).toContain("financial-close");
+    expect(await errors(after)).toEqual([]);
+  });
+
+  it("does nothing when the name is already there, and refuses names that are taken", async () => {
+    const vault = await loadAcme();
+    const [term, entry] = Object.entries(vault.tags).find(([, t]) => t.aliases.length > 0)!;
+    expect(addAlias(vault, "tag", term, entry.aliases[0]!, NOW)).toEqual([]);
+    const other = Object.keys(vault.tags).find((t) => t !== term)!;
+    expect(() => addAlias(vault, "tag", other, entry.aliases[0]!)).toThrow(/already another name/);
+    expect(() => addAlias(vault, "tag", other, term)).toThrow(/use merge/);
+    expect(() => addAlias(vault, "tag", "nope", "x")).toThrow(/Unknown tag/);
+    expect(() => addAlias(vault, "tag", other, "Not A Slug")).toThrow(/kebab-case/);
   });
 });
 

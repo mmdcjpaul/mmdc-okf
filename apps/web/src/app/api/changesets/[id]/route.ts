@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { getChangeset, getNote, transitionChangeset, writeAudit } from "@lore/db";
+import { commitIndexed, getChangeset, getNote, transitionChangeset, writeAudit } from "@lore/db";
 import { z } from "zod";
 import { canApproveChangeset, canSeeChangeset } from "@/lib/changesets";
 import { apiContext } from "@/lib/context";
@@ -27,6 +27,9 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
   }
   // A deleted note never appears in the index, so there is nothing to wait for.
   if (cs.state === "committed" && cs.intents.some((i) => i.type === "delete")) indexed = true;
+  // A change to the vocabulary alone has no note of its own to wait for.
+  if (!indexed && !href && cs.commitSha)
+    indexed = await commitIndexed(db(), cs.vaultId, cs.commitSha);
 
   return NextResponse.json(
     {

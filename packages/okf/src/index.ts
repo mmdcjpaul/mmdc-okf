@@ -139,7 +139,7 @@ export { generateIndexes, type IndexOptions } from "./indexes.ts";
 export { MEMBERS_END, MEMBERS_START, hubMembers } from "./hubs.ts";
 
 export { bump, moveNote, newNote, verify, type NewNoteInput } from "./ops/notes.ts";
-export { addTerm, mergeTerms, renameTerm } from "./ops/taxonomy.ts";
+export { addAlias, addTerm, mergeTerms, renameTerm } from "./ops/taxonomy.ts";
 export { setNamespace, setProfileTeams, type NamespacePatch } from "./ops/config.ts";
 export { appendLogEntry } from "./ops/logmd.ts";
 export { TYPE_TEMPLATES, templateBody } from "./ops/templates.ts";

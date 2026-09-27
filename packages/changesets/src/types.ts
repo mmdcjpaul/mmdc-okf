@@ -32,7 +32,25 @@ export type ChangesetIntent =
   | { type: "verify"; path: string }
   | { type: "rename_term"; kind: "theme" | "system" | "tag"; from: string; to: string }
   | { type: "merge_terms"; kind: "theme" | "system" | "tag"; from: string[]; into: string }
-  | { type: "add_term"; kind: "theme" | "system" | "tag"; slug: string; description: string }
+  | {
+      type: "add_term";
+      kind: "theme" | "system" | "tag";
+      slug: string;
+      description: string;
+      /**
+       * Actor of the maintainer who accepted the term in the taxonomy queue. Only the queue
+       * sets it: anything that takes intents from outside must drop it.
+       */
+      acceptedBy?: string;
+    }
+  | {
+      type: "add_alias";
+      kind: "theme" | "system" | "tag";
+      slug: string;
+      alias: string;
+      /** Actor of the maintainer who chose this in the taxonomy queue. */
+      acceptedBy?: string;
+    }
   | {
       /** Registers a namespace or changes its settings. Admins only. */
       type: "set_namespace";
@@ -114,6 +132,10 @@ export interface ChangesetDraft {
   /** Lint errors left after the automatic repair. */
   unrepaired: Issue[];
   duplicates: DuplicateFlag[];
+  /** New terms a maintainer has accepted in the taxonomy queue, as `<kind>:<slug>`. */
+  acceptedTerms?: string[];
+  /** True when every change to the vocabulary was decided by a maintainer in the queue. */
+  vocabularyDecided?: boolean;
 }
 
 export interface ReviewContext {

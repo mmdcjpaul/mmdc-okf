@@ -1,4 +1,5 @@
 import {
+  addAlias,
   addTerm,
   buildNoteText,
   bump,
@@ -35,6 +36,7 @@ import {
 import { analyzeChangeset } from "./analyze.ts";
 import { isSafePath } from "./ops.ts";
 import { decideReview } from "./review.ts";
+import { vocabularyDecided } from "./terms.ts";
 import type {
   ChangesetFacts,
   ChangesetIntent,
@@ -212,6 +214,8 @@ function applyIntent(vault: Vault, intent: ChangesetIntent, actor: string, now: 
       return setNamespace(vault, intent.slug, intent.patch);
     case "set_teams":
       return setProfileTeams(vault, intent.teams);
+    case "add_alias":
+      return addAlias(vault, intent.kind, intent.slug, intent.alias, now);
     case "add_term":
       return addTerm(
         vault,
@@ -255,6 +259,9 @@ export function describeChangeset(facts: ChangesetFacts, intents: ChangesetInten
   if (term?.type === "merge_terms")
     return `merge ${term.kind} ${term.from.map((f) => `"${f}"`).join(", ")} into "${term.into}"`;
   if (term?.type === "add_term") return `add ${term.kind} "${term.slug}"`;
+  const alias = intents.find((i) => i.type === "add_alias");
+  if (alias?.type === "add_alias" && intents.length === 1)
+    return `add "${alias.alias}" as another name for ${alias.kind} "${alias.slug}"`;
   const ns = intents.find((i) => i.type === "set_namespace");
   if (ns?.type === "set_namespace")
     return facts.terms.some((t) => t.kind === "namespace" && t.change === "added")
@@ -494,6 +501,10 @@ export async function prepareChangeset(
       facts,
       unrepaired,
       duplicates: input.duplicates ?? [],
+      vocabularyDecided: vocabularyDecided(input.intents, input.ops, root),
+      acceptedTerms: input.intents.flatMap((i) =>
+        i.type === "add_term" && i.acceptedBy ? [`${i.kind}:${i.slug}`] : [],
+      ),
     },
     reviewCtx,
   );

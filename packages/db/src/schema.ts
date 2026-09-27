@@ -346,7 +346,25 @@ export type ChangesetIntent =
   | { type: "verify"; path: string }
   | { type: "rename_term"; kind: "theme" | "system" | "tag"; from: string; to: string }
   | { type: "merge_terms"; kind: "theme" | "system" | "tag"; from: string[]; into: string }
-  | { type: "add_term"; kind: "theme" | "system" | "tag"; slug: string; description: string }
+  | {
+      type: "add_term";
+      kind: "theme" | "system" | "tag";
+      slug: string;
+      description: string;
+      /**
+       * Actor of the maintainer who accepted the term in the taxonomy queue. Only the queue
+       * sets it: anything that takes intents from outside must drop it.
+       */
+      acceptedBy?: string;
+    }
+  | {
+      type: "add_alias";
+      kind: "theme" | "system" | "tag";
+      slug: string;
+      alias: string;
+      /** Actor of the maintainer who chose this in the taxonomy queue. */
+      acceptedBy?: string;
+    }
   | {
       /** Registers a namespace or changes its settings. Admins only. */
       type: "set_namespace";
