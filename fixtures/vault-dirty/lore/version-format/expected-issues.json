@@ -1,0 +1,9 @@
+[
+  {
+    "rule": "lore/version-format",
+    "severity": "error",
+    "path": "kb/docs/bad-version.md",
+    "line": 6,
+    "message": "Invalid version \"1.0\"; expected MAJOR.MINOR.PATCH such as 1.0.0"
+  }
+]

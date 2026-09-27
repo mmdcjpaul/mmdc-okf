@@ -1,0 +1,10 @@
+/**
+ * `@lore/db`: the Library's Postgres schema and the only code that writes SQL.
+ *
+ * @packageDocumentation
+ */
+export * from "./schema.ts";
+export { closeDb, createDb, type Db, type DbOptions } from "./client.ts";
+export * from "./repos/identity.ts";
+export * from "./repos/library.ts";
+export * from "./repos/indexing.ts";

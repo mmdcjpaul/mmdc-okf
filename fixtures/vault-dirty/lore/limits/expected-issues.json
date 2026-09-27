@@ -1,0 +1,16 @@
+[
+  {
+    "rule": "lore/limits",
+    "severity": "error",
+    "path": "kb/docs/too-many-tags.md",
+    "line": 8,
+    "message": "A note has at most 8 tags; found 9"
+  },
+  {
+    "rule": "lore/limits",
+    "severity": "error",
+    "path": "kb/docs/too-many.md",
+    "line": 7,
+    "message": "A note has 1 to 3 themes; found 4"
+  }
+]

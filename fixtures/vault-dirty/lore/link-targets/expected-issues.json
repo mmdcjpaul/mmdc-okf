@@ -1,0 +1,21 @@
+[
+  {
+    "rule": "lore/link-targets",
+    "severity": "warning",
+    "path": "kb/docs/broken-links.md",
+    "line": 10,
+    "column": 5,
+    "message": "Wanted note: \"/docs/missing.md\" does not exist yet",
+    "data": {
+      "target": "kb/docs/missing.md"
+    }
+  },
+  {
+    "rule": "lore/link-targets",
+    "severity": "warning",
+    "path": "kb/docs/broken-links.md",
+    "line": 10,
+    "column": 34,
+    "message": "Link \"../../README.md\" points outside the bundle"
+  }
+]

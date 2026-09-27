@@ -1,0 +1,23 @@
+[
+  {
+    "rule": "lore/namespace",
+    "severity": "error",
+    "path": "kb/_drafts/note.md",
+    "line": 1,
+    "message": "Unknown managed folder \"_drafts\""
+  },
+  {
+    "rule": "lore/namespace",
+    "severity": "error",
+    "path": "kb/root-note.md",
+    "line": 1,
+    "message": "Notes must live in a namespace folder, not at the bundle root"
+  },
+  {
+    "rule": "lore/namespace",
+    "severity": "error",
+    "path": "kb/unregistered/note.md",
+    "line": 1,
+    "message": "Namespace \"unregistered\" is not registered in .kb/namespaces.yaml"
+  }
+]

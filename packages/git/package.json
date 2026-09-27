@@ -1,0 +1,17 @@
+{
+  "name": "@lore/git",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "GitProvider interface, local bare-repository provider, and mirror reads.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@lore/okf": "workspace:*"
+  }
+}

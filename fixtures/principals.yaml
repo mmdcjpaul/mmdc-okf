@@ -1,0 +1,56 @@
+# Users, teams, and namespace grants for permission tests in Plans 2, 3, and 4.
+# Grants: read < write < maintain. Namespaces with visibility: company are readable by every member.
+teams:
+  admissions-ops: { title: Admissions Ops }
+  finance-systems: { title: Finance Systems }
+  it-support: { title: IT Support }
+  people-ops: { title: People Ops }
+
+users:
+  alice:
+    name: Alice Reyes
+    email: alice@acme.test
+    role: member
+    teams: [admissions-ops]
+  bob:
+    name: Bob Chan
+    email: bob@acme.test
+    role: member
+    teams: [finance-systems]
+  carol:
+    name: Carol Diaz
+    email: carol@acme.test
+    role: member
+    teams: []
+  dana:
+    name: Dana Ito
+    email: dana@acme.test
+    role: admin
+    teams: []
+  erin:
+    name: Erin Garcia
+    email: erin@acme.test
+    role: member
+    teams: []
+  svc-multica:
+    name: Multica agent runtime
+    email: svc-multica@acme.test
+    role: member
+    service_account: true
+    teams: []
+
+grants:
+  - { namespace: admissions, team: admissions-ops, level: write }
+  - { namespace: finance, user: bob, level: maintain }
+  - { namespace: people-ops, user: erin, level: read }
+  - { namespace: it-support, user: svc-multica, level: read }
+  - { namespace: finance, user: svc-multica, level: read }
+
+# Expected outcomes the permission tests assert.
+expectations:
+  alice: { can_write: [admissions], can_read_restricted: [] }
+  bob: { can_maintain: [finance], can_read_restricted: [] }
+  carol: { can_write: [], can_read_restricted: [] }
+  dana: { admin: true, can_read_restricted: [people-ops] }
+  erin: { can_read_restricted: [people-ops] }
+  svc-multica: { can_read_restricted: [] }

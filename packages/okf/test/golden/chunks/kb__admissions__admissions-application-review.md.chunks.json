@@ -1,0 +1,17 @@
+[
+  {
+    "id": "kb_01J9Z97DD6RATBZG9YHCKR1FVG#0",
+    "noteId": "kb_01J9Z97DD6RATBZG9YHCKR1FVG",
+    "position": 0,
+    "headingPath": [
+      "Overview"
+    ],
+    "header": "Note: Admissions application review (Process, admissions)\nSummary: How an application moves from submitted to a decision, who reviews it, and how long each step takes.\nThemes: enrollment. Systems: salesforce.\nSection: Overview / Roles / Steps / Related",
+    "text": "# Overview\n\nEvery application is reviewed within 10 working days of the last document arriving.\nSince September 2026 the second reader step is done by the program lead instead of a\nsecond admissions officer.\n\n# Roles\n\n- Admissions officer: checks documents and scores the application.\n- Program lead: second reader for borderline scores and final decision.\n\n# Steps\n\n1. The applicant submits the application and documents in the portal.\n2. An admissions officer checks the documents within 3 working days.\n3. The officer scores the application in Salesforce.\n4. Scores between 60 and 75 go to the program lead as second reader.\n5. The decision is recorded in Salesforce, which emails the applicant.\n6. Admitted applicants are enrolled following [Enroll a new student](/admissions/enroll-a-new-student.md).\n\n# Related\n\n- [Enrollment](/_themes/enrollment.md)\n- [Transcript evaluation policy](/admissions/transcript-evaluation-policy.md)",
+    "tokens": 198,
+    "contentHash": "c9d311d8af40a17308812f0fea822660ed5b3ef0487be0bbc64bfa9114070140",
+    "start": 440,
+    "end": 1374,
+    "footnotes": []
+  }
+]

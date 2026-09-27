@@ -1,0 +1,32 @@
+[
+  {
+    "rule": "okf/reserved-files",
+    "severity": "error",
+    "path": "kb/docs/index.md",
+    "line": 1,
+    "message": "index.md is reserved and must not have frontmatter",
+    "fixable": true
+  },
+  {
+    "rule": "okf/reserved-files",
+    "severity": "error",
+    "path": "kb/docs/log.md",
+    "line": 7,
+    "message": "log.md must be newest first: 2026-03-01 comes after 2026-01-01"
+  },
+  {
+    "rule": "okf/reserved-files",
+    "severity": "error",
+    "path": "kb/docs/log.md",
+    "line": 11,
+    "message": "log.md sections must be dated \"## YYYY-MM-DD\", found \"## March 2026\""
+  },
+  {
+    "rule": "okf/reserved-files",
+    "severity": "error",
+    "path": "kb/index.md",
+    "line": 1,
+    "message": "Root index.md must declare okf_version: \"0.2\"",
+    "fixable": true
+  }
+]

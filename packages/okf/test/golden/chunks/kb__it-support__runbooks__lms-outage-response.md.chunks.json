@@ -1,0 +1,17 @@
+[
+  {
+    "id": "kb_01J9ZKF0JKSAK5RMRKCYQJQ2KK#0",
+    "noteId": "kb_01J9ZKF0JKSAK5RMRKCYQJQ2KK",
+    "position": 0,
+    "headingPath": [
+      "Trigger"
+    ],
+    "header": "Note: LMS outage response (Runbook, it-support)\nSummary: Diagnose and escalate an LMS outage, and keep instructors informed.\nThemes: onboarding. Systems: lms.\nSection: Trigger / Severity and escalation / Diagnosis / Resolution / Rollback / Related",
+    "text": "# Trigger\n\nTwo or more reports that the LMS is down, or the uptime monitor alerts.\n\n# Severity and escalation\n\nSev 2 during term. Escalate to the vendor after 30 minutes. Internal reference:\nokapi-runbook-canary.\n\n# Diagnosis\n\n1. Check the vendor status page.\n2. Try signing in from off the campus network.\n\n# Resolution\n\n1. Open a vendor ticket with the incident number.\n2. Post an update on the status page every 30 minutes.\n\n# Rollback\n\nNot applicable.\n\n# Related\n\n- [LMS](/_systems/lms.md)",
+    "tokens": 124,
+    "contentHash": "bf23bb30b391638774a9b9a71aceb5e3c41403f4a65267508a2a3ac33588930d",
+    "start": 387,
+    "end": 880,
+    "footnotes": []
+  }
+]

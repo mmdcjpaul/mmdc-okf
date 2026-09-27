@@ -1,0 +1,25 @@
+{
+  "name": "@lore/cli",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The kb command: lint, index, query, and edit an OKF vault.",
+  "bin": {
+    "kb": "./dist/kb.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@lore/okf": "workspace:*",
+    "commander": "^15.0.0"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1"
+  }
+}

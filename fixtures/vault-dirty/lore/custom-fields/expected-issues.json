@@ -1,0 +1,9 @@
+[
+  {
+    "rule": "lore/custom-fields",
+    "severity": "error",
+    "path": "kb/docs/bad-audience.md",
+    "line": 8,
+    "message": "Custom field \"audience\" must be enum of all-staff, managers"
+  }
+]

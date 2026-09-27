@@ -1,0 +1,17 @@
+[
+  {
+    "id": "kb_01J9Z8A3C5E7G9H1K3M5N7P9Q2#0",
+    "noteId": "kb_01J9Z8A3C5E7G9H1K3M5N7P9Q2",
+    "position": 0,
+    "headingPath": [
+      "When to use"
+    ],
+    "header": "Note: Resend the enrollment confirmation email (Action, admissions)\nSummary: Re-sends the enrollment confirmation email for one enrollment record.\nThemes: enrollment. Systems: salesforce.\nSection: When to use / Manual procedure / Rollback / Related",
+    "text": "# When to use\n\nThe student says the confirmation email never arrived and the enrollment\nstatus in Salesforce is Confirmed.\n\n# Manual procedure\n\n1. Open the enrollment record in Salesforce.\n2. Check that the contact's email address is correct and fix it if needed.\n3. Choose Send confirmation from the record's action menu.\n\n# Rollback\n\nNone needed. Sending the email again is harmless.\n\n# Related\n\n- [Salesforce](/_systems/salesforce.md)",
+    "tokens": 95,
+    "contentHash": "3824aa8b369d58c02dead3d5296dae5578ce72ffbd3d3193109f43623cb7cb4e",
+    "start": 635,
+    "end": 1072,
+    "footnotes": []
+  }
+]

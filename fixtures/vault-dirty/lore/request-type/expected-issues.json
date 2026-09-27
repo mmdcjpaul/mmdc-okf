@@ -1,0 +1,37 @@
+[
+  {
+    "rule": "lore/request-type",
+    "severity": "error",
+    "path": "kb/docs/bad-request.md",
+    "line": 1,
+    "message": "Request Type: fields.0: Select field \"choice\" needs options"
+  },
+  {
+    "rule": "lore/request-type",
+    "severity": "error",
+    "path": "kb/docs/bad-request.md",
+    "line": 1,
+    "message": "Request Type: fields.1.type: Invalid option: expected one of \"email\"|\"text\"|\"select\"|\"date\"|\"number\"|\"boolean\""
+  },
+  {
+    "rule": "lore/request-type",
+    "severity": "error",
+    "path": "kb/docs/bad-request.md",
+    "line": 1,
+    "message": "Request Type: follow_up_after: Invalid ISO duration"
+  },
+  {
+    "rule": "lore/request-type",
+    "severity": "error",
+    "path": "kb/docs/bad-request.md",
+    "line": 1,
+    "message": "Request Type: kind: Invalid option: expected one of \"request\"|\"incident\""
+  },
+  {
+    "rule": "lore/request-type",
+    "severity": "error",
+    "path": "kb/docs/bad-request.md",
+    "line": 11,
+    "message": "runbook \"/docs/missing-runbook.md\" does not resolve to a note"
+  }
+]

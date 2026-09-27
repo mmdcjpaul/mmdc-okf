@@ -1,0 +1,16 @@
+[
+  {
+    "rule": "lore/duplicate-title",
+    "severity": "error",
+    "path": "kb/docs/one.md",
+    "line": 3,
+    "message": "Title \"Same title\" is also used by kb/docs/two.md"
+  },
+  {
+    "rule": "lore/duplicate-title",
+    "severity": "error",
+    "path": "kb/docs/two.md",
+    "line": 3,
+    "message": "Title \"same Title\" is also used by kb/docs/one.md"
+  }
+]

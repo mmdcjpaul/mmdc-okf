@@ -1,0 +1,19 @@
+# Governed tags. Aliases are rewritten to the canonical tag by kb lint --fix.
+access-requests: { description: Requests to grant or change system access., aliases: [access-request] }
+accounts-payable: { description: Vendor bills and payments., aliases: [ap] }
+applications: { description: Admission applications and their review., aliases: [] }
+deposits: { description: Enrollment deposits and how they are recorded., aliases: [] }
+duplicates: { description: Duplicate records and how to prevent or merge them., aliases: [duplicate-records] }
+enrollment-status: { description: Enrollment status values and transitions., aliases: [] }
+laptops: { description: Staff laptops and other devices., aliases: [laptop, devices] }
+leave: { description: Annual, sick, and parental leave., aliases: [] }
+new-hires: { description: People joining the company., aliases: [new-hire] }
+new-students: { description: First-time students., aliases: [] }
+outages: { description: Service outages and incidents., aliases: [outage, downtime] }
+passwords: { description: Passwords and sign-in problems., aliases: [password] }
+payroll: { description: Payroll runs, payslips, and corrections., aliases: [] }
+reconciliation: { description: Matching one set of records to another during the close., aliases: [] }
+refunds: { description: Refunds to students., aliases: [refund] }
+returning-students: { description: Former students who enroll again., aliases: [re-enrollment, returning-student] }
+security: { description: Security controls and policies., aliases: [] }
+sync: { description: Integrations that copy data between systems., aliases: [integration] }

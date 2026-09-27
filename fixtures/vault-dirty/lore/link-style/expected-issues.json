@@ -1,0 +1,29 @@
+[
+  {
+    "rule": "lore/link-style",
+    "severity": "warning",
+    "path": "kb/docs/relative-links.md",
+    "line": 10,
+    "column": 5,
+    "message": "Link \"./target.md#steps\" should be absolute",
+    "fixable": true
+  },
+  {
+    "rule": "lore/link-style",
+    "severity": "warning",
+    "path": "kb/docs/relative-links.md",
+    "line": 10,
+    "column": 34,
+    "message": "Link \"../_themes/general.md\" should be absolute",
+    "fixable": true
+  },
+  {
+    "rule": "lore/link-style",
+    "severity": "warning",
+    "path": "kb/docs/relative-links.md",
+    "line": 10,
+    "column": 64,
+    "message": "Link \"./\" should be absolute",
+    "fixable": true
+  }
+]

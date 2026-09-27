@@ -1,0 +1,36 @@
+{
+  "name": "lore",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.20.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "create-vault": "node scripts/create-vault.mjs",
+    "gen:synthetic": "node --experimental-strip-types scripts/gen-synthetic-vault.ts",
+    "lore": "node apps/worker/src/cli.ts",
+    "dev:worker": "pnpm --filter worker dev",
+    "dev:web": "pnpm --filter web dev",
+    "dev:library": "turbo run dev --filter web --filter worker",
+    "services:up": "docker compose -f deploy/dev/library.compose.yml up -d",
+    "services:down": "docker compose -f deploy/dev/library.compose.yml down"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^10.11.0",
+    "fast-check": "^4.10.2",
+    "prettier": "^3.9.9",
+    "turbo": "^2.11.3",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.70.1",
+    "vitest": "^5.0.1"
+  }
+}

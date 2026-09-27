@@ -1,0 +1,17 @@
+[
+  {
+    "id": "kb_01J9Z3R8Q3WVVFKY18ZVW9DPEJ#0",
+    "noteId": "kb_01J9Z3R8Q3WVVFKY18ZVW9DPEJ",
+    "position": 0,
+    "headingPath": [
+      "Overview"
+    ],
+    "header": "Note: Month-end close process (Process, finance)\nSummary: The five-day monthly close: who does which step on which working day.\nThemes: month-end-close. Systems: netsuite.\nSection: Overview / Roles / Steps / Related",
+    "text": "# Overview\n\nThe close starts on the first working day and ends with the management pack on day five.\n\n# Roles\n\n- AP team: vendor bills and accruals.\n- AR team: invoices, deposits, and receivables.\n- Controller: review and sign-off.\n\n# Steps\n\n1. Day 1: cut off AP and AR entry for the prior month.\n2. Day 2: [reconcile bank accounts](/finance/reconcile-bank-accounts.md).\n3. Day 3: [accrue unbilled revenue](/finance/accrue-unbilled-revenue.md) and expenses.\n4. Day 4: controller review of the trial balance.\n5. Day 5: publish the management pack.\n\n# Related\n\n- [Month-end close](/_themes/month-end-close.md)",
+    "tokens": 170,
+    "contentHash": "6283aa356f66091c568972537595ab1aeba59464edc8a2c2225ad743d3b2def3",
+    "start": 408,
+    "end": 1015,
+    "footnotes": []
+  }
+]

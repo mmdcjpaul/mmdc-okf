@@ -1,0 +1,35 @@
+[
+  {
+    "rule": "lore/required",
+    "severity": "error",
+    "path": "kb/docs/missing-fields.md",
+    "line": 1,
+    "message": "Missing required field \"description\"",
+    "fixable": false,
+    "data": {
+      "key": "description"
+    }
+  },
+  {
+    "rule": "lore/required",
+    "severity": "error",
+    "path": "kb/docs/missing-fields.md",
+    "line": 1,
+    "message": "Missing required field \"id\"",
+    "fixable": true,
+    "data": {
+      "key": "id"
+    }
+  },
+  {
+    "rule": "lore/required",
+    "severity": "error",
+    "path": "kb/docs/missing-fields.md",
+    "line": 1,
+    "message": "Missing required field \"version\"",
+    "fixable": true,
+    "data": {
+      "key": "version"
+    }
+  }
+]

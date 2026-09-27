@@ -1,0 +1,70 @@
+[
+  {
+    "rule": "lore/vocabulary",
+    "severity": "error",
+    "path": "kb/docs/unknown-terms.md",
+    "line": 2,
+    "message": "Unknown type \"Howto\"; the profile allows How-To, Process, Explanation, Reference, Policy, Decision, Runbook, Request Type, Action, Theme, System, Source Document, Graph Report"
+  },
+  {
+    "rule": "lore/vocabulary",
+    "severity": "error",
+    "path": "kb/docs/unknown-terms.md",
+    "line": 7,
+    "message": "\"misc\" is an alias; use the canonical theme \"general\"",
+    "fixable": true,
+    "data": {
+      "kind": "theme",
+      "field": "themes",
+      "value": "misc",
+      "canonical": "general"
+    }
+  },
+  {
+    "rule": "lore/vocabulary",
+    "severity": "error",
+    "path": "kb/docs/unknown-terms.md",
+    "line": 8,
+    "message": "Unknown system \"toolz\"; run `kb taxonomy list` and reuse an existing term",
+    "fixable": false,
+    "data": {
+      "kind": "system",
+      "field": "systems",
+      "value": "toolz"
+    }
+  },
+  {
+    "rule": "lore/vocabulary",
+    "severity": "error",
+    "path": "kb/docs/unknown-terms.md",
+    "line": 9,
+    "message": "\"alfa\" is an alias; use the canonical tag \"alpha\"",
+    "fixable": true,
+    "data": {
+      "kind": "tag",
+      "field": "tags",
+      "value": "alfa",
+      "canonical": "alpha"
+    }
+  },
+  {
+    "rule": "lore/vocabulary",
+    "severity": "error",
+    "path": "kb/docs/unknown-terms.md",
+    "line": 9,
+    "message": "Unknown tag \"gamma\"; run `kb taxonomy list` and reuse an existing term",
+    "fixable": false,
+    "data": {
+      "kind": "tag",
+      "field": "tags",
+      "value": "gamma"
+    }
+  },
+  {
+    "rule": "lore/vocabulary",
+    "severity": "error",
+    "path": "kb/docs/unknown-terms.md",
+    "line": 10,
+    "message": "Unknown owner team \"team-z\""
+  }
+]

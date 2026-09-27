@@ -1,0 +1,18 @@
+[
+  {
+    "rule": "lore/hub-members",
+    "severity": "warning",
+    "path": "kb/_systems/tooling.md",
+    "line": 15,
+    "message": "Hub member list is out of date; run kb index",
+    "fixable": true
+  },
+  {
+    "rule": "lore/hub-members",
+    "severity": "warning",
+    "path": "kb/_themes/general.md",
+    "line": 16,
+    "message": "Hub member list is out of date; run kb index",
+    "fixable": true
+  }
+]

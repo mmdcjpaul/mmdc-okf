@@ -1,0 +1,6 @@
+# Golden questions for retrieval testing (TECH_STACK 10.4). Start with ~30 real questions
+# from past support requests. expect_notes and expect_request_type hold note ids.
+# - q: How do I re-enroll a student who left last year?
+#   intent: question
+#   expect_notes: [kb_...]
+[]

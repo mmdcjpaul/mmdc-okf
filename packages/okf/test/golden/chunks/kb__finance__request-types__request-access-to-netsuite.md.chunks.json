@@ -1,0 +1,17 @@
+[
+  {
+    "id": "kb_01J9Z7K2M4P6R8T0V2X4Z6B8C9#0",
+    "noteId": "kb_01J9Z7K2M4P6R8T0V2X4Z6B8C9",
+    "position": 0,
+    "headingPath": [
+      "What happens next"
+    ],
+    "header": "Note: Request access to NetSuite (Request Type, finance)\nSummary: Ask Finance Systems to grant or change NetSuite access for a user.\nThemes: access-management. Systems: netsuite.\nSection: What happens next / Related",
+    "text": "# What happens next\n\nFinance Systems grants access within 2 working days after the requester's\nmanager approves the request in the ticket.\n\n# Related\n\n- [Access management](/_themes/access-management.md)",
+    "tokens": 41,
+    "contentHash": "f4441ad4020876c656577d545461f90f7f7bf465e9608d45069def5e8357e58e",
+    "start": 1027,
+    "end": 1230,
+    "footnotes": []
+  }
+]

@@ -1,0 +1,9 @@
+[
+  {
+    "rule": "lore/id-format",
+    "severity": "error",
+    "path": "kb/docs/bad-id.md",
+    "line": 5,
+    "message": "Invalid id \"kb_123\"; expected kb_ plus a 26-character ULID"
+  }
+]

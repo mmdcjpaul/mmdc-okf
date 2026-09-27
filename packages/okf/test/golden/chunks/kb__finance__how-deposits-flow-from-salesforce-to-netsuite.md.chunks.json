@@ -1,0 +1,22 @@
+[
+  {
+    "id": "kb_01J9ZANJBYJPDCA4XQW6G45W39#0",
+    "noteId": "kb_01J9ZANJBYJPDCA4XQW6G45W39",
+    "position": 0,
+    "headingPath": [
+      "Overview"
+    ],
+    "header": "Note: How deposits flow from Salesforce to NetSuite (Explanation, finance)\nSummary: The integration that turns online deposits in Salesforce into customer deposits in NetSuite.\nThemes: enrollment. Systems: salesforce, netsuite.\nSection: Overview / How it works / Related",
+    "text": "# Overview\n\nOnline deposits are captured in Salesforce and pushed to NetSuite every 15 minutes.[^deposit-spec]\n\n# How it works\n\n1. The payment page creates a Payment record on the enrollment in Salesforce.\n2. The integration picks up new Payment records and creates a customer deposit in NetSuite.\n3. NetSuite returns the deposit number, which is written back to Salesforce.\n4. A workflow in Salesforce moves the enrollment to Confirmed.\n\nDeposits received by bank transfer skip this flow and are entered by hand, see\n[Post an enrollment deposit](/finance/post-an-enrollment-deposit.md).\n\n# Related\n\n- [NetSuite](/_systems/netsuite.md)\n\n[^deposit-spec]: Deposit integration spec (2025)",
+    "tokens": 150,
+    "contentHash": "afa6e36dd993ef1ddf6d88430a53232e6123135cb38ba7317f2a6450e48e6770",
+    "start": 522,
+    "end": 1207,
+    "footnotes": [
+      {
+        "id": "deposit-spec",
+        "title": "Deposit integration spec (2025)"
+      }
+    ]
+  }
+]

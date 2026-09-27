@@ -1,0 +1,2 @@
+alpha: { description: First tag., aliases: [alfa] }
+beta: { description: Second tag., aliases: [] }

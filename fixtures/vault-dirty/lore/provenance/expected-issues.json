@@ -1,0 +1,23 @@
+[
+  {
+    "rule": "lore/provenance",
+    "severity": "error",
+    "path": "kb/docs/bad-provenance.md",
+    "line": 8,
+    "message": "Invalid generated: by: Actor must be human:<id>, <job>/<model>, or process:<name>; at: Invalid ISO datetime"
+  },
+  {
+    "rule": "lore/provenance",
+    "severity": "error",
+    "path": "kb/docs/bad-provenance.md",
+    "line": 9,
+    "message": "Invalid verified: Invalid input"
+  },
+  {
+    "rule": "lore/provenance",
+    "severity": "error",
+    "path": "kb/docs/bad-provenance.md",
+    "line": 10,
+    "message": "Invalid stale_after: Invalid ISO datetime"
+  }
+]

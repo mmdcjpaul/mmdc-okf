@@ -1,0 +1,22 @@
+[
+  {
+    "id": "kb_01J9Z6Q4X8M2T7C3VQ5R1N0B8D#0",
+    "noteId": "kb_01J9Z6Q4X8M2T7C3VQ5R1N0B8D",
+    "position": 0,
+    "headingPath": [
+      "When to use this"
+    ],
+    "header": "Note: Enroll a returning student in Salesforce (How-To, admissions)\nSummary: Reactivate a former student's record and open a new enrollment without creating a duplicate contact.\nThemes: enrollment. Systems: salesforce, sis.\nSection: When to use this / Steps / Related",
+    "text": "# When to use this\n\nUse this when a student who left or graduated applies again. For first-time\nstudents, follow [Enroll a new student](/admissions/enroll-a-new-student.md).\n\n# Steps\n\n1. Search Salesforce by student ID, not by name. Returning students keep their ID.[^sis-sop]\n2. Open the existing contact and set the status to Returning.\n3. Create the enrollment from the contact, never from the Enrollments tab.\n4. Wait for the nightly sync to update the SIS. If the student needs access sooner, ask IT to\n   [restart the SIS sync job](/it-support/runbooks/restart-the-sis-sync-job.md).\n\n# Related\n\n- [Enrollment](/_themes/enrollment.md)\n- [Clean up duplicate contacts](/admissions/clean-up-duplicate-contacts.md)\n- [Enrollment status codes](/admissions/enrollment-status-codes.md)\n\n[^sis-sop]: SIS enrollment SOP (2025)",
+    "tokens": 209,
+    "contentHash": "fb282438d8148371d1cb1bb05552189bc634831b0d01e512d09e6506190ea067",
+    "start": 795,
+    "end": 1617,
+    "footnotes": [
+      {
+        "id": "sis-sop",
+        "title": "SIS enrollment SOP (2025)"
+      }
+    ]
+  }
+]

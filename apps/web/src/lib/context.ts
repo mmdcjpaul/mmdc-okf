@@ -1,0 +1,60 @@
+import "server-only";
+import { cache } from "react";
+import { cookies } from "next/headers";
+import { notFound, redirect } from "next/navigation";
+import {
+  loadPrincipal,
+  readScope,
+  SESSION_COOKIE,
+  verifySessionToken,
+  type Principal,
+} from "@lore/auth";
+import { firstVault, getVaultBySlug, type ReadScope, type Vault } from "@lore/db";
+import { db } from "./db";
+import { env } from "./env";
+
+export interface RequestContext {
+  vault: Vault;
+  principal: Principal;
+  scope: ReadScope;
+}
+
+/** The signed-in person, or null. Cached for the request. */
+export const currentUserId = cache(async (): Promise<string | null> => {
+  const jar = await cookies();
+  return verifySessionToken(jar.get(SESSION_COOKIE)?.value, env().APP_SECRET);
+});
+
+export const currentVault = cache(async (): Promise<Vault | null> => {
+  const slug = env().LORE_VAULT;
+  return slug ? getVaultBySlug(db(), slug) : firstVault(db());
+});
+
+/**
+ * Vault, principal, and read scope for this request. Redirects to sign-in when there is no
+ * session. Every page and route handler that reads notes starts here.
+ */
+export const requireContext = cache(async (): Promise<RequestContext> => {
+  const userId = await currentUserId();
+  if (!userId) redirect("/login");
+  const vault = await currentVault();
+  if (!vault) throw new Error("No vault is registered. Run `pnpm lore seed --vault <dir>`.");
+  const principal = await loadPrincipal(db(), vault.id, userId);
+  if (!principal) redirect("/login");
+  return { vault, principal, scope: readScope(principal) };
+});
+
+/** Same as {@link requireContext}, for route handlers: null instead of a redirect. */
+export async function apiContext(): Promise<RequestContext | null> {
+  const userId = await currentUserId();
+  if (!userId) return null;
+  const vault = await currentVault();
+  if (!vault) return null;
+  const principal = await loadPrincipal(db(), vault.id, userId);
+  return principal ? { vault, principal, scope: readScope(principal) } : null;
+}
+
+/** Unreadable and missing notes both 404, so a note's existence is not revealed. */
+export function hidden(): never {
+  notFound();
+}

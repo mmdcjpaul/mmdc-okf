@@ -1,0 +1,68 @@
+/**
+ * The worker process: runs index jobs from pg-boss, polls vaults for pushes made outside Lore,
+ * and serves /health. Shuts down gracefully on SIGINT and SIGTERM.
+ */
+import { createServer } from "node:http";
+import { listVaults } from "@lore/db";
+import { loadConfig } from "./config.ts";
+import { indexVault } from "./indexer/index-vault.ts";
+import {
+  createRuntime,
+  enqueueIndex,
+  QUEUES,
+  startBoss,
+  VAULT_INDEXED,
+  type IndexJobData,
+} from "./runtime.ts";
+
+const config = loadConfig();
+const rt = await createRuntime(config);
+const boss = await startBoss(config, rt.log);
+let lastIndex: { at: string; vaultId: string; head: string | null } | null = null;
+
+await boss.work<IndexJobData>(QUEUES.index, async ([job]) => {
+  if (!job) return;
+  const result = await indexVault(rt.deps, job.data.vaultId);
+  lastIndex = { at: new Date().toISOString(), vaultId: result.vaultId, head: result.head };
+  if (!result.skipped) {
+    await boss.publish(VAULT_INDEXED, {
+      vaultId: result.vaultId,
+      head: result.head,
+      changed: result.changed,
+      processChanged: result.processChanged,
+    });
+  }
+});
+
+async function pollAll(): Promise<void> {
+  for (const v of await listVaults(rt.db))
+    await enqueueIndex(boss, { vaultId: v.id, reason: "poll" });
+}
+await pollAll();
+const poller = setInterval(
+  () => void pollAll().catch((err) => rt.log.error({ err }, "poll failed")),
+  config.POLL_SECONDS * 1000,
+);
+
+const server = createServer((req, res) => {
+  if (req.url === "/health") {
+    res.writeHead(200, { "content-type": "application/json" });
+    res.end(JSON.stringify({ ok: true, lastIndex }));
+    return;
+  }
+  res.writeHead(404).end();
+});
+server.listen(config.WORKER_PORT, "127.0.0.1", () =>
+  rt.log.info({ port: config.WORKER_PORT }, "worker started"),
+);
+
+async function shutdown(signal: string) {
+  rt.log.info({ signal }, "shutting down");
+  clearInterval(poller);
+  server.close();
+  await boss.stop({ graceful: true, timeout: 30_000 });
+  await rt.close();
+  process.exit(0);
+}
+process.on("SIGINT", () => void shutdown("SIGINT"));
+process.on("SIGTERM", () => void shutdown("SIGTERM"));

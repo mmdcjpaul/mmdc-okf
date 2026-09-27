@@ -1,0 +1,9 @@
+[
+  {
+    "rule": "lore/hub-link",
+    "severity": "warning",
+    "path": "kb/docs/no-hub.md",
+    "line": 9,
+    "message": "Add at least one link to a Theme or System hub"
+  }
+]

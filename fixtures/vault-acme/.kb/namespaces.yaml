@@ -1,0 +1,25 @@
+admissions:
+  title: Admissions
+  description: Applications, admission decisions, and student enrollment.
+  owner: admissions-ops
+  visibility: company
+  publishing: manual
+finance:
+  title: Finance
+  description: Deposits, refunds, the general ledger, and the monthly close.
+  owner: finance-systems
+  visibility: company
+  publishing: manual
+it-support:
+  title: IT Support
+  description: Accounts, devices, the LMS, and integrations run by IT.
+  owner: it-support
+  visibility: company
+  publishing: auto
+people-ops:
+  title: People Ops
+  description: Employment, payroll, and leave. Restricted to People Ops and managers.
+  owner: people-ops
+  visibility: restricted
+  publishing: manual
+  ai_processing: false

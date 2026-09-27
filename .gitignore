@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.turbo/
+coverage/
+*.log
+.DS_Store
+.kb/.cache/
+/tmp-*/
+bench-out/
+.data/
+.env.local
+.next/
+next-env.d.ts
+*.tsbuildinfo

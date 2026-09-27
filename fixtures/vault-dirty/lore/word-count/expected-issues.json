@@ -1,0 +1,22 @@
+[
+  {
+    "rule": "lore/word-count",
+    "severity": "warning",
+    "path": "kb/docs/long.md",
+    "line": 9,
+    "message": "1302 words; consider splitting notes over 1200 words",
+    "data": {
+      "words": 1302
+    }
+  },
+  {
+    "rule": "lore/word-count",
+    "severity": "error",
+    "path": "kb/docs/too-long.md",
+    "line": 9,
+    "message": "2602 words; notes over 2500 words must be split into atomic notes",
+    "data": {
+      "words": 2602
+    }
+  }
+]

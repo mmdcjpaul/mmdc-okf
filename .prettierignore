@@ -1,0 +1,9 @@
+fixtures/
+templates/vault/kb/
+pnpm-lock.yaml
+*.md
+.data
+apps/web/.next
+packages/okf/test/golden/
+templates/vault/.kb/
+**/*.tsbuildinfo

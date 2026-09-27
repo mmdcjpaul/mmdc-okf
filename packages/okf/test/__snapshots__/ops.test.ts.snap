@@ -1,0 +1,158 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`bump > writes a log entry and resets verification for a process change 1`] = `
+[
+  {
+    "content": "---
+type: How-To
+title: Enroll a returning student in Salesforce
+description: Reactivate a former student's record and open a new enrollment without creating a duplicate contact.
+id: kb_01J9Z6Q4X8M2T7C3VQ5R1N0B8D
+version: 2.0.0
+themes: [enrollment]
+systems: [salesforce, sis]
+tags: [returning-students, duplicates]
+owner: admissions-ops
+aliases: [re-enroll a student, reactivate a student, re-enroll returning student]
+resource: https://acme.lightning.force.com/lightning/o/Enrollment__c/home
+generated: { by: human:mreyes, at: 2026-09-24T00:00:00Z }
+sources:
+  - { id: sis-sop, resource: /admissions/references/sis-enrollment-sop-2025.md, title: SIS enrollment SOP (2025) }
+audience: all-staff
+---
+
+# When to use this
+
+Use this when a student who left or graduated applies again. For first-time
+students, follow [Enroll a new student](/admissions/enroll-a-new-student.md).
+
+# Steps
+
+1. Search Salesforce by student ID, not by name. Returning students keep their ID.[^sis-sop]
+2. Open the existing contact and set the status to Returning.
+3. Create the enrollment from the contact, never from the Enrollments tab.
+4. Wait for the nightly sync to update the SIS. If the student needs access sooner, ask IT to
+   [restart the SIS sync job](/it-support/runbooks/restart-the-sis-sync-job.md).
+
+# Related
+
+- [Enrollment](/_themes/enrollment.md)
+- [Clean up duplicate contacts](/admissions/clean-up-duplicate-contacts.md)
+- [Enrollment status codes](/admissions/enrollment-status-codes.md)
+
+[^sis-sop]: SIS enrollment SOP (2025)
+",
+    "op": "put",
+    "path": "kb/admissions/enroll-a-returning-student-in-salesforce.md",
+  },
+  {
+    "content": "# Admissions log
+
+## 2026-09-24
+
+- Process change: [Enroll a returning student in Salesforce](/admissions/enroll-a-returning-student-in-salesforce.md) 1.2.0 to 2.0.0 by human:mreyes
+
+## 2026-09-15
+
+- Process change: [Admissions application review](/admissions/admissions-application-review.md) 1.3.0 to 2.0.0 by human:mreyes. The program lead is now the second reader.
+
+## 2026-01-12
+
+- Deprecated [Submit a paper enrollment form](/admissions/submit-a-paper-enrollment-form.md) in favour of [Enroll a new student](/admissions/enroll-a-new-student.md).
+",
+    "op": "put",
+    "path": "kb/admissions/log.md",
+  },
+]
+`;
+
+exports[`newNote > writes the stable key order and refuses to overwrite 1`] = `
+[
+  {
+    "content": "---
+type: How-To
+title: Enroll a visiting student
+description: "TODO: one sentence that says what this note covers."
+id: kb_01J9ZTEST0000000000000000X
+version: 0.1.0
+themes: [enrollment]
+systems: [salesforce]
+status: draft
+generated: { by: human:mreyes, at: 2026-09-24T00:00:00Z }
+---
+
+# When to use this
+
+<!-- write here -->
+
+# Steps
+
+1. <!-- first step -->
+
+# Related
+
+- [Enrollment](/_themes/enrollment.md)
+- [Salesforce](/_systems/salesforce.md)
+",
+    "op": "put",
+    "path": "kb/admissions/enroll-a-visiting-student.md",
+  },
+]
+`;
+
+exports[`taxonomy > renames a tag everywhere and keeps the old name as an alias 1`] = `
+[
+  ".kb/tags.yaml",
+  "kb/admissions/clean-up-duplicate-contacts.md",
+  "kb/admissions/enroll-a-returning-student-in-salesforce.md",
+  "kb/admissions/merge-duplicate-student-records.md",
+  "kb/admissions/use-the-student-id-as-the-primary-key.md",
+  "kb/log.md",
+]
+`;
+
+exports[`verify > appends a verification and sets stale_after from the review interval 1`] = `
+[
+  {
+    "content": "---
+type: Explanation
+title: How deposits flow from Salesforce to NetSuite
+description: The integration that turns online deposits in Salesforce into customer deposits in NetSuite.
+id: kb_01J9ZANJBYJPDCA4XQW6G45W39
+version: 1.0.0
+themes: [enrollment]
+systems: [salesforce, netsuite]
+tags: [deposits, sync]
+generated: { by: lore-ingest/claude-sonnet-5, at: 2026-09-20T06:00:00Z }
+verified:
+  - { by: human:bchan, at: 2026-09-24T00:00:00Z }
+stale_after: 2027-09-24T00:00:00Z
+sources:
+  - { id: deposit-spec, resource: /finance/references/deposit-integration-spec-2025.md, title: Deposit integration spec (2025) }
+---
+
+# Overview
+
+Online deposits are captured in Salesforce and pushed to NetSuite every 15 minutes.[^deposit-spec]
+
+# How it works
+
+1. The payment page creates a Payment record on the enrollment in Salesforce.
+2. The integration picks up new Payment records and creates a customer deposit in NetSuite.
+3. NetSuite returns the deposit number, which is written back to Salesforce.
+4. A workflow in Salesforce moves the enrollment to Confirmed.
+
+Deposits received by bank transfer skip this flow and are entered by hand, see
+[Post an enrollment deposit](/finance/post-an-enrollment-deposit.md).
+
+# Related
+
+- [NetSuite](/_systems/netsuite.md)
+
+[^deposit-spec]: Deposit integration spec (2025)
+",
+    "op": "put",
+    "path": "kb/finance/how-deposits-flow-from-salesforce-to-netsuite.md",
+  },
+]
+`;

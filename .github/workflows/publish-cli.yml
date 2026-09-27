@@ -1,0 +1,24 @@
+# Publishes the kb CLI to GitHub Packages. The major version follows the profile schema version.
+name: publish-cli
+on:
+  workflow_dispatch:
+    inputs:
+      package:
+        description: "Package name, for example @yourorg/kb"
+        required: true
+permissions:
+  contents: read
+  packages: write
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm, registry-url: https://npm.pkg.github.com }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo run test --filter @lore/cli...
+      - run: node scripts/publish-cli.mjs "${{ inputs.package }}"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

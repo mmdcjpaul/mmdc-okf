@@ -1,0 +1,123 @@
+# Golden questions for retrieval and routing evaluation (TECH_STACK 10.4).
+# restricted: true marks questions only people-ops readers should get an answer to.
+- q: "How do I re-enroll a student who left last year?"
+  intent: question
+  expect_notes: [kb_01J9Z6Q4X8M2T7C3VQ5R1N0B8D]
+- q: "re-enroll returning student"
+  intent: question
+  expect_notes: [kb_01J9Z6Q4X8M2T7C3VQ5R1N0B8D]
+- q: "How do I enroll a student who has never studied here?"
+  intent: question
+  expect_notes: [kb_01J9Z6RPR3FZ0PRCXXEDQJE7KK]
+- q: "There are two Salesforce contacts for the same student, what do I do?"
+  intent: question
+  expect_notes: [kb_01J9ZTN2VAKHSW04Z9NM0QKFKP, kb_01J9Z9THRWK2Y2ZN8F22Y709SG]
+- q: "Why do we match students by student ID?"
+  intent: question
+  expect_notes: [kb_01J9ZQ6RSPXB1C7H5QJ8YTWTRZ]
+- q: "What does the enrollment status RTRN mean?"
+  intent: question
+  expect_notes: [kb_01J9Z7TP1D2YGEXJ5A7AAGP76W]
+- q: "When does an enrollment become Confirmed?"
+  intent: question
+  expect_notes: [kb_01J9Z0AH1NMX67ASRTH1MM95SP, kb_01J9ZANJBYJPDCA4XQW6G45W39]
+- q: "Who is the second reader for borderline applications?"
+  intent: question
+  expect_notes: [kb_01J9Z97DD6RATBZG9YHCKR1FVG]
+- q: "Do we accept unofficial transcripts?"
+  intent: question
+  expect_notes: [kb_01J9ZPYGCMT3BDBNMCAG36H4KA]
+- q: "An applicant wants to know what is happening with their application"
+  intent: question
+  expect_notes: [kb_01J9ZMXMAFWYF33VJ7RFE28J4D]
+- q: "How do I prepare new student orientation?"
+  intent: question
+  expect_notes: [kb_01J9Z7VW0AS2SRZWZB1BPY1VKN]
+- q: "A student never got the enrollment confirmation email"
+  intent: question
+  expect_notes: [kb_01J9Z8A3C5E7G9H1K3M5N7P9Q2]
+- q: "How do I record a deposit paid by bank transfer?"
+  intent: question
+  expect_notes: [kb_01J9ZNC3WYHPNW67V0DP2SZPEV]
+- q: "How do online deposits get into NetSuite?"
+  intent: question
+  expect_notes: [kb_01J9ZANJBYJPDCA4XQW6G45W39]
+- q: "What NetSuite roles are there?"
+  intent: question
+  expect_notes: [kb_01J9ZMG0YGWYVP8D9B3G21QA15]
+- q: "What happens on day 3 of the close?"
+  intent: question
+  expect_notes: [kb_01J9Z3R8Q3WVVFKY18ZVW9DPEJ, kb_01J9ZVWY2NK3K8T4SM207C1TGF]
+- q: "How do I reconcile the bank accounts at month end?"
+  intent: question
+  expect_notes: [kb_01J9Z7T31PYEBQ4V9VEKE590MD]
+- q: "Which journal entry code do I use for accruals?"
+  intent: question
+  expect_notes: [kb_01J9ZTPSMA42456PDD22TWQN86]
+- q: "Can a student get their deposit back if they withdraw?"
+  intent: question
+  expect_notes: [kb_01J9ZZNZWKFSVY6DP5W41JS01D]
+- q: "How do I refund a student who withdrew?"
+  intent: question
+  expect_notes: [kb_01J9ZBHMXJEGW0FS7KKX70XBZQ]
+- q: "How do I approve a vendor bill?"
+  intent: question
+  expect_notes: [kb_01J9ZZGS2CBMYFE6K6PYV5ZB4F]
+- q: "How does the SIS sync work?"
+  intent: question
+  expect_notes: [kb_01J9ZV6VTK9AWK6X16D6ZBTPYN]
+- q: "How do I reset someone's password?"
+  intent: question
+  expect_notes: [kb_01J9ZHEXJ1HEYSGWPXF2ZXZV97]
+- q: "Can I use SMS codes for MFA?"
+  intent: question
+  expect_notes: [kb_01J9ZHDS4J45E17M4ZF0X3GSCW]
+- q: "What are IT Support's hours?"
+  intent: question
+  expect_notes: [kb_01J9Z48P85SECYKAKP9AJANVYG]
+- q: "I can't sign in with single sign-on"
+  intent: question
+  expect_notes: [kb_01J9Z3R8P9XBC54HXT255QB3SJ]
+- q: "How do I add a TA to my course in the LMS?"
+  intent: question
+  expect_notes: [kb_01J9ZCKW1HFXNJ4M63HVDC1P7V]
+- q: "How many days of annual leave do I get?"
+  intent: question
+  expect_notes: [kb_01J9Z24EEKGC3VZHWD9N2V3BKJ]
+  restricted: true
+- q: "When is the payroll cut-off in October?"
+  intent: question
+  expect_notes: [kb_01J9ZZG6RTR0Z4MYPSZK5XSNW3]
+  restricted: true
+- q: "My payslip is wrong"
+  intent: question
+  expect_notes: [kb_01J9Z4BNV2RWG917WDBPDA6JVK]
+  restricted: true
+- q: "I need access to NetSuite"
+  intent: request
+  expect_request_type: kb_01J9Z7K2M4P6R8T0V2X4Z6B8C9
+- q: "can you give my new hire NetSuite AP access"
+  intent: request
+  expect_request_type: kb_01J9Z7K2M4P6R8T0V2X4Z6B8C9
+- q: "NetSuite says I don't have permission to approve bills"
+  intent: request
+  expect_request_type: kb_01J9Z7K2M4P6R8T0V2X4Z6B8C9
+- q: "I need a laptop for someone starting Monday"
+  intent: request
+  expect_request_type: kb_01J9ZZJXRYEZE3Q7X5V6B21F02
+- q: "my laptop screen cracked, can I get a new one"
+  intent: request
+  expect_request_type: kb_01J9ZZJXRYEZE3Q7X5V6B21F02
+- q: "the LMS is down"
+  intent: incident
+  expect_request_type: kb_01J9ZPEQMCM3DN6N51KZFRSHCG
+- q: "students can't open the course page in canvas"
+  intent: incident
+  expect_request_type: kb_01J9ZPEQMCM3DN6N51KZFRSHCG
+- q: "where is the enrollment hub"
+  intent: navigation
+  expect_notes: [kb_01J9Z2WW0FNXGEKJS3JD0Y32TP]
+- q: "whats the weather tomorrow"
+  intent: off_topic
+- q: "write me a poem about spreadsheets"
+  intent: off_topic

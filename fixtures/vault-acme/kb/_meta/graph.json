@@ -1,0 +1,1963 @@
+{
+  "okf_version": "0.2",
+  "nodes": [
+    {
+      "id": "kb_01J9ZCYP1ZV4DC95J1CHAN5JN0",
+      "path": "/_systems/lms.md",
+      "title": "LMS",
+      "type": "System",
+      "namespace": null,
+      "themes": [],
+      "systems": [],
+      "tags": [],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-06-01T00:00:00Z",
+      "hub": "system"
+    },
+    {
+      "id": "kb_01J9ZBEK32PBMKSCTAW72MRYWD",
+      "path": "/_systems/netsuite.md",
+      "title": "NetSuite",
+      "type": "System",
+      "namespace": null,
+      "themes": [],
+      "systems": [],
+      "tags": [],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-06-01T00:00:00Z",
+      "hub": "system"
+    },
+    {
+      "id": "kb_01J9ZVR16G8PS6HDHQ2BZRKMW2",
+      "path": "/_systems/salesforce.md",
+      "title": "Salesforce",
+      "type": "System",
+      "namespace": null,
+      "themes": [],
+      "systems": [],
+      "tags": [],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-06-01T00:00:00Z",
+      "hub": "system"
+    },
+    {
+      "id": "kb_01J9Z71H68QNW60M604G9BFP7P",
+      "path": "/_systems/sis.md",
+      "title": "SIS",
+      "type": "System",
+      "namespace": null,
+      "themes": [],
+      "systems": [],
+      "tags": [],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-06-01T00:00:00Z",
+      "hub": "system"
+    },
+    {
+      "id": "kb_01J9Z223GN6BBDFRDZS1H4200B",
+      "path": "/_themes/access-management.md",
+      "title": "Access management",
+      "type": "Theme",
+      "namespace": null,
+      "themes": [],
+      "systems": [],
+      "tags": [],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": null,
+      "hub": "theme"
+    },
+    {
+      "id": "kb_01J9Z2WW0FNXGEKJS3JD0Y32TP",
+      "path": "/_themes/enrollment.md",
+      "title": "Enrollment",
+      "type": "Theme",
+      "namespace": null,
+      "themes": [],
+      "systems": [],
+      "tags": [],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": null,
+      "hub": "theme"
+    },
+    {
+      "id": "kb_01J9ZC52QN7B7JYJF9XTRA02JT",
+      "path": "/_themes/month-end-close.md",
+      "title": "Month-end close",
+      "type": "Theme",
+      "namespace": null,
+      "themes": [],
+      "systems": [],
+      "tags": [],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": null,
+      "hub": "theme"
+    },
+    {
+      "id": "kb_01J9ZEAWG82NJXH1Z3BFGJYBD2",
+      "path": "/_themes/onboarding.md",
+      "title": "Onboarding",
+      "type": "Theme",
+      "namespace": null,
+      "themes": [],
+      "systems": [],
+      "tags": [],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": null,
+      "hub": "theme"
+    },
+    {
+      "id": "kb_01J9Z8A3C5E7G9H1K3M5N7P9Q2",
+      "path": "/admissions/actions/resend-enrollment-confirmation.md",
+      "title": "Resend the enrollment confirmation email",
+      "type": "Action",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "salesforce"
+      ],
+      "tags": [],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-03-09T03:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z97DD6RATBZG9YHCKR1FVG",
+      "path": "/admissions/admissions-application-review.md",
+      "title": "Admissions application review",
+      "type": "Process",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "salesforce"
+      ],
+      "tags": [
+        "applications"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-03-14T02:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZMXMAFWYF33VJ7RFE28J4D",
+      "path": "/admissions/check-an-applications-status.md",
+      "title": "Check an application's status",
+      "type": "How-To",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "salesforce"
+      ],
+      "tags": [
+        "applications"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZTN2VAKHSW04Z9NM0QKFKP",
+      "path": "/admissions/clean-up-duplicate-contacts.md",
+      "title": "Clean up duplicate contacts",
+      "type": "How-To",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "salesforce"
+      ],
+      "tags": [
+        "duplicates"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z6RPR3FZ0PRCXXEDQJE7KK",
+      "path": "/admissions/enroll-a-new-student.md",
+      "title": "Enroll a new student",
+      "type": "How-To",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "salesforce"
+      ],
+      "tags": [
+        "new-students"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z6Q4X8M2T7C3VQ5R1N0B8D",
+      "path": "/admissions/enroll-a-returning-student-in-salesforce.md",
+      "title": "Enroll a returning student in Salesforce",
+      "type": "How-To",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "salesforce",
+        "sis"
+      ],
+      "tags": [
+        "returning-students",
+        "duplicates"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-03-01T08:15:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z7TP1D2YGEXJ5A7AAGP76W",
+      "path": "/admissions/enrollment-status-codes.md",
+      "title": "Enrollment status codes",
+      "type": "Reference",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "salesforce",
+        "sis"
+      ],
+      "tags": [
+        "enrollment-status"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z0AH1NMX67ASRTH1MM95SP",
+      "path": "/admissions/how-enrollment-statuses-work.md",
+      "title": "How enrollment statuses work",
+      "type": "Explanation",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "salesforce",
+        "sis"
+      ],
+      "tags": [
+        "enrollment-status"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZYZ7F0NXY398WGWX63QJP4",
+      "path": "/admissions/manage-the-course-waitlist.md",
+      "title": "Manage the course waitlist",
+      "type": "How-To",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "sis"
+      ],
+      "tags": [],
+      "trust": "unverified",
+      "status": "draft",
+      "stale_after": null,
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z9THRWK2Y2ZN8F22Y709SG",
+      "path": "/admissions/merge-duplicate-student-records.md",
+      "title": "Merge duplicate student records",
+      "type": "How-To",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "salesforce"
+      ],
+      "tags": [
+        "duplicates"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-16T10:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZZEPH3B0HZ954EZZ9GR8KA",
+      "path": "/admissions/references/sis-enrollment-sop-2025.md",
+      "title": "SIS enrollment SOP (2025)",
+      "type": "Source Document",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "sis"
+      ],
+      "tags": [],
+      "trust": "unverified",
+      "status": "stable",
+      "stale_after": null,
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z7VW0AS2SRZWZB1BPY1VKN",
+      "path": "/admissions/run-new-student-orientation.md",
+      "title": "Run new student orientation",
+      "type": "How-To",
+      "namespace": "admissions",
+      "themes": [
+        "onboarding",
+        "enrollment"
+      ],
+      "systems": [
+        "lms"
+      ],
+      "tags": [
+        "new-students"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZKZCQATHWYC3KZH78M9NKQ",
+      "path": "/admissions/submit-a-paper-enrollment-form.md",
+      "title": "Submit a paper enrollment form",
+      "type": "How-To",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [],
+      "tags": [],
+      "trust": "human",
+      "status": "deprecated",
+      "stale_after": "2025-12-01T00:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZPYGCMT3BDBNMCAG36H4KA",
+      "path": "/admissions/transcript-evaluation-policy.md",
+      "title": "Transcript evaluation policy",
+      "type": "Policy",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [],
+      "tags": [
+        "applications"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZQ6RSPXB1C7H5QJ8YTWTRZ",
+      "path": "/admissions/use-the-student-id-as-the-primary-key.md",
+      "title": "Use the student ID as the primary key",
+      "type": "Decision",
+      "namespace": "admissions",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "salesforce",
+        "sis"
+      ],
+      "tags": [
+        "duplicates"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": null,
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZVWY2NK3K8T4SM207C1TGF",
+      "path": "/finance/accrue-unbilled-revenue.md",
+      "title": "Accrue unbilled revenue",
+      "type": "How-To",
+      "namespace": "finance",
+      "themes": [
+        "month-end-close"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [
+        "reconciliation"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZH2CFEJP6GVN14TSK8NQEA",
+      "path": "/finance/actions/issue-a-small-refund.md",
+      "title": "Issue a small refund",
+      "type": "Action",
+      "namespace": "finance",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [
+        "refunds"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZZGS2CBMYFE6K6PYV5ZB4F",
+      "path": "/finance/approve-vendor-invoices.md",
+      "title": "Approve vendor invoices",
+      "type": "How-To",
+      "namespace": "finance",
+      "themes": [
+        "month-end-close"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [
+        "accounts-payable"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2026-05-01T00:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZSDVWG597G3NM5EHYWC81A",
+      "path": "/finance/close-accounts-payable.md",
+      "title": "Close accounts payable for the month",
+      "type": "How-To",
+      "namespace": "finance",
+      "themes": [
+        "month-end-close"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [
+        "accounts-payable"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZANJBYJPDCA4XQW6G45W39",
+      "path": "/finance/how-deposits-flow-from-salesforce-to-netsuite.md",
+      "title": "How deposits flow from Salesforce to NetSuite",
+      "type": "Explanation",
+      "namespace": "finance",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "salesforce",
+        "netsuite"
+      ],
+      "tags": [
+        "deposits",
+        "sync"
+      ],
+      "trust": "unverified",
+      "status": "stable",
+      "stale_after": null,
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZBHMXJEGW0FS7KKX70XBZQ",
+      "path": "/finance/issue-a-student-refund.md",
+      "title": "Issue a student refund",
+      "type": "How-To",
+      "namespace": "finance",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [
+        "refunds"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z3R8Q3WVVFKY18ZVW9DPEJ",
+      "path": "/finance/month-end-close-process.md",
+      "title": "Month-end close process",
+      "type": "Process",
+      "namespace": "finance",
+      "themes": [
+        "month-end-close"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [
+        "reconciliation"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZMG0YGWYVP8D9B3G21QA15",
+      "path": "/finance/netsuite-access-levels.md",
+      "title": "NetSuite access levels",
+      "type": "Reference",
+      "namespace": "finance",
+      "themes": [
+        "access-management"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [
+        "access-requests"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZTPSMA42456PDD22TWQN86",
+      "path": "/finance/netsuite-journal-entry-codes.md",
+      "title": "NetSuite journal entry codes",
+      "type": "Reference",
+      "namespace": "finance",
+      "themes": [
+        "month-end-close"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [],
+      "trust": "machine",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZNC3WYHPNW67V0DP2SZPEV",
+      "path": "/finance/post-an-enrollment-deposit.md",
+      "title": "Post an enrollment deposit",
+      "type": "How-To",
+      "namespace": "finance",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "netsuite",
+        "salesforce"
+      ],
+      "tags": [
+        "deposits"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z7T31PYEBQ4V9VEKE590MD",
+      "path": "/finance/reconcile-bank-accounts.md",
+      "title": "Reconcile bank accounts",
+      "type": "How-To",
+      "namespace": "finance",
+      "themes": [
+        "month-end-close"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [
+        "reconciliation"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZFAXTXTN0CSGNSQ97H0T4D",
+      "path": "/finance/references/deposit-integration-spec-2025.md",
+      "title": "Deposit integration spec (2025)",
+      "type": "Source Document",
+      "namespace": "finance",
+      "themes": [],
+      "systems": [
+        "salesforce",
+        "netsuite"
+      ],
+      "tags": [],
+      "trust": "unverified",
+      "status": "stable",
+      "stale_after": null,
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZZNZWKFSVY6DP5W41JS01D",
+      "path": "/finance/refund-policy.md",
+      "title": "Refund policy",
+      "type": "Policy",
+      "namespace": "finance",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [],
+      "tags": [
+        "refunds"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z7K2M4P6R8T0V2X4Z6B8C9",
+      "path": "/finance/request-types/request-access-to-netsuite.md",
+      "title": "Request access to NetSuite",
+      "type": "Request Type",
+      "namespace": "finance",
+      "themes": [
+        "access-management"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [
+        "access-requests"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZY1R7WVC22TCH6Z7R4FGVY",
+      "path": "/finance/runbooks/grant-netsuite-access.md",
+      "title": "Grant NetSuite access",
+      "type": "Runbook",
+      "namespace": "finance",
+      "themes": [
+        "access-management"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [
+        "access-requests"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZCKW1HFXNJ4M63HVDC1P7V",
+      "path": "/it-support/grant-lms-instructor-access.md",
+      "title": "Grant LMS instructor access",
+      "type": "How-To",
+      "namespace": "it-support",
+      "themes": [
+        "access-management"
+      ],
+      "systems": [
+        "lms"
+      ],
+      "tags": [
+        "access-requests"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZV6VTK9AWK6X16D6ZBTPYN",
+      "path": "/it-support/how-the-sis-to-salesforce-sync-works.md",
+      "title": "How the SIS to Salesforce sync works",
+      "type": "Explanation",
+      "namespace": "it-support",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "sis",
+        "salesforce"
+      ],
+      "tags": [
+        "sync"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z48P85SECYKAKP9AJANVYG",
+      "path": "/it-support/it-support-hours-and-contacts.md",
+      "title": "IT Support hours and contacts",
+      "type": "Reference",
+      "namespace": "it-support",
+      "themes": [
+        "onboarding"
+      ],
+      "systems": [],
+      "tags": [],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZHDS4J45E17M4ZF0X3GSCW",
+      "path": "/it-support/multi-factor-authentication-policy.md",
+      "title": "Multi-factor authentication policy",
+      "type": "Policy",
+      "namespace": "it-support",
+      "themes": [
+        "access-management"
+      ],
+      "systems": [],
+      "tags": [
+        "security"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZPEQMCM3DN6N51KZFRSHCG",
+      "path": "/it-support/request-types/report-an-lms-outage.md",
+      "title": "Report an LMS outage",
+      "type": "Request Type",
+      "namespace": "it-support",
+      "themes": [
+        "onboarding"
+      ],
+      "systems": [
+        "lms"
+      ],
+      "tags": [
+        "outages"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZZJXRYEZE3Q7X5V6B21F02",
+      "path": "/it-support/request-types/request-a-laptop.md",
+      "title": "Request a laptop",
+      "type": "Request Type",
+      "namespace": "it-support",
+      "themes": [
+        "onboarding"
+      ],
+      "systems": [],
+      "tags": [
+        "laptops"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZHEXJ1HEYSGWPXF2ZXZV97",
+      "path": "/it-support/reset-a-staff-password.md",
+      "title": "Reset a staff password",
+      "type": "How-To",
+      "namespace": "it-support",
+      "themes": [
+        "access-management"
+      ],
+      "systems": [],
+      "tags": [
+        "passwords"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZKF0JKSAK5RMRKCYQJQ2KK",
+      "path": "/it-support/runbooks/lms-outage-response.md",
+      "title": "LMS outage response",
+      "type": "Runbook",
+      "namespace": "it-support",
+      "themes": [
+        "onboarding"
+      ],
+      "systems": [
+        "lms"
+      ],
+      "tags": [
+        "outages"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z1BSQ32PH1RZXXZ2ZHJ5WA",
+      "path": "/it-support/runbooks/restart-the-sis-sync-job.md",
+      "title": "Restart the SIS sync job",
+      "type": "Runbook",
+      "namespace": "it-support",
+      "themes": [
+        "enrollment"
+      ],
+      "systems": [
+        "sis",
+        "salesforce"
+      ],
+      "tags": [
+        "sync"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z4GB4264VBSK4H49V4SPMC",
+      "path": "/it-support/set-up-a-campus-printer.md",
+      "title": "Set up a campus printer",
+      "type": "How-To",
+      "namespace": "it-support",
+      "themes": [
+        "onboarding"
+      ],
+      "systems": [],
+      "tags": [
+        "laptops"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZCJECF7NR8GRG3P5YQZ6T5",
+      "path": "/it-support/set-up-a-new-hire-laptop.md",
+      "title": "Set up a new hire laptop",
+      "type": "How-To",
+      "namespace": "it-support",
+      "themes": [
+        "onboarding"
+      ],
+      "systems": [],
+      "tags": [
+        "laptops",
+        "new-hires"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z3R8P9XBC54HXT255QB3SJ",
+      "path": "/it-support/troubleshoot-single-sign-on.md",
+      "title": "Troubleshoot single sign-on",
+      "type": "How-To",
+      "namespace": "it-support",
+      "themes": [
+        "access-management"
+      ],
+      "systems": [],
+      "tags": [
+        "passwords"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZSMH6SDYJV5ZEGEFXV7KWK",
+      "path": "/people-ops/audit-payroll-quarterly.md",
+      "title": "Audit payroll every quarter",
+      "type": "Decision",
+      "namespace": "people-ops",
+      "themes": [
+        "month-end-close"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [
+        "payroll",
+        "reconciliation"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": null,
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z24EEKGC3VZHWD9N2V3BKJ",
+      "path": "/people-ops/leave-policy.md",
+      "title": "Leave policy",
+      "type": "Policy",
+      "namespace": "people-ops",
+      "themes": [
+        "onboarding"
+      ],
+      "systems": [],
+      "tags": [
+        "leave"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZH9M4CNJHKE1A7M45XZX5D",
+      "path": "/people-ops/offboard-an-employee.md",
+      "title": "Offboard an employee",
+      "type": "How-To",
+      "namespace": "people-ops",
+      "themes": [
+        "access-management",
+        "onboarding"
+      ],
+      "systems": [],
+      "tags": [
+        "new-hires"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZS58DCC68E1BEC5M500B23",
+      "path": "/people-ops/onboard-a-new-employee.md",
+      "title": "Onboard a new employee",
+      "type": "Process",
+      "namespace": "people-ops",
+      "themes": [
+        "onboarding"
+      ],
+      "systems": [],
+      "tags": [
+        "new-hires"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9ZZG6RTR0Z4MYPSZK5XSNW3",
+      "path": "/people-ops/payroll-calendar.md",
+      "title": "Payroll calendar",
+      "type": "Reference",
+      "namespace": "people-ops",
+      "themes": [
+        "month-end-close"
+      ],
+      "systems": [
+        "netsuite"
+      ],
+      "tags": [
+        "payroll"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-08-03T09:00:00Z",
+      "hub": null
+    },
+    {
+      "id": "kb_01J9Z4BNV2RWG917WDBPDA6JVK",
+      "path": "/people-ops/request-a-payroll-correction.md",
+      "title": "Request a payroll correction",
+      "type": "How-To",
+      "namespace": "people-ops",
+      "themes": [
+        "month-end-close"
+      ],
+      "systems": [],
+      "tags": [
+        "payroll"
+      ],
+      "trust": "human",
+      "status": "stable",
+      "stale_after": "2027-01-30T09:00:00Z",
+      "hub": null
+    }
+  ],
+  "edges": [
+    {
+      "source": "/admissions/actions/resend-enrollment-confirmation.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/actions/resend-enrollment-confirmation.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/actions/resend-enrollment-confirmation.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/admissions-application-review.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/admissions-application-review.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/admissions-application-review.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/admissions-application-review.md",
+      "target": "/admissions/enroll-a-new-student.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/admissions-application-review.md",
+      "target": "/admissions/transcript-evaluation-policy.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/check-an-applications-status.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/check-an-applications-status.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/check-an-applications-status.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/check-an-applications-status.md",
+      "target": "/admissions/admissions-application-review.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/clean-up-duplicate-contacts.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/clean-up-duplicate-contacts.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/clean-up-duplicate-contacts.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/clean-up-duplicate-contacts.md",
+      "target": "/admissions/enroll-a-returning-student-in-salesforce.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/clean-up-duplicate-contacts.md",
+      "target": "/admissions/use-the-student-id-as-the-primary-key.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/enroll-a-new-student.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/enroll-a-new-student.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/enroll-a-new-student.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/enroll-a-new-student.md",
+      "target": "/admissions/check-an-applications-status.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/enroll-a-new-student.md",
+      "target": "/admissions/enroll-a-returning-student-in-salesforce.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/enroll-a-new-student.md",
+      "target": "/finance/post-an-enrollment-deposit.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/enroll-a-returning-student-in-salesforce.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/enroll-a-returning-student-in-salesforce.md",
+      "target": "/_systems/sis.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/enroll-a-returning-student-in-salesforce.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/enroll-a-returning-student-in-salesforce.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/enroll-a-returning-student-in-salesforce.md",
+      "target": "/admissions/clean-up-duplicate-contacts.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/enroll-a-returning-student-in-salesforce.md",
+      "target": "/admissions/enroll-a-new-student.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/enroll-a-returning-student-in-salesforce.md",
+      "target": "/admissions/enrollment-status-codes.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/enroll-a-returning-student-in-salesforce.md",
+      "target": "/admissions/references/sis-enrollment-sop-2025.md",
+      "kind": "source"
+    },
+    {
+      "source": "/admissions/enroll-a-returning-student-in-salesforce.md",
+      "target": "/it-support/runbooks/restart-the-sis-sync-job.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/enrollment-status-codes.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/enrollment-status-codes.md",
+      "target": "/_systems/sis.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/enrollment-status-codes.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/enrollment-status-codes.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/enrollment-status-codes.md",
+      "target": "/admissions/how-enrollment-statuses-work.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/how-enrollment-statuses-work.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/how-enrollment-statuses-work.md",
+      "target": "/_systems/sis.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/how-enrollment-statuses-work.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/how-enrollment-statuses-work.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/how-enrollment-statuses-work.md",
+      "target": "/admissions/enrollment-status-codes.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/how-enrollment-statuses-work.md",
+      "target": "/it-support/how-the-sis-to-salesforce-sync-works.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/manage-the-course-waitlist.md",
+      "target": "/_systems/sis.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/manage-the-course-waitlist.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/manage-the-course-waitlist.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/merge-duplicate-student-records.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/merge-duplicate-student-records.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/merge-duplicate-student-records.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/references/sis-enrollment-sop-2025.md",
+      "target": "/_systems/sis.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/references/sis-enrollment-sop-2025.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/run-new-student-orientation.md",
+      "target": "/_systems/lms.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/run-new-student-orientation.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/run-new-student-orientation.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/run-new-student-orientation.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/submit-a-paper-enrollment-form.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/submit-a-paper-enrollment-form.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/submit-a-paper-enrollment-form.md",
+      "target": "/admissions/enroll-a-new-student.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/submit-a-paper-enrollment-form.md",
+      "target": "/admissions/enroll-a-new-student.md",
+      "kind": "superseded_by"
+    },
+    {
+      "source": "/admissions/transcript-evaluation-policy.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/transcript-evaluation-policy.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/transcript-evaluation-policy.md",
+      "target": "/admissions/admissions-application-review.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/use-the-student-id-as-the-primary-key.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "link"
+    },
+    {
+      "source": "/admissions/use-the-student-id-as-the-primary-key.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/use-the-student-id-as-the-primary-key.md",
+      "target": "/_systems/sis.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/use-the-student-id-as-the-primary-key.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/admissions/use-the-student-id-as-the-primary-key.md",
+      "target": "/admissions/clean-up-duplicate-contacts.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/accrue-unbilled-revenue.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/accrue-unbilled-revenue.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/accrue-unbilled-revenue.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/accrue-unbilled-revenue.md",
+      "target": "/finance/month-end-close-process.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/accrue-unbilled-revenue.md",
+      "target": "/finance/netsuite-journal-entry-codes.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/actions/issue-a-small-refund.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/actions/issue-a-small-refund.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/actions/issue-a-small-refund.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/actions/issue-a-small-refund.md",
+      "target": "/finance/refund-policy.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/approve-vendor-invoices.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/approve-vendor-invoices.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/approve-vendor-invoices.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/close-accounts-payable.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/close-accounts-payable.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/close-accounts-payable.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/close-accounts-payable.md",
+      "target": "/finance/month-end-close-process.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/how-deposits-flow-from-salesforce-to-netsuite.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/how-deposits-flow-from-salesforce-to-netsuite.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/how-deposits-flow-from-salesforce-to-netsuite.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/how-deposits-flow-from-salesforce-to-netsuite.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/how-deposits-flow-from-salesforce-to-netsuite.md",
+      "target": "/finance/post-an-enrollment-deposit.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/how-deposits-flow-from-salesforce-to-netsuite.md",
+      "target": "/finance/references/deposit-integration-spec-2025.md",
+      "kind": "source"
+    },
+    {
+      "source": "/finance/issue-a-student-refund.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/issue-a-student-refund.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/issue-a-student-refund.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/issue-a-student-refund.md",
+      "target": "/finance/actions/issue-a-small-refund.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/issue-a-student-refund.md",
+      "target": "/finance/refund-policy.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/month-end-close-process.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/month-end-close-process.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/month-end-close-process.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/month-end-close-process.md",
+      "target": "/finance/accrue-unbilled-revenue.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/month-end-close-process.md",
+      "target": "/finance/reconcile-bank-accounts.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/netsuite-access-levels.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/netsuite-access-levels.md",
+      "target": "/_themes/access-management.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/netsuite-access-levels.md",
+      "target": "/_themes/access-management.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/netsuite-access-levels.md",
+      "target": "/finance/request-types/request-access-to-netsuite.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/netsuite-journal-entry-codes.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/netsuite-journal-entry-codes.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/netsuite-journal-entry-codes.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/post-an-enrollment-deposit.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/post-an-enrollment-deposit.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/post-an-enrollment-deposit.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/post-an-enrollment-deposit.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/post-an-enrollment-deposit.md",
+      "target": "/finance/how-deposits-flow-from-salesforce-to-netsuite.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/reconcile-bank-accounts.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/reconcile-bank-accounts.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/reconcile-bank-accounts.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/reconcile-bank-accounts.md",
+      "target": "/finance/month-end-close-process.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/references/deposit-integration-spec-2025.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/references/deposit-integration-spec-2025.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/refund-policy.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/refund-policy.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/request-types/request-access-to-netsuite.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/request-types/request-access-to-netsuite.md",
+      "target": "/_themes/access-management.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/request-types/request-access-to-netsuite.md",
+      "target": "/_themes/access-management.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/runbooks/grant-netsuite-access.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "link"
+    },
+    {
+      "source": "/finance/runbooks/grant-netsuite-access.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/runbooks/grant-netsuite-access.md",
+      "target": "/_themes/access-management.md",
+      "kind": "member"
+    },
+    {
+      "source": "/finance/runbooks/grant-netsuite-access.md",
+      "target": "/finance/netsuite-access-levels.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/grant-lms-instructor-access.md",
+      "target": "/_systems/lms.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/grant-lms-instructor-access.md",
+      "target": "/_systems/lms.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/grant-lms-instructor-access.md",
+      "target": "/_themes/access-management.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/how-the-sis-to-salesforce-sync-works.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/how-the-sis-to-salesforce-sync-works.md",
+      "target": "/_systems/sis.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/how-the-sis-to-salesforce-sync-works.md",
+      "target": "/_systems/sis.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/how-the-sis-to-salesforce-sync-works.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/how-the-sis-to-salesforce-sync-works.md",
+      "target": "/admissions/enrollment-status-codes.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/how-the-sis-to-salesforce-sync-works.md",
+      "target": "/it-support/runbooks/restart-the-sis-sync-job.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/it-support-hours-and-contacts.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/it-support-hours-and-contacts.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/multi-factor-authentication-policy.md",
+      "target": "/_themes/access-management.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/multi-factor-authentication-policy.md",
+      "target": "/_themes/access-management.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/request-types/report-an-lms-outage.md",
+      "target": "/_systems/lms.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/request-types/report-an-lms-outage.md",
+      "target": "/_systems/lms.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/request-types/report-an-lms-outage.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/request-types/request-a-laptop.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/request-types/request-a-laptop.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/reset-a-staff-password.md",
+      "target": "/_themes/access-management.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/reset-a-staff-password.md",
+      "target": "/_themes/access-management.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/reset-a-staff-password.md",
+      "target": "/it-support/multi-factor-authentication-policy.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/runbooks/lms-outage-response.md",
+      "target": "/_systems/lms.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/runbooks/lms-outage-response.md",
+      "target": "/_systems/lms.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/runbooks/lms-outage-response.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/runbooks/restart-the-sis-sync-job.md",
+      "target": "/_systems/salesforce.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/runbooks/restart-the-sis-sync-job.md",
+      "target": "/_systems/sis.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/runbooks/restart-the-sis-sync-job.md",
+      "target": "/_systems/sis.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/runbooks/restart-the-sis-sync-job.md",
+      "target": "/_themes/enrollment.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/set-up-a-campus-printer.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/set-up-a-new-hire-laptop.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/set-up-a-new-hire-laptop.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/set-up-a-new-hire-laptop.md",
+      "target": "/it-support/multi-factor-authentication-policy.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/set-up-a-new-hire-laptop.md",
+      "target": "/it-support/request-types/request-a-laptop.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/troubleshoot-single-sign-on.md",
+      "target": "/_themes/access-management.md",
+      "kind": "link"
+    },
+    {
+      "source": "/it-support/troubleshoot-single-sign-on.md",
+      "target": "/_themes/access-management.md",
+      "kind": "member"
+    },
+    {
+      "source": "/it-support/troubleshoot-single-sign-on.md",
+      "target": "/it-support/reset-a-staff-password.md",
+      "kind": "link"
+    },
+    {
+      "source": "/people-ops/audit-payroll-quarterly.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/people-ops/audit-payroll-quarterly.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "link"
+    },
+    {
+      "source": "/people-ops/audit-payroll-quarterly.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "member"
+    },
+    {
+      "source": "/people-ops/leave-policy.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "link"
+    },
+    {
+      "source": "/people-ops/leave-policy.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "member"
+    },
+    {
+      "source": "/people-ops/offboard-an-employee.md",
+      "target": "/_themes/access-management.md",
+      "kind": "link"
+    },
+    {
+      "source": "/people-ops/offboard-an-employee.md",
+      "target": "/_themes/access-management.md",
+      "kind": "member"
+    },
+    {
+      "source": "/people-ops/offboard-an-employee.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "member"
+    },
+    {
+      "source": "/people-ops/offboard-an-employee.md",
+      "target": "/people-ops/payroll-calendar.md",
+      "kind": "link"
+    },
+    {
+      "source": "/people-ops/onboard-a-new-employee.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "link"
+    },
+    {
+      "source": "/people-ops/onboard-a-new-employee.md",
+      "target": "/_themes/onboarding.md",
+      "kind": "member"
+    },
+    {
+      "source": "/people-ops/onboard-a-new-employee.md",
+      "target": "/it-support/set-up-a-new-hire-laptop.md",
+      "kind": "link"
+    },
+    {
+      "source": "/people-ops/onboard-a-new-employee.md",
+      "target": "/people-ops/leave-policy.md",
+      "kind": "link"
+    },
+    {
+      "source": "/people-ops/payroll-calendar.md",
+      "target": "/_systems/netsuite.md",
+      "kind": "member"
+    },
+    {
+      "source": "/people-ops/payroll-calendar.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "link"
+    },
+    {
+      "source": "/people-ops/payroll-calendar.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "member"
+    },
+    {
+      "source": "/people-ops/request-a-payroll-correction.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "link"
+    },
+    {
+      "source": "/people-ops/request-a-payroll-correction.md",
+      "target": "/_themes/month-end-close.md",
+      "kind": "member"
+    },
+    {
+      "source": "/people-ops/request-a-payroll-correction.md",
+      "target": "/people-ops/payroll-calendar.md",
+      "kind": "link"
+    }
+  ],
+  "wanted": [
+    {
+      "path": "/it-support/unlock-a-locked-account.md",
+      "from": [
+        "/it-support/reset-a-staff-password.md"
+      ]
+    }
+  ]
+}

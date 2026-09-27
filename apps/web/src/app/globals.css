@@ -1,0 +1,273 @@
+@import "tailwindcss";
+
+/* Design tokens. Branding (LB-8) overrides --accent at runtime from settings. */
+:root {
+  --bg: #f7f7f5;
+  --paper: #ffffff;
+  --ink: #1c1c1e;
+  --ink-2: #3d3d42;
+  --muted: #6b6b73;
+  --faint: #9a9aa2;
+  --line: #e7e6e2;
+  --line-2: #efeeea;
+  --hover: #efeeeb;
+  --accent: #4b50d8;
+  --accent-ink: #ffffff;
+  --accent-soft: #eceefe;
+  --ok: #1f7a4d;
+  --ok-soft: #e5f4ec;
+  --warn: #9a5b00;
+  --warn-soft: #fdf1dc;
+  --bad: #b42318;
+  --bad-soft: #fde9e7;
+  --info-soft: #e8f0fd;
+  --info: #1f4fb4;
+  --mark: #fff1a8;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161618;
+    --paper: #1c1c1f;
+    --ink: #ececef;
+    --ink-2: #cfcfd4;
+    --muted: #9c9ca5;
+    --faint: #6e6e77;
+    --line: #2c2c31;
+    --line-2: #26262a;
+    --hover: #26262b;
+    --accent: #8b8ff5;
+    --accent-ink: #111114;
+    --accent-soft: #272944;
+    --ok: #5cc98e;
+    --ok-soft: #173125;
+    --warn: #f0b457;
+    --warn-soft: #36290f;
+    --bad: #f28b82;
+    --bad-soft: #3a1d1b;
+    --info: #8fb4f8;
+    --info-soft: #1b2740;
+    --mark: #5a4b12;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-hover: var(--hover);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-face), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-feature-settings: "cv11", "ss01";
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+mark {
+  background: var(--mark);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* Note body. Hand-written instead of a typography plugin to keep the reading column tight. */
+.note-body {
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.note-body > * + * {
+  margin-top: 0.9em;
+}
+.note-body h1,
+.note-body h2,
+.note-body h3,
+.note-body h4 {
+  color: var(--ink);
+  font-weight: 620;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  scroll-margin-top: 80px;
+}
+.note-body h1 {
+  font-size: 1.35em;
+  margin-top: 1.8em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--line-2);
+}
+.note-body h2 {
+  font-size: 1.18em;
+  margin-top: 1.6em;
+}
+.note-body h3 {
+  font-size: 1.04em;
+  margin-top: 1.4em;
+}
+.note-body > :first-child {
+  margin-top: 0;
+}
+.note-body a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-underline-offset: 3px;
+}
+.note-body a:hover {
+  text-decoration-color: var(--accent);
+}
+.note-body .link-wanted {
+  color: var(--bad);
+  border-bottom: 1px dashed currentColor;
+  cursor: help;
+}
+.note-body .link-missing {
+  color: var(--muted);
+  border-bottom: 1px dotted currentColor;
+  cursor: help;
+}
+.note-body ul,
+.note-body ol {
+  padding-left: 1.4em;
+}
+.note-body ul {
+  list-style: disc;
+}
+.note-body ol {
+  list-style: decimal;
+}
+.note-body li + li {
+  margin-top: 0.3em;
+}
+.note-body li > ul,
+.note-body li > ol {
+  margin-top: 0.3em;
+}
+.note-body li::marker {
+  color: var(--faint);
+}
+.note-body input[type="checkbox"] {
+  margin-right: 0.4em;
+  accent-color: var(--accent);
+}
+.note-body blockquote {
+  border-left: 3px solid var(--line);
+  padding: 0.1em 0 0.1em 1em;
+  color: var(--muted);
+}
+.note-body code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--line-2);
+  border-radius: 4px;
+  padding: 0.12em 0.35em;
+}
+.note-body pre {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.9em 1em;
+  overflow-x: auto;
+  line-height: 1.55;
+}
+.note-body pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.84em;
+}
+.note-body .table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.note-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+.note-body th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--ink);
+  background: var(--bg);
+}
+.note-body th,
+.note-body td {
+  padding: 0.5em 0.8em;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+.note-body tr:last-child td {
+  border-bottom: 0;
+}
+.note-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+}
+.note-body hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 2em 0;
+}
+.note-body .footnotes {
+  font-size: 0.88em;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
+  padding-top: 1em;
+  margin-top: 2.5em;
+}
+.note-body .footnotes h2 {
+  font-size: 0.95em;
+  margin-top: 0;
+}
+.note-body sup a {
+  text-decoration: none;
+}
+
+/* Command palette */
+[cmdk-item][data-selected="true"] {
+  background: var(--hover);
+}
+[cmdk-group-heading] {
+  padding: 8px 12px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--faint);
+}

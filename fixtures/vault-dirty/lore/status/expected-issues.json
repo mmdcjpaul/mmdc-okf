@@ -1,0 +1,9 @@
+[
+  {
+    "rule": "lore/status",
+    "severity": "error",
+    "path": "kb/docs/bad-status.md",
+    "line": 8,
+    "message": "Invalid status \"published\"; use draft, stable, or deprecated"
+  }
+]

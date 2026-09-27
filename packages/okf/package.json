@@ -1,0 +1,35 @@
+{
+  "name": "@lore/okf",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Parse, validate, and serialize OKF v0.2 notes with Lore's profile rules.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json",
+    "bench": "node --experimental-strip-types test/bench/scale.ts"
+  },
+  "dependencies": {
+    "@secretlint/core": "^13.0.5",
+    "@secretlint/secretlint-rule-preset-recommend": "^13.0.5",
+    "graphology": "^0.26.0",
+    "graphology-communities-louvain": "^2.0.2",
+    "js-tiktoken": "^1.0.21",
+    "mdast-util-to-string": "^4.0.0",
+    "remark-frontmatter": "^5.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "ulid": "^3.0.2",
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.1.0",
+    "yaml": "^2.9.1",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/mdast": "^4.0.4",
+    "graphology-types": "^0.24.8"
+  }
+}

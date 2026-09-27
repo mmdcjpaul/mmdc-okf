@@ -1,0 +1,4 @@
+okf_version: "0.2"
+teams: [team-a]
+custom_fields:
+  - { name: audience, type: enum, values: [all-staff, managers], required: false }

@@ -1,0 +1,16 @@
+[
+  {
+    "rule": "lore/duplicate-id",
+    "severity": "error",
+    "path": "kb/docs/first.md",
+    "line": 5,
+    "message": "Duplicate id kb_01J9ZAAAAAAAAAAAAAAAAAAAAA, also used by kb/docs/second.md"
+  },
+  {
+    "rule": "lore/duplicate-id",
+    "severity": "error",
+    "path": "kb/docs/second.md",
+    "line": 5,
+    "message": "Duplicate id kb_01J9ZAAAAAAAAAAAAAAAAAAAAA, also used by kb/docs/first.md"
+  }
+]

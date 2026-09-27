@@ -1,0 +1,8 @@
+# Namespaces are the top-level folders under kb/. They decide ownership and access.
+general:
+  title: General
+  description: Company-wide knowledge that no single team owns.
+  owner: knowledge-team
+  visibility: company
+  publishing: manual
+  ai_processing: true

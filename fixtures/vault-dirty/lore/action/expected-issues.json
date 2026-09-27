@@ -1,0 +1,51 @@
+[
+  {
+    "rule": "lore/action",
+    "severity": "error",
+    "path": "kb/docs/approval-action.md",
+    "line": 1,
+    "message": "Action: Actions with execution: approval need at least one approver"
+  },
+  {
+    "rule": "lore/action",
+    "severity": "error",
+    "path": "kb/docs/bad-action.md",
+    "line": 1,
+    "message": "Action: execution: Invalid option: expected one of \"auto\"|\"approval\"|\"manual\""
+  },
+  {
+    "rule": "lore/action",
+    "severity": "error",
+    "path": "kb/docs/bad-action.md",
+    "line": 1,
+    "message": "Action: executor.resource: Invalid input: expected string, received undefined"
+  },
+  {
+    "rule": "lore/action",
+    "severity": "error",
+    "path": "kb/docs/bad-action.md",
+    "line": 1,
+    "message": "Action: parameters.0.name: Parameter names are snake_case"
+  },
+  {
+    "rule": "lore/action",
+    "severity": "error",
+    "path": "kb/docs/bad-action.md",
+    "line": 1,
+    "message": "Action: parameters.0.type: Invalid option: expected one of \"string\"|\"number\"|\"integer\"|\"boolean\"|\"date\"|\"email\"|\"enum\""
+  },
+  {
+    "rule": "lore/action",
+    "severity": "error",
+    "path": "kb/docs/bad-action.md",
+    "line": 1,
+    "message": "Action: risk: Invalid option: expected one of \"low\"|\"medium\"|\"high\""
+  },
+  {
+    "rule": "lore/action",
+    "severity": "error",
+    "path": "kb/docs/bad-action.md",
+    "line": 13,
+    "message": "Actions need a \"Rollback\" section"
+  }
+]

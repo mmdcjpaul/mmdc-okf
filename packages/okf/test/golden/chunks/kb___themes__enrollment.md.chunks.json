@@ -1,0 +1,33 @@
+[
+  {
+    "id": "kb_01J9Z2WW0FNXGEKJS3JD0Y32TP#0",
+    "noteId": "kb_01J9Z2WW0FNXGEKJS3JD0Y32TP",
+    "position": 0,
+    "headingPath": [
+      "Overview"
+    ],
+    "header": "Note: Enrollment (Theme)\nSummary: The student journey from application to an active enrollment, across admissions, finance, and IT.\nSection: Overview / Members / How-To / Process",
+    "text": "# Overview\n\nEnrollment covers everything from a submitted application to a student who can attend classes: admission decisions, deposits, the Salesforce enrollment record, and the SIS account. Each team documents its own part in its own namespace; this hub collects them.\n\n# Members\n\n<!-- kb:members:start -->\n\n## How-To\n\n* [Check an application's status](/admissions/check-an-applications-status.md) - Look up where an application is in review and what the applicant still needs to send.\n* [Clean up duplicate contacts](/admissions/clean-up-duplicate-contacts.md) - Find and merge duplicate student contacts in Salesforce so each student has one record.\n* [Enroll a new student](/admissions/enroll-a-new-student.md) - Create the contact and first enrollment for a student who has never studied here.\n* [Enroll a returning student in Salesforce](/admissions/enroll-a-returning-student-in-salesforce.md) - Reactivate a former student's record and open a new enrollment without creating a duplicate contact.\n* [Issue a student refund](/finance/issue-a-student-refund.md) - Refund a deposit or tuition payment to a student who withdrew.\n* [Manage the course waitlist](/admissions/manage-the-course-waitlist.md) (draft) - Move waitlisted students into open seats in the order they joined.\n* [Merge duplicate student records](/admissions/merge-duplicate-student-records.md) - Merge two Salesforce contacts that belong to the same student into one record.\n* [Post an enrollment deposit](/finance/post-an-enrollment-deposit.md) - Record a student's enrollment deposit in NetSuite so the enrollment becomes Confirmed.\n* [Run new student orientation](/admissions/run-new-student-orientation.md) - Prepare and run the orientation session for newly enrolled students.\n\n## Process\n\n* [Admissions application review](/admissions/admissions-application-review.md) - How an application moves from submitted to a decision, who reviews it, and how long each step takes.",
+    "tokens": 422,
+    "contentHash": "b443b55c739f8c98972bb21f6e46207f1c0dc11193459cefa74877c912de7b43",
+    "start": 353,
+    "end": 2305,
+    "footnotes": []
+  },
+  {
+    "id": "kb_01J9Z2WW0FNXGEKJS3JD0Y32TP#1",
+    "noteId": "kb_01J9Z2WW0FNXGEKJS3JD0Y32TP",
+    "position": 1,
+    "headingPath": [
+      "Members",
+      "Explanation"
+    ],
+    "header": "Note: Enrollment (Theme)\nSummary: The student journey from application to an active enrollment, across admissions, finance, and IT.\nSection: Explanation / Reference / Policy / Decision / Runbook / Action / Source Document",
+    "text": "## Explanation\n\n* [How deposits flow from Salesforce to NetSuite](/finance/how-deposits-flow-from-salesforce-to-netsuite.md) - The integration that turns online deposits in Salesforce into customer deposits in NetSuite.\n* [How enrollment statuses work](/admissions/how-enrollment-statuses-work.md) - Why an enrollment moves through Pending, Confirmed, Active, and Closed, and what each status controls.\n* [How the SIS to Salesforce sync works](/it-support/how-the-sis-to-salesforce-sync-works.md) - The nightly job that copies confirmed enrollments from Salesforce to the SIS and results back.\n\n## Reference\n\n* [Enrollment status codes](/admissions/enrollment-status-codes.md) - Every Enrollment__c status value in Salesforce with its SIS equivalent.\n\n## Policy\n\n* [Refund policy](/finance/refund-policy.md) - When students get their deposit and tuition back after withdrawing.\n* [Transcript evaluation policy](/admissions/transcript-evaluation-policy.md) - Which transcripts Admissions accepts and how foreign transcripts are evaluated.\n\n## Decision\n\n* [Use the student ID as the primary key](/admissions/use-the-student-id-as-the-primary-key.md) - Why Salesforce and the SIS match students by student ID instead of name or email.\n\n## Runbook\n\n* [Restart the SIS sync job](/it-support/runbooks/restart-the-sis-sync-job.md) - Restart the Salesforce to SIS enrollment sync after a failed or stuck run.\n\n## Action\n\n* [Issue a small refund](/finance/actions/issue-a-small-refund.md) - Refund up to 500 dollars to a student after a withdrawal.\n* [Resend the enrollment confirmation email](/admissions/actions/resend-enrollment-confirmation.md) - Re-sends the enrollment confirmation email for one enrollment record.\n\n## Source Document\n\n* [SIS enrollment SOP (2025)](/admissions/references/sis-enrollment-sop-2025.md) - Extracted text of the 2025 SIS enrollment standard operating procedure.\n\n<!-- kb:members:end -->",
+    "tokens": 435,
+    "contentHash": "625f1c1701f627b27ff9b418221aafaf531f9ca8e525014c72309cc48448209c",
+    "start": 2307,
+    "end": 4219,
+    "footnotes": []
+  }
+]

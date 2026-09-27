@@ -1,0 +1,34 @@
+# Local services for running the Library on a laptop. See plans/02-library.md, section 2.
+# Ports are bound to 127.0.0.1 only. Postgres uses 5433 so it does not clash with other projects.
+name: lore-library
+
+services:
+  postgres:
+    image: postgres:18.6-bookworm
+    environment:
+      POSTGRES_USER: lore
+      POSTGRES_PASSWORD: lore
+      POSTGRES_DB: lore
+    ports: ["127.0.0.1:5433:5432"]
+    volumes: [pg:/var/lib/postgresql]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lore"]
+      interval: 2s
+      retries: 30
+
+  meilisearch:
+    image: getmeili/meilisearch:v1.51.0
+    environment:
+      MEILI_MASTER_KEY: lore-dev-master-key
+      MEILI_ENV: development
+      MEILI_NO_ANALYTICS: "true"
+    ports: ["127.0.0.1:7701:7700"]
+    volumes: [meili:/meili_data]
+
+  mailpit:
+    image: axllent/mailpit:v1.27
+    ports: ["127.0.0.1:8025:8025", "127.0.0.1:1025:1025"]
+
+volumes:
+  pg:
+  meili:

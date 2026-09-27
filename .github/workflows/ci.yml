@@ -1,0 +1,66 @@
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 3 * * *" # nightly: scale benchmark
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    # The worker's integration tests (indexer, leak canary) need Postgres and Meilisearch.
+    services:
+      postgres:
+        image: postgres:18.6-bookworm
+        env: { POSTGRES_USER: lore, POSTGRES_PASSWORD: lore, POSTGRES_DB: lore }
+        ports: ["5433:5432"]
+        options: --health-cmd "pg_isready -U lore" --health-interval 2s --health-retries 30
+      meilisearch:
+        image: getmeili/meilisearch:v1.51.0
+        env: { MEILI_MASTER_KEY: lore-dev-master-key, MEILI_NO_ANALYTICS: "true" }
+        ports: ["7701:7700"]
+    env:
+      LORE_REQUIRE_SERVICES: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/cache@v4
+        with:
+          path: .turbo
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-
+      - run: pnpm turbo run typecheck test --cache-dir=.turbo
+      - run: pnpm lint
+      - run: pnpm format:check
+
+  vault-template:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @lore/cli build
+      - run: pnpm create-vault ci-vault --dir "$RUNNER_TEMP/ci-vault" --cli @yourorg/kb@1
+      - name: Lint and check generated files in the new vault
+        working-directory: ${{ runner.temp }}/ci-vault
+        run: |
+          node "$GITHUB_WORKSPACE/packages/cli/dist/kb.js" lint --format github,human
+          node "$GITHUB_WORKSPACE/packages/cli/dist/kb.js" index --check
+
+  bench:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @lore/cli build
+      - run: pnpm --filter @lore/okf bench

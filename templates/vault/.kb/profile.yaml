@@ -1,0 +1,30 @@
+# Vault profile: what this vault allows. See the Lore TECH_STACK, section 5.
+schema_version: 1
+title: {{VAULT_TITLE}}
+okf_version: "0.2"
+bundle_root: kb
+id_prefix: kb_
+required: [type, title, description, id, version, themes]
+limits: { words_warn: 1200, words_error: 2500, max_tags: 8, max_themes: 3, image_max_mb: 2 }
+types:
+  How-To:          { review_days: 180, desk: answer }
+  Process:         { review_days: 180, desk: answer }
+  Explanation:     { review_days: 365, desk: answer }
+  Reference:       { review_days: 365, desk: answer }
+  Policy:          { review_days: 365, desk: answer }
+  Decision:        { desk: answer }
+  Runbook:         { review_days: 180, desk: team }
+  Request Type:    { review_days: 365, desk: intake }
+  Action:          { review_days: 180, desk: none }
+  Theme:           { desk: navigate }
+  System:          { review_days: 365, desk: navigate }
+  Source Document: { desk: none, word_limits: false }
+  Graph Report:    { desk: none, word_limits: false }
+# Team slugs that may appear in `owner`. Lore keeps this in sync when admins add teams.
+teams: [knowledge-team]
+custom_fields: []
+# absolute: links are written as /namespace/note.md (open kb/ as the Obsidian vault).
+# relative: links are written as ../namespace/note.md.
+link_style: absolute
+# Per-rule overrides: off, warning, or error.
+rules: {}

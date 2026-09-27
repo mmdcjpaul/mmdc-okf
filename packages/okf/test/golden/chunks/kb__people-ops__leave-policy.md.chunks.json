@@ -1,0 +1,17 @@
+[
+  {
+    "id": "kb_01J9Z24EEKGC3VZHWD9N2V3BKJ#0",
+    "noteId": "kb_01J9Z24EEKGC3VZHWD9N2V3BKJ",
+    "position": 0,
+    "headingPath": [
+      "Policy"
+    ],
+    "header": "Note: Leave policy (Policy, people-ops)\nSummary: Annual, sick, and parental leave entitlements for employees.\nThemes: onboarding.\nSection: Policy / Scope / Exceptions / Related",
+    "text": "# Policy\n\nEmployees get 20 days of annual leave, 10 days of paid sick leave, and 16 weeks of\nparental leave.\n\n# Scope\n\nAll employees. Contractors follow their contract.\n\n# Exceptions\n\nUnused annual leave above 5 days does not carry over.\n\n# Related\n\n- [Onboarding](/_themes/onboarding.md)",
+    "tokens": 70,
+    "contentHash": "046ab95304f82693e34ca0a21cafe770bf9341fdc3e1bf3cc10921e43d7d5789",
+    "start": 355,
+    "end": 643,
+    "footnotes": []
+  }
+]

@@ -1,0 +1,29 @@
+[
+  {
+    "rule": "lore/wikilinks",
+    "severity": "warning",
+    "path": "kb/docs/uses-wikilinks.md",
+    "line": 10,
+    "column": 5,
+    "message": "Wikilink [[Target note]] should be a standard markdown link",
+    "fixable": true
+  },
+  {
+    "rule": "lore/wikilinks",
+    "severity": "warning",
+    "path": "kb/docs/uses-wikilinks.md",
+    "line": 10,
+    "column": 25,
+    "message": "Wikilink [[Missing thing]] should be a standard markdown link",
+    "fixable": true
+  },
+  {
+    "rule": "lore/wikilinks",
+    "severity": "warning",
+    "path": "kb/docs/uses-wikilinks.md",
+    "line": 10,
+    "column": 62,
+    "message": "Wikilink [[General#Overview]] should be a standard markdown link",
+    "fixable": true
+  }
+]

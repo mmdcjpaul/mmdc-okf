@@ -1,0 +1,8 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "test": { "dependsOn": [], "inputs": ["src/**", "test/**"] },
+    "build": { "outputs": [".next/**", "!.next/cache/**"] }
+  }
+}

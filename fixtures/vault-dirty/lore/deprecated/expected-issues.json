@@ -1,0 +1,16 @@
+[
+  {
+    "rule": "lore/deprecated",
+    "severity": "error",
+    "path": "kb/docs/missing-successor.md",
+    "line": 9,
+    "message": "superseded_by \"/docs/does-not-exist.md\" does not point at another existing note"
+  },
+  {
+    "rule": "lore/deprecated",
+    "severity": "error",
+    "path": "kb/docs/no-successor.md",
+    "line": 8,
+    "message": "Deprecated notes need superseded_by pointing at the replacement"
+  }
+]

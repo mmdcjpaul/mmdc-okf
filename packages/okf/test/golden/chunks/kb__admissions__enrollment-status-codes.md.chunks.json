@@ -1,0 +1,17 @@
+[
+  {
+    "id": "kb_01J9Z7TP1D2YGEXJ5A7AAGP76W#0",
+    "noteId": "kb_01J9Z7TP1D2YGEXJ5A7AAGP76W",
+    "position": 0,
+    "headingPath": [
+      "Overview"
+    ],
+    "header": "Note: Enrollment status codes (Reference, admissions)\nSummary: Every Enrollment__c status value in Salesforce with its SIS equivalent.\nThemes: enrollment. Systems: salesforce, sis.\nSection: Overview / Details / Related",
+    "text": "# Overview\n\nUse these values when filtering enrollment reports or reading sync errors.\n\n# Details\n\n| Salesforce status | SIS code | Meaning |\n| --- | --- | --- |\n| Pending | PEND | Created, no deposit yet |\n| Confirmed | CONF | Deposit received |\n| Active | ACTV | Term has started |\n| Returning | RTRN | Former student re-enrolling |\n| Closed | CLSD | Term ended or withdrawn |\n\n# Related\n\n- [Enrollment](/_themes/enrollment.md)\n- [How enrollment statuses work](/admissions/how-enrollment-statuses-work.md)",
+    "tokens": 122,
+    "contentHash": "52640b045f48b2e0305f05455f2c4e29e047d9a9ceb6909a186a94421cfcc4f8",
+    "start": 417,
+    "end": 924,
+    "footnotes": []
+  }
+]

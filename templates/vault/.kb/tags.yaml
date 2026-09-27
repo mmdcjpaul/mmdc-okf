@@ -1,0 +1,3 @@
+# Governed tags. Writers propose new tags; maintainers approve them. Aliases are rewritten
+# to the canonical tag by kb lint --fix.
+getting-started: { description: Where new people and agents should start., aliases: [start-here] }

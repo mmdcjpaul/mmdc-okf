@@ -1,0 +1,14 @@
+{
+  "name": "@lore/ai",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Embeddings now; model routing, budgets, and usage logging in L8.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

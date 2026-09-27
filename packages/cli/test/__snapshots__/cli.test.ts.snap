@@ -1,0 +1,103 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`kb lint > passes on vault-acme with warnings only 1`] = `
+"kb/it-support/reset-a-staff-password.md
+  19:1    warning Wanted note: "/it-support/unlock-a-locked-account.md" does not exist yet  lore/link-targets
+
+kb/it-support/set-up-a-campus-printer.md
+  14:1    warning Add at least one link to a Theme or System hub  lore/hub-link
+
+✖ 0 errors, 2 warnings in 2 files
+"
+`;
+
+exports[`kb mv, bump, verify > moves a note and rewrites inbound links 1`] = `
+"  deleted kb/finance/refund-policy.md
+  wrote   kb/finance/policies/student-refund-policy.md
+  wrote   kb/_meta/graph-report.md
+  wrote   kb/_themes/enrollment.md
+  wrote   kb/finance/actions/issue-a-small-refund.md
+  wrote   kb/finance/issue-a-student-refund.md
+"
+`;
+
+exports[`kb new > writes a templated note with a fresh id 1`] = `
+"---
+type: How-To
+title: Waive a late enrollment fee
+description: "TODO: one sentence that says what this note covers."
+id: kb_<id>
+version: 1.0.0
+themes: [enrollment]
+systems: [netsuite]
+tags: [refunds]
+generated: { by: human:mreyes, at: 2026-09-24T00:00:00Z }
+---
+
+# When to use this
+
+<!-- write here -->
+
+# Steps
+
+1. <!-- first step -->
+
+# Related
+
+- [Enrollment](/_themes/enrollment.md)
+- [NetSuite](/_systems/netsuite.md)
+"
+`;
+
+exports[`kb query and kb related > lists links, backlinks, and similar notes 1`] = `
+"/admissions/enroll-a-returning-student-in-salesforce.md  Enroll a returning student in Salesforce
+
+Links to
+  /admissions/enroll-a-new-student.md  [How-To, admissions]
+    Enroll a new student - Create the contact and first enrollment for a student who has never studied here.
+  /it-support/runbooks/restart-the-sis-sync-job.md  [Runbook, it-support]
+    Restart the SIS sync job - Restart the Salesforce to SIS enrollment sync after a failed or stuck run.
+  /_themes/enrollment.md  [Theme, _themes]
+    Enrollment - The student journey from application to an active enrollment, across admissions, finance, and IT.
+  /admissions/clean-up-duplicate-contacts.md  [How-To, admissions]
+    Clean up duplicate contacts - Find and merge duplicate student contacts in Salesforce so each student has one record.
+  /admissions/enrollment-status-codes.md  [Reference, admissions]
+    Enrollment status codes - Every Enrollment__c status value in Salesforce with its SIS equivalent.
+Linked from
+  /admissions/clean-up-duplicate-contacts.md  [How-To, admissions]
+    Clean up duplicate contacts - Find and merge duplicate student contacts in Salesforce so each student has one record.
+  /admissions/enroll-a-new-student.md  [How-To, admissions]
+    Enroll a new student - Create the contact and first enrollment for a student who has never studied here.
+Similar
+  /admissions/merge-duplicate-student-records.md  [How-To, admissions]
+    Merge duplicate student records - Merge two Salesforce contacts that belong to the same student into one record.
+  /admissions/actions/resend-enrollment-confirmation.md  [Action, admissions]
+    Resend the enrollment confirmation email - Re-sends the enrollment confirmation email for one enrollment record.
+  /admissions/use-the-student-id-as-the-primary-key.md  [Decision, admissions]
+    Use the student ID as the primary key - Why Salesforce and the SIS match students by student ID instead of name or email.
+  /finance/post-an-enrollment-deposit.md  [How-To, finance]
+    Post an enrollment deposit - Record a student's enrollment deposit in NetSuite so the enrollment becomes Confirmed.
+  /admissions/run-new-student-orientation.md  [How-To, admissions]
+    Run new student orientation - Prepare and run the orientation session for newly enrolled students.
+  /admissions/how-enrollment-statuses-work.md  [Explanation, admissions]
+    How enrollment statuses work - Why an enrollment moves through Pending, Confirmed, Active, and Closed, and what each status controls.
+  /admissions/references/sis-enrollment-sop-2025.md  [Source Document, admissions]
+    SIS enrollment SOP (2025) - Extracted text of the 2025 SIS enrollment standard operating procedure.
+  /it-support/how-the-sis-to-salesforce-sync-works.md  [Explanation, it-support]
+    How the SIS to Salesforce sync works - The nightly job that copies confirmed enrollments from Salesforce to the SIS and results back.
+  /finance/issue-a-student-refund.md  [How-To, finance]
+    Issue a student refund - Refund a deposit or tuition payment to a student who withdrew.
+  /people-ops/onboard-a-new-employee.md  [Process, people-ops]
+    Onboard a new employee - Everything that happens between a signed offer and the end of a new employee's first week.
+"
+`;
+
+exports[`kb taxonomy > lists the vocabulary 1`] = `
+"Themes
+  access-management - Granting, changing, and removing access to company systems. (aliases: permissions)
+  enrollment - The student journey from application to an active enrollment, across admissions, finance, and IT. (aliases: enrolment, registration)
+  month-end-close - Finance's monthly close: reconciliations, accruals, and reporting. (aliases: close, month end)
+  onboarding - Getting new staff and new students ready on day one: accounts, equipment, and orientation.
+
+"
+`;
