@@ -419,6 +419,15 @@ export const changesets = pgTable(
       .notNull()
       .default(sql`'{}'::text[]`),
     aiSummary: text("ai_summary"),
+    /** Notes this changeset's new notes resemble or contradict, from the ingestion pipeline. */
+    duplicates: jsonb("duplicates")
+      .$type<
+        { path: string; otherId: string; kind: "duplicate" | "contradiction"; score?: number }[]
+      >()
+      .notNull()
+      .default([]),
+    /** The upload or capture this changeset came from. */
+    ingestItemId: text("ingest_item_id"),
     warnings: jsonb("warnings").$type<string[]>().notNull().default([]),
     issues: jsonb("issues").$type<StoredIssue[]>().notNull().default([]),
     reviewReasons: jsonb("review_reasons").$type<StoredReviewReason[]>().notNull().default([]),

@@ -1,0 +1,7 @@
+<!-- type: csv; method: code; title: ; pages: ; images:  -->
+| Code | Meaning | Set by |
+| --- | --- | --- |
+| PEN | Pending: application received | Admissions |
+| CON | Confirmed: deposit paid | Finance |
+| ACT | Active: term started | SIS |
+| WDR | Withdrawn \| refunded | Admissions |

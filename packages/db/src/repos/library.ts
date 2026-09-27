@@ -125,6 +125,15 @@ export async function getNote(db: Db, scope: ReadScope, id: string): Promise<Not
   return row ?? null;
 }
 
+/** Readable notes with these ids, in no particular order. */
+export async function notesByIds(db: Db, scope: ReadScope, ids: string[]): Promise<NoteRow[]> {
+  if (ids.length === 0) return [];
+  return db
+    .select()
+    .from(notes)
+    .where(and(readable(scope), inArray(notes.id, ids)));
+}
+
 export async function getNoteByPath(
   db: Db,
   scope: ReadScope,

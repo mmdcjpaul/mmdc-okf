@@ -1,0 +1,12 @@
+{
+  "name": "Read the leave request PDF (fixtures/uploads/leave-request.pdf)",
+  "when": {
+    "instructions": "You convert a document to markdown",
+    "images": true
+  },
+  "output": {
+    "title": "Leave request procedure",
+    "markdown": "# Leave request procedure\n\nRequest leave at least two weeks before the first day.\n\n1. Open the HR portal and choose Request leave.\n2. Pick the dates and the type of leave.\n3. Your manager approves or declines within three working days.\n\n# Carrying leave over\n\nUp to five days carry over to the next year. Days beyond five are lost on 31 March.\n",
+    "unreadable": []
+  }
+}

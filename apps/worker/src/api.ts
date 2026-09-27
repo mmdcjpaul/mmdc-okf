@@ -16,6 +16,10 @@ export interface ApiDeps {
   health: () => Record<string, unknown>;
   /** Queues a changeset for processing. The web app calls this right after it saves one. */
   onChangeset?: (id: string) => Promise<void>;
+  /** Queues an upload or capture for processing (Process now). */
+  onIngest?: (id: string) => Promise<void>;
+  /** Calls the scripted model has received, when AI_MODE=fake. Null otherwise. */
+  fakeCalls?: () => { count: number; last: string | null } | null;
   /** Recomputes health for notes whose feedback changed. */
   onFeedback?: (vaultId: string, noteIds: string[]) => Promise<void>;
 }
@@ -47,6 +51,12 @@ export function createApi(deps: ApiDeps) {
           await deps.onChangeset(cs[1]!);
           return send(res, 202, { queued: cs[1] });
         }
+        // POST /ingest/:id/process
+        const item = /^\/ingest\/(in_[0-9A-HJKMNP-TV-Z]{26})\/process$/.exec(url.pathname);
+        if (item && deps.onIngest) {
+          await deps.onIngest(item[1]!);
+          return send(res, 202, { queued: item[1] });
+        }
         // POST /vaults/:id/health?note=<id>&note=<id>
         const health = /^\/vaults\/([^/]+)\/health$/.exec(url.pathname);
         const notes = url.searchParams.getAll("note").slice(0, 100);
@@ -59,6 +69,12 @@ export function createApi(deps: ApiDeps) {
       if (req.method !== "GET") return send(res, 405, { error: "Method not allowed" });
       if (url.pathname === "/health") return send(res, 200, { ok: true, ...deps.health() });
       if (!authorized(req, deps.token)) return send(res, 401, { error: "Unauthorized" });
+
+      // GET /ai/fake: what the scripted model was asked, for tests that count calls.
+      if (url.pathname === "/ai/fake") {
+        const calls = deps.fakeCalls?.() ?? null;
+        return calls ? send(res, 200, calls) : send(res, 404, { error: "AI_MODE is not fake" });
+      }
 
       // GET /vaults/:id/changes/:sha?path=<repository path>
       const m = /^\/vaults\/([^/]+)\/changes\/([0-9a-f]{40,64})$/.exec(url.pathname);

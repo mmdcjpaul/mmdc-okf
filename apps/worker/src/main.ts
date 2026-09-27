@@ -3,17 +3,19 @@
  * and serves /health and the internal API. Shuts down gracefully on SIGINT and SIGTERM.
  */
 import { createServer } from "node:http";
-import { changesetsToProcess, listVaults } from "@lore/db";
+import { changesetsToProcess, listIngestItems, listVaults } from "@lore/db";
 import { createApi } from "./api.ts";
 import { applyIndexEffects } from "./changesets/effects.ts";
 import { processChangeset, type ChangesetDeps } from "./changesets/process.ts";
 import { loadConfig } from "./config.ts";
 import { indexVault } from "./indexer/index-vault.ts";
+import { processIngestItem, type IngestDeps } from "./ingest/process.ts";
 import { refreshHealth } from "./indexer/refresh-stale.ts";
 import {
   createRuntime,
   enqueueChangeset,
   enqueueIndex,
+  enqueueIngest,
   mirrorFor,
   providerFor,
   QUEUES,
@@ -21,6 +23,7 @@ import {
   VAULT_INDEXED,
   type ChangesetJobData,
   type IndexJobData,
+  type IngestJobData,
 } from "./runtime.ts";
 
 const config = loadConfig();
@@ -60,12 +63,47 @@ await boss.work<ChangesetJobData>(QUEUES.changeset, POLL, async ([job]) => {
   if (job) await processChangeset(changesetDeps, job.data.changesetId);
 });
 
+const ingestDeps: IngestDeps = {
+  db: rt.db,
+  meili: rt.deps.meili,
+  objects: rt.deps.objects,
+  gateway: rt.ai.gateway,
+  embedder: rt.deps.embedder,
+  log: rt.log,
+  mirrorFor,
+};
+await boss.work<IngestJobData>(QUEUES.ingest, POLL, async ([job]) => {
+  if (!job) return;
+  await rt.ai.refresh();
+  const outcome = await processIngestItem(ingestDeps, job.data.itemId);
+  if (outcome.state === "done") await enqueueChangeset(boss, outcome.changesetId);
+});
+
 /** Picks up changesets whose job was never queued or was lost, so no write is dropped. */
 async function sweepChangesets(): Promise<void> {
   const stuckBefore = new Date(Date.now() - 2 * 60_000);
   for (const cs of await changesetsToProcess(rt.db, stuckBefore))
     await enqueueChangeset(boss, cs.id);
 }
+
+/**
+ * Tries waiting items again: the budget may have been raised, the provider may be back.
+ * Items that are queued stay queued until someone chooses Process now (AU-6).
+ */
+async function retryWaiting(): Promise<void> {
+  for (const vault of await listVaults(rt.db)) {
+    const waiting = await listIngestItems(rt.db, {
+      vaultId: vault.id,
+      states: ["waiting"],
+      limit: 50,
+    });
+    for (const item of waiting) await enqueueIngest(boss, item.id);
+  }
+}
+const retrier = setInterval(
+  () => void retryWaiting().catch((err) => rt.log.error({ err }, "ingest retry failed")),
+  10 * 60_000,
+);
 await sweepChangesets();
 const sweeper = setInterval(
   () => void sweepChangesets().catch((err) => rt.log.error({ err }, "changeset sweep failed")),
@@ -86,6 +124,14 @@ const api = createApi({
   db: rt.db,
   mirrorFor,
   onChangeset: (id) => enqueueChangeset(boss, id),
+  onIngest: (id) => enqueueIngest(boss, id),
+  fakeCalls: () =>
+    rt.ai.fake && config.AI_MODE === "fake"
+      ? {
+          count: rt.ai.fake.calls.length,
+          last: rt.ai.fake.calls.at(-1)?.instructions.slice(0, 80) ?? null,
+        }
+      : null,
   onFeedback: async (vaultId, noteIds) => {
     await refreshHealth(rt.deps, vaultId, noteIds);
   },
@@ -101,6 +147,7 @@ async function shutdown(signal: string) {
   rt.log.info({ signal }, "shutting down");
   clearInterval(poller);
   clearInterval(sweeper);
+  clearInterval(retrier);
   server.close();
   await boss.stop({ graceful: true, timeout: 30_000 });
   await rt.close();

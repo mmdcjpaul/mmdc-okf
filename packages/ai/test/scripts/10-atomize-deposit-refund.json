@@ -1,0 +1,31 @@
+{
+  "name": "Atomize the deposit refund SOP (fixtures/uploads/deposit-refund-sop.docx)",
+  "when": {
+    "instructions": "You turn a source document into notes",
+    "input": "<document label=\"deposit-refund-sop.docx\">"
+  },
+  "output": {
+    "summary": "The SOP describes one task, so it became one How-To. The 30-day window is already in the refund policy, so it is linked, not repeated.",
+    "items": [
+      {
+        "action": "create",
+        "type": "How-To",
+        "namespace": "finance",
+        "title": "Refund a tuition deposit to a withdrawn applicant",
+        "description": "Return a deposit to an applicant who withdraws before the term starts.",
+        "themes": ["month-end-close"],
+        "systems": ["netsuite", "salesforce"],
+        "tags": [],
+        "body": "# When to use this\n\nAn applicant withdraws before the term starts and asks for their deposit back.\n\n# Steps\n\n1. Find the deposit in NetSuite by student ID.\n2. Check the payment date against the 30-day window.\n3. Create a refund against the original payment method.\n4. Set the enrollment status in Salesforce to Withdrawn.\n\n# Related\n\n- [Month-end close](/_themes/month-end-close.md)\n- [Refund policy](/finance/refund-policy.md)\n",
+        "reason": "The document describes one task."
+      },
+      {
+        "action": "skip",
+        "covered": "The 30-day refund window",
+        "by": "refund-policy",
+        "reason": "Already in the refund policy."
+      }
+    ],
+    "proposedTerms": []
+  }
+}

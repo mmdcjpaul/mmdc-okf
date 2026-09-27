@@ -10,3 +10,4 @@ export * from "./repos/library.ts";
 export * from "./repos/indexing.ts";
 export * from "./repos/changesets.ts";
 export * from "./repos/feedback.ts";
+export * from "./repos/ai.ts";

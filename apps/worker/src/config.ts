@@ -14,6 +14,10 @@ const Env = z.object({
   EMBEDDINGS_LOCAL_MODEL: z.string().optional(),
   EMBEDDINGS_CACHE_DIR: z.string().optional(),
   AI_MODE: z.enum(["fake", "off", "live"]).default("off"),
+  /** Scripted answers for AI_MODE=fake. */
+  AI_FAKE_SCRIPTS: z.string().default(resolve(REPO_ROOT, "packages/ai/test/scripts")),
+  /** Encrypts provider keys in settings. 32 bytes, as 64 hex characters or base64. */
+  APP_ENCRYPTION_KEY: z.string().optional(),
   /** Bare repositories and mirrors (and the object store when OBJECT_STORE=fs). */
   DATA_DIR: z.string().default(resolve(REPO_ROOT, ".data")),
   /** `s3` is any S3-compatible store. `fs` keeps objects under DATA_DIR and cannot serve browsers. */
@@ -50,5 +54,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   ) {
     throw new Error("Invalid worker configuration:\n  INTERNAL_API_TOKEN: set a secret value");
   }
+  if (parsed.data.AI_MODE === "live" && !parsed.data.APP_ENCRYPTION_KEY)
+    throw new Error(
+      "Invalid worker configuration:\n  APP_ENCRYPTION_KEY: needed to read provider keys when AI_MODE=live",
+    );
   return { ...parsed.data, repoRoot: REPO_ROOT };
 }

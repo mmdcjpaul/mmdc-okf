@@ -6,6 +6,7 @@ import { LocalGitProvider, Mirror, type GitProvider } from "@lore/git";
 import { Meilisearch } from "@lore/search";
 import { PgBoss } from "pg-boss";
 import pino, { type Logger } from "pino";
+import { createAi, type Ai } from "./ai.ts";
 import type { Config } from "./config.ts";
 import type { IndexDeps } from "./indexer/index-vault.ts";
 import { FsObjectStore, S3ObjectStore, type ObjectStore } from "@lore/ingest";
@@ -15,7 +16,13 @@ export const QUEUES = {
   index: "index",
   /** One job per changeset: prepare, lint, review rules, commit. */
   changeset: "changeset",
+  /** One job per upload or capture: extract, atomize, validate, hand over as a changeset. */
+  ingest: "ingest",
 } as const;
+
+export interface IngestJobData {
+  itemId: string;
+}
 
 export interface ChangesetJobData {
   changesetId: string;
@@ -36,6 +43,7 @@ export interface Runtime {
   db: Db;
   log: Logger;
   deps: IndexDeps;
+  ai: Ai;
   close(): Promise<void>;
 }
 
@@ -101,6 +109,7 @@ export async function createRuntime(
     db,
     log,
     deps,
+    ai: createAi(config, db),
     async close() {
       await db.$client.end({ timeout: 5 });
       log.flush?.();
@@ -114,7 +123,13 @@ export async function startBoss(config: Config, log: Logger): Promise<PgBoss> {
   await boss.start();
   await boss.createQueue(QUEUES.index, { policy: "stately", retryLimit: 3, retryDelay: 5 });
   await boss.createQueue(QUEUES.changeset, { retryLimit: 3, retryDelay: 5, retryBackoff: true });
+  // Not retried by the queue: a model call that failed is retried by the sweep, later.
+  await boss.createQueue(QUEUES.ingest, { retryLimit: 0, expireInSeconds: 900 });
   return boss;
+}
+
+export async function enqueueIngest(boss: PgBoss, itemId: string): Promise<void> {
+  await boss.send(QUEUES.ingest, { itemId }, { singletonKey: itemId });
 }
 
 export async function enqueueChangeset(boss: PgBoss, changesetId: string): Promise<void> {

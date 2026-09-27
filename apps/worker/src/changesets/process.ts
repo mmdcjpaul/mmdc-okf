@@ -99,6 +99,7 @@ async function prepare(
       ops: fromStoredOps(cs.ops),
       intents: cs.intents,
       baseShas: cs.baseShas,
+      duplicates: cs.duplicates,
       approvedBy,
     },
     {
@@ -112,14 +113,17 @@ async function prepare(
   );
 }
 
-function record(p: Prepared, head: string) {
+function record(p: Prepared, head: string, cs: ChangesetRow) {
+  // What the ingestion pipeline said about the document stays with the changeset. The lint
+  // warnings are replaced on every preparation, since the vault may have changed.
+  const fromIngest = cs.ingestItemId ? cs.warnings.filter((w) => !/^[^\s:]+\.md: /.test(w)) : [];
   return {
     finalOps: toStoredOps(p.finalOps),
     preparedHead: head,
     namespaces: p.facts.namespaces,
     noteIds: p.facts.notes.filter((n) => n.primary || n.kind !== "updated").map((n) => n.id),
     title: p.title,
-    warnings: p.warnings,
+    warnings: [...new Set([...fromIngest, ...p.warnings])],
     issues: p.issues.map((i) => ({
       rule: i.rule,
       severity: i.severity,
@@ -192,7 +196,7 @@ export async function processChangeset(deps: ChangesetDeps, id: string): Promise
       if (p.status === "invalid") {
         // Back to the writer, with what to fix.
         await updateChangeset(db, id, {
-          ...record(p, head),
+          ...record(p, head, cs),
           state: "draft",
           error: p.refusal,
           attempts: attempt,
@@ -201,7 +205,7 @@ export async function processChangeset(deps: ChangesetDeps, id: string): Promise
       }
       if (p.decision.review && !approver) {
         await updateChangeset(db, id, {
-          ...record(p, head),
+          ...record(p, head, cs),
           state: "in_review",
           attempts: attempt,
         });
@@ -240,7 +244,7 @@ export async function processChangeset(deps: ChangesetDeps, id: string): Promise
           ...(approver ? [{ name: approver.name, email: approver.email }] : []),
         ],
       });
-      await updateChangeset(db, id, { ...record(p, head), attempts: attempt });
+      await updateChangeset(db, id, { ...record(p, head, cs), attempts: attempt });
       const result = await provider.commit(ref, {
         ops: p.finalOps,
         message,
