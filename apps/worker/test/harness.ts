@@ -1,7 +1,6 @@
 /**
  * Integration harness: a scratch database, scratch Meilisearch indexes, and a bare repository
- * seeded from a fixture vault. Needs the dev compose services (`pnpm services:up`); tests skip
- * when they are not reachable.
+ * seeded from a fixture vault. Needs the dev compose services (`pnpm services:up`).
  */
 import { cp, mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -27,12 +26,18 @@ const ADMIN_URL = process.env.TEST_PG_ADMIN_URL ?? "postgres://lore:lore@127.0.0
 const MEILI_URL = process.env.TEST_MEILI_URL ?? "http://127.0.0.1:7701";
 const MEILI_KEY = process.env.TEST_MEILI_KEY ?? "lore-dev-master-key";
 
-/** True when the services are up. CI sets LORE_REQUIRE_SERVICES so the tests fail instead of skipping. */
-export async function servicesAvailable(): Promise<boolean> {
-  const ok = await probe();
-  if (!ok && process.env.LORE_REQUIRE_SERVICES)
-    throw new Error("Postgres or Meilisearch is not reachable");
-  return ok;
+/**
+ * Integration tests never skip: a run that cannot reach the services fails, so a green run
+ * always means the indexer and permission tests really ran.
+ */
+export async function servicesAvailable(): Promise<true> {
+  if (!(await probe())) {
+    throw new Error(
+      `Postgres (${ADMIN_URL.replace(/\/\/.*@/, "//")}) or Meilisearch (${MEILI_URL}) is not reachable. ` +
+        "Run `pnpm services:up`.",
+    );
+  }
+  return true;
 }
 
 async function probe(): Promise<boolean> {

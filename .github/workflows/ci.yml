@@ -20,8 +20,6 @@ jobs:
         image: getmeili/meilisearch:v1.51.0
         env: { MEILI_MASTER_KEY: lore-dev-master-key, MEILI_NO_ANALYTICS: "true" }
         ports: ["7701:7700"]
-    env:
-      LORE_REQUIRE_SERVICES: "1"
     steps:
       - uses: actions/checkout@v4
       # Started by hand because service containers cannot take a command.
@@ -40,6 +38,7 @@ jobs:
           key: turbo-${{ runner.os }}-${{ github.sha }}
           restore-keys: turbo-${{ runner.os }}-
       - run: pnpm turbo run typecheck test --cache-dir=.turbo
+      - run: pnpm test:int
       - run: pnpm lint
       - run: pnpm format:check
 

@@ -18,6 +18,14 @@
     "dev": {
       "cache": false,
       "persistent": true
+    },
+    "test:int": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "e2e": {
+      "dependsOn": ["^build"],
+      "cache": false
     }
   }
 }

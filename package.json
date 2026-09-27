@@ -21,7 +21,9 @@
     "dev:library": "turbo run dev --filter web --filter worker",
     "services:up": "docker compose -f deploy/dev/library.compose.yml up -d",
     "services:down": "docker compose -f deploy/dev/library.compose.yml down",
-    "scale:library": "node scripts/scale/library.ts"
+    "scale:library": "node scripts/scale/library.ts",
+    "test:int": "turbo run test:int",
+    "e2e": "turbo run e2e"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",

@@ -161,6 +161,8 @@ Build a rule engine where each rule has an id, severity, a check function over t
 | `lore/secrets` | secretlint recommended rules | Error | No |
 | `lore/images` | Referenced images exist and are under the size limit | Warning | No |
 | `lore/hub-members` | Generated member lists are current | Warning | Regenerate |
+| `lore/link-style` | Links use the profile's `link_style` | Warning | Converts to the profile's style |
+| `lore/provenance` | `generated`, `verified`, `stale_after`, and `sources` are well formed | Error | No |
 
 Also build:
 
@@ -237,8 +239,8 @@ Build `packages/cli` on top of `@lore/okf`, bundled with tsup into a single file
 |---|---|
 | `kb lint [--fix] [--format human,json,github] [paths]` | Exit 1 on errors |
 | `kb new <type> "<title>" --ns <ns> --theme <theme>` | Writes a templated note with a fresh id |
-| `kb query "<text>" [--ns] [--type] [--limit]` | MiniSearch over title, aliases, description, and body; index cached in `.kb/.cache/` keyed by file mtimes |
-| `kb related <path or id> [--remote]` | Linked notes plus MiniSearch similarity; `--remote` deferred to Plan 4 |
+| `kb query "<text>" [--ns] [--type] [--limit]` | Full-text search over title, aliases, description, and body; a compact index cached in `.kb/.cache/` keyed by file mtimes (not MiniSearch: `docs/decisions/0002-kb-query-index.md`) |
+| `kb related <path or id> [--remote]` | Linked notes plus similarity from the same index; `--remote` deferred to Plan 4 |
 | `kb index [--check]` | Regenerates files; `--check` exits 1 if anything is out of date |
 | `kb mv <from> <to>` | Applies `moveNote` |
 | `kb bump <path> --class fix,addition,process` | Applies `bump` |

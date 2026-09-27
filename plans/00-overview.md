@@ -80,7 +80,7 @@ Every external dependency sits behind an interface. Each plan tests against fake
 | `GitProvider` | `@lore/git` | `LocalGitProvider` (bare repo on disk) | `GitHubProvider` (GitHub App) |
 | `ModelGateway` | `@lore/ai` | `FakeModelProvider` (scripted), `off` | AI SDK providers from encrypted keys |
 | `Embedder` | `@lore/ai` | `HashEmbedder` (deterministic feature hashing), local transformers.js | Provider embeddings with the Postgres cache |
-| `ObjectStore` | `@lore/ingest` | Filesystem or MinIO | Lightsail bucket (S3 API) |
+| `ObjectStore` | `@lore/ingest` | Filesystem, memory, or a local S3 gateway | Lightsail bucket (S3 API) |
 | `Mailer` | `@lore/db` notifications | Console or Mailpit | Amazon SES |
 | `DeskKnowledge` | `@lore/desk` | `InMemoryKnowledge` (fixture vault + MiniSearch + cosine) | `SearchDeskKnowledge` over `@lore/search` |
 | `DeskPrincipal` | `@lore/desk` | Fixture principals with a user switcher | Better Auth session + `readableNamespaces` |
@@ -111,7 +111,7 @@ Plan 1 creates these in `fixtures/`, and every plan tests against them. Changing
 
 ## 5. Conventions for every plan
 
-- Tooling: Vitest for unit and integration tests, Testcontainers for Postgres and Meilisearch in integration tests, Playwright for end-to-end tests, fast-check for property tests, axe-core in Playwright for accessibility.
+- Tooling: Vitest for unit and integration tests, the dev compose services for Postgres, Meilisearch, and the object store in integration tests (`docs/decisions/0005-test-tiers.md`), Playwright for end-to-end tests, fast-check for property tests, axe-core in Playwright for accessibility.
 - Test tiers: `test` (unit, no containers, under a minute), `test:int` (containers), `e2e` (a running app). Pull request CI runs all three with fake models. A nightly job runs live-model and live-GitHub suites that need secrets.
 - No test may call a paid model or a real GitHub repository unless it is tagged `@live`. Live tests have a spending cap enforced by `@lore/ai` budgets.
 - IDs are `kb_` plus a ULID for notes and `cs_`, `fb_`, `tk_`, `ds_` plus a ULID for app records. Actors follow the OKF convention: `human:<id>`, `<job>/<model>`, `process:<name>`.
