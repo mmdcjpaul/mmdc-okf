@@ -17,6 +17,7 @@ import {
   getUser,
   getVault,
   grantsFor,
+  getFeatures,
   listNamespaces,
   notify,
   reviewsOf,
@@ -106,9 +107,12 @@ async function prepare(
       src,
       // A changeset with no person behind it (the Gardener, say) can read everything and
       // write nothing, so it always goes to review.
-      access: submitter?.access ?? new Map(),
+      access:
+        submitter?.access ??
+        new Map((await listNamespaces(deps.db, vault.id)).map((n) => [n.slug, "read" as const])),
       isAdmin: submitter?.isAdmin ?? false,
       now: deps.now?.() ?? new Date(),
+      autoPublishing: (await getFeatures(deps.db)).autoPublishing,
     },
   );
 }

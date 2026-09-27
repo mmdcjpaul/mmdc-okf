@@ -1,6 +1,7 @@
 // Scale check for the Library on the 20,000-note synthetic vault (plans/02-library.md):
 //   - a one-note push is searchable in under 30 s (L3 freshness)
 //   - search p95 is under 300 ms (L4)
+//   - the global graph draws every note without freezing the page (L10)
 // Needs the dev services (`pnpm services:up`) and Docker for k6.
 //   pnpm scale:library [--keep]
 import { execFileSync, spawn, spawnSync, type ChildProcess } from "node:child_process";
@@ -10,6 +11,7 @@ import { join, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import postgres from "postgres";
 import { createSessionToken } from "../../packages/auth/src/index.ts";
+import { checkGraph } from "./graph-check.ts";
 
 const REPO = resolve(import.meta.dirname, "../..");
 const VAULT_DIR = join(REPO, "bench-out/synthetic-vault");
@@ -116,6 +118,7 @@ const server: ChildProcess = spawn("pnpm", ["exec", "next", "start", "--port", S
   stdio: "ignore",
 });
 let k6Status: number;
+
 try {
   for (let i = 0; i < 120; i++) {
     try {
@@ -150,6 +153,7 @@ try {
     { stdio: "inherit" },
   );
   k6Status = k6.status ?? 1;
+  results.push(...(await checkGraph(`http://127.0.0.1:${PORT}`, session)));
   if (existsSync(summary)) {
     const metrics = JSON.parse(readFileSync(summary, "utf8")).metrics as Record<
       string,

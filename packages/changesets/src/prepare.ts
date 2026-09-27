@@ -56,6 +56,8 @@ export interface PrepareContext {
   now: Date;
   /** Id generator, injectable for deterministic tests. */
   newId?: () => string;
+  /** False when admins have switched auto publishing off: every namespace reviews AI drafts. */
+  autoPublishing?: boolean;
 }
 
 const EMPTY_FACTS: ChangesetFacts = {
@@ -487,7 +489,10 @@ export async function prepareChangeset(
     access: ctx.access,
     isAdmin: ctx.isAdmin,
     publishing: Object.fromEntries(
-      Object.entries(vault.namespaces).map(([slug, ns]) => [slug, ns.publishing]),
+      Object.entries(vault.namespaces).map(([slug, ns]) => [
+        slug,
+        ctx.autoPublishing === false ? "manual" : ns.publishing,
+      ]),
     ),
   };
   // People fix their own validation errors before anything is sent on. AI output gets one

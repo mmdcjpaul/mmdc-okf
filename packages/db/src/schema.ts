@@ -523,7 +523,8 @@ export const ingestItems = pgTable(
     /** An earlier item with the same file hash. */
     duplicateOf: text("duplicate_of"),
     state: text("state", {
-      enum: ["queued", "extracting", "atomizing", "waiting", "done", "failed"],
+      // `batched`: a model call is with the provider's batch API; the item resumes when it answers.
+      enum: ["queued", "extracting", "atomizing", "batched", "waiting", "done", "failed"],
     })
       .notNull()
       .default("queued"),
@@ -644,6 +645,145 @@ export const noteFlags = pgTable(
   ],
 );
 
+/** A model request as stored for a batch. Images are base64, so large ones are not batched. */
+export interface StoredModelRequest {
+  instructions: string;
+  context: string[];
+  input: string;
+  images: { base64: string; mediaType: string }[];
+  /** JSON Schema of the answer. */
+  schema: Record<string, unknown>;
+  maxOutputTokens: number;
+}
+
+/** One submission to a provider's batch API. */
+export const llmBatches = pgTable(
+  "llm_batches",
+  {
+    id: text("id").primaryKey(),
+    provider: text("provider").notNull(),
+    /** The provider's id for the batch. */
+    externalId: text("external_id").notNull(),
+    state: text("state", { enum: ["submitted", "ended", "failed"] })
+      .notNull()
+      .default("submitted"),
+    requests: integer("requests").notNull().default(0),
+    error: text("error"),
+    submittedAt: ts("submitted_at").notNull().defaultNow(),
+    polledAt: ts("polled_at"),
+    endedAt: ts("ended_at"),
+  },
+  (t) => [index("llm_batches_state").on(t.state, t.submittedAt)],
+);
+
+/**
+ * A model call that can wait for the provider's batch API (AU-6). The key names the work
+ * (`ingest:<item>:<task>:<n>`), so the job that asked can find the answer when it runs again.
+ */
+export const llmBatchRequests = pgTable(
+  "llm_batch_requests",
+  {
+    key: text("key").primaryKey(),
+    task: text("task").notNull(),
+    provider: text("provider").notNull(),
+    model: text("model").notNull(),
+    request: jsonb("request").$type<StoredModelRequest>().notNull(),
+    /** What is waiting for the answer, for example `ingest` and an item id. */
+    ownerKind: text("owner_kind").notNull(),
+    ownerId: text("owner_id").notNull(),
+    userId: text("user_id"),
+    vaultId: text("vault_id"),
+    namespace: text("namespace"),
+    state: text("state", { enum: ["pending", "submitted", "done", "failed"] })
+      .notNull()
+      .default("pending"),
+    batchId: text("batch_id").references(() => llmBatches.id, { onDelete: "set null" }),
+    /** The model's answer as JSON text, not yet checked against the schema. */
+    answer: text("answer"),
+    usage: jsonb("usage").$type<{
+      input: number;
+      output: number;
+      cacheRead: number;
+      cacheWrite: number;
+    }>(),
+    error: text("error"),
+    createdAt: created(),
+    finishedAt: ts("finished_at"),
+  },
+  (t) => [
+    index("llm_batch_requests_state").on(t.state, t.provider),
+    index("llm_batch_requests_owner").on(t.ownerKind, t.ownerId),
+    index("llm_batch_requests_batch").on(t.batchId),
+  ],
+);
+
+/** Example questions a note answers (doc2query), embedded into its card vector. */
+export const noteQuestions = pgTable(
+  "note_questions",
+  {
+    vaultId: text("vault_id")
+      .notNull()
+      .references(() => vaults.id, { onDelete: "cascade" }),
+    noteId: text("note_id").notNull(),
+    /** The content the questions were written for. Questions for older content are replaced. */
+    contentHash: text("content_hash").notNull(),
+    questions: text("questions")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    model: text("model").notNull(),
+    generatedAt: ts("generated_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.vaultId, t.noteId] })],
+);
+
+/** What one Gardener run found. Shapes are owned by the worker (`gardener/report.ts`). */
+export interface StoredGardenerReport {
+  [section: string]: unknown;
+}
+
+export const gardenerRuns = pgTable(
+  "gardener_runs",
+  {
+    id: text("id").primaryKey(),
+    vaultId: text("vault_id")
+      .notNull()
+      .references(() => vaults.id, { onDelete: "cascade" }),
+    /** The namespace that was checked, or null for the whole vault. */
+    namespace: text("namespace"),
+    /** Who asked for the run. Null for the weekly schedule. */
+    requestedBy: text("requested_by").references(() => users.id, { onDelete: "set null" }),
+    state: text("state", { enum: ["running", "done", "failed"] })
+      .notNull()
+      .default("running"),
+    report: jsonb("report").$type<StoredGardenerReport>().notNull().default({}),
+    /** Changesets the run put in the review queue. */
+    proposals: text("proposals")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    error: text("error"),
+    startedAt: ts("started_at").notNull().defaultNow(),
+    finishedAt: ts("finished_at"),
+  },
+  (t) => [index("gardener_runs_vault").on(t.vaultId, t.startedAt)],
+);
+
+/** What the Gardener has already proposed, so a run does not propose it again. */
+export const gardenerProposals = pgTable(
+  "gardener_proposals",
+  {
+    vaultId: text("vault_id")
+      .notNull()
+      .references(() => vaults.id, { onDelete: "cascade" }),
+    /** For example `duplicate:<id>:<id>` or `wanted:/finance/x.md`. */
+    key: text("key").notNull(),
+    changesetId: text("changeset_id").notNull(),
+    createdAt: created(),
+  },
+  (t) => [primaryKey({ columns: [t.vaultId, t.key] })],
+);
+
 export const llmUsage = pgTable(
   "llm_usage",
   {
@@ -685,5 +825,9 @@ export type ReviewRow = typeof reviews.$inferSelect;
 export type IngestItemRow = typeof ingestItems.$inferSelect;
 export type FeedbackRow = typeof feedback.$inferSelect;
 export type NotificationRow = typeof notifications.$inferSelect;
+export type GardenerRunRow = typeof gardenerRuns.$inferSelect;
+export type LlmBatchRow = typeof llmBatches.$inferSelect;
+export type LlmBatchRequestRow = typeof llmBatchRequests.$inferSelect;
+export type NoteQuestionsRow = typeof noteQuestions.$inferSelect;
 export type NoteFlagRow = typeof noteFlags.$inferSelect;
 export type LlmUsageRow = typeof llmUsage.$inferSelect;

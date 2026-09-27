@@ -138,7 +138,28 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: pnpm }
       - run: pnpm install --frozen-lockfile
+      # The graph is checked in a real browser.
+      - run: pnpm --filter web exec playwright install --with-deps chromium
       - run: pnpm scale:library
+
+  # Nightly: one tiny batch per provider that has a key in the repository's secrets. A
+  # provider without a key is skipped, and the job says which were.
+  live:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.LIVE_ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.LIVE_OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.LIVE_GEMINI_API_KEY }}
+      LIVE_OPENAI_MODEL: ${{ vars.LIVE_OPENAI_MODEL }}
+      LIVE_GOOGLE_MODEL: ${{ vars.LIVE_GOOGLE_MODEL }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @lore/ai test:live
 
   bench:
     if: github.event_name == 'schedule'

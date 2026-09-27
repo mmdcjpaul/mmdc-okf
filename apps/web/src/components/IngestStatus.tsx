@@ -17,6 +17,7 @@ const LABEL: Record<string, string> = {
   queued: "Waiting in the queue",
   extracting: "Reading the file",
   atomizing: "Drafting notes",
+  batched: "Sent to the model in a batch",
   waiting: "Waiting",
   done: "Done",
   failed: "Not processed",
@@ -33,12 +34,13 @@ export function IngestStatus(props: { id: string; initial: Status; canProcess: b
   const moving =
     WORKING.has(status.state) ||
     status.state === "queued" ||
+    status.state === "batched" ||
     started ||
     (status.state === "done" &&
       ["submitted", "committing", "approved"].includes(status.changesetState ?? ""));
 
   const [age, setAge] = useState(0);
-  const slow = status.state === "queued" && !started && age > 20;
+  const slow = ["queued", "batched"].includes(status.state) && !started && age > 20;
   useEffect(() => {
     const t = setInterval(() => setAge((a) => a + 1), 1000);
     return () => clearInterval(t);
@@ -52,7 +54,7 @@ export function IngestStatus(props: { id: string; initial: Status; canProcess: b
           const res = await fetch(`/api/ingest/${props.id}`, { cache: "no-store" });
           if (!res.ok) return;
           const next = (await res.json()) as Status;
-          if (next.state !== "queued") setStarted(false);
+          if (!["queued", "batched"].includes(next.state)) setStarted(false);
           setStatus((cur) => {
             if (cur.state !== next.state || cur.changesetState !== next.changesetState)
               router.refresh();
@@ -80,12 +82,14 @@ export function IngestStatus(props: { id: string; initial: Status; canProcess: b
     }
   }
 
-  const spinning = moving && !(status.state === "queued" && !started);
+  const spinning = moving && !(["queued", "batched"].includes(status.state) && !started);
   return (
     <div aria-live="polite">
       <p className="flex items-center gap-2 text-[15px] font-medium text-ink">
         {spinning ? <Loader2 size={16} className="animate-spin text-muted" aria-hidden /> : null}
-        {started && status.state === "queued" ? "Starting" : (LABEL[status.state] ?? status.state)}
+        {started && ["queued", "batched"].includes(status.state)
+          ? "Starting"
+          : (LABEL[status.state] ?? status.state)}
       </p>
       {status.reason ? <p className="mt-1 text-[14px] text-ink-2">{status.reason}</p> : null}
       {status.state === "queued" && !started ? (
@@ -95,7 +99,14 @@ export function IngestStatus(props: { id: string; initial: Status; canProcess: b
             : "A writer in the namespace will process it."}
         </p>
       ) : null}
-      {props.canProcess && ["queued", "waiting"].includes(status.state) && !started ? (
+      {status.state === "batched" && !started ? (
+        <p className="mt-1 text-[14px] text-muted">
+          Batches cost about half as much. The answer usually arrives within an hour, and always
+          within a day.
+          {props.canProcess ? " Process now does not wait, at the normal price." : ""}
+        </p>
+      ) : null}
+      {props.canProcess && ["queued", "batched", "waiting"].includes(status.state) && !started ? (
         <button
           type="button"
           onClick={() => void processNow()}

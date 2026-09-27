@@ -133,3 +133,16 @@ export async function createSnapshot(
     "The worker could not be reached"
   );
 }
+
+/** Asks the worker for a Gardener run. False when the worker cannot be reached. */
+export async function requestGardener(
+  vaultId: string,
+  namespace: string | null,
+  by: string,
+): Promise<boolean> {
+  const q = new URLSearchParams({ by, ...(namespace ? { namespace } : {}) });
+  const res = await call(`/vaults/${encodeURIComponent(vaultId)}/gardener?${q}`, {
+    method: "POST",
+  });
+  return res?.ok ?? false;
+}

@@ -320,7 +320,11 @@ export function deriveAssets(
   return out;
 }
 
-export function noteDoc(d: DerivedNote, vector: number[] | null): NoteDoc {
+export function noteDoc(
+  d: DerivedNote,
+  vector: number[] | null,
+  questions: string[] = [],
+): NoteDoc {
   const r = d.row;
   return {
     id: r.id,
@@ -329,6 +333,7 @@ export function noteDoc(d: DerivedNote, vector: number[] | null): NoteDoc {
     title: r.title,
     aliases: r.aliases ?? [],
     description: r.description ?? "",
+    questions,
     body: (r.body ?? "").slice(0, 20_000),
     type: r.type,
     namespace: r.namespace ?? null,

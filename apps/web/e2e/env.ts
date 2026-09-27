@@ -35,6 +35,9 @@ export const WORKER_ENV: Record<string, string> = {
   INTERNAL_API_TOKEN: "lore-e2e-internal-token",
   // A throwaway key: the suite saves provider keys to check they never come back.
   APP_ENCRYPTION_KEY: "e2e0".repeat(16),
+  // The suite must behave the same at any hour, so nothing is sent by the clock. Tests ask
+  // for a turn of the batch schedule when they want one.
+  BATCH_SCHEDULE: "off",
   LOG_LEVEL: "warn",
   // Pushes are indexed inline by the tests; the poller only needs to exist.
   POLL_SECONDS: "3600",

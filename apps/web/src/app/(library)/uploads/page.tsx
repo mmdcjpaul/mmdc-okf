@@ -14,6 +14,7 @@ const STATE: Record<IngestItemRow["state"], { label: string; tone: string }> = {
   queued: { label: "In the queue", tone: "bg-line-2 text-muted" },
   extracting: { label: "Processing", tone: "bg-info-soft text-info" },
   atomizing: { label: "Processing", tone: "bg-info-soft text-info" },
+  batched: { label: "In a batch", tone: "bg-info-soft text-info" },
   waiting: { label: "Waiting", tone: "bg-warn-soft text-warn" },
   done: { label: "Done", tone: "bg-ok-soft text-ok" },
   failed: { label: "Not processed", tone: "bg-bad-soft text-bad" },

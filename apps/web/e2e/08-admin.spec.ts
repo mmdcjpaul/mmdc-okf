@@ -287,7 +287,7 @@ test.describe("Admin", () => {
       .getByRole("navigation", { name: "Admin" })
       .getByRole("link", { name: /Branding/ })
       .click();
-    await page.getByLabel("Name").fill("Acme Handbook");
+    await page.getByRole("textbox", { name: "Name" }).fill("Acme Handbook");
     await page.getByLabel("Accent colour").fill("#0b6e4f");
     await page.getByRole("button", { name: "Save" }).click();
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();
@@ -305,7 +305,7 @@ test.describe("Admin", () => {
       .evaluate((el: HTMLInputElement) => el.removeAttribute("pattern"));
     await page.getByRole("button", { name: "Save" }).click();
     await expect(page.getByText("Write the colour as #rrggbb")).toBeVisible();
-    await page.getByLabel("Name").fill("");
+    await page.getByRole("textbox", { name: "Name" }).fill("");
     await page.getByLabel("Accent colour").fill("");
     await page.getByRole("button", { name: "Save" }).click();
     await expect(page.getByText("Saved", { exact: true })).toBeVisible();

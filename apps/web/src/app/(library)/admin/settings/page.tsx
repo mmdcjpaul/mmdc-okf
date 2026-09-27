@@ -1,10 +1,26 @@
 import type { Metadata } from "next";
-import { getSetting } from "@lore/db";
+import { getFeatures, getSetting, type Features } from "@lore/db";
 import { ActionForm } from "@/components/ActionForm";
 import { adminButton, adminInput } from "@/components/admin-styles";
 import { requireAdmin } from "@/lib/context";
 import { db } from "@/lib/db";
 import { saveBranding } from "../actions";
+
+const FEATURES: { name: keyof Features; label: string; hint: string }[] = [
+  { name: "capture", label: "Capture", hint: "Paste rough notes and have them turned into notes." },
+  { name: "graph", label: "Graph view", hint: "The map of every note and the links between them." },
+  {
+    name: "gardener",
+    label: "Gardener",
+    hint: "Looks for duplicates, orphans, and wanted notes every week, and proposes fixes for review.",
+  },
+  {
+    name: "autoPublishing",
+    label: "Auto publishing",
+    hint: "Lets namespaces set to publish by themselves do so. Off, every AI draft is reviewed.",
+  },
+  { name: "desk", label: "Desk and My tickets", hint: "Needs the Desk to be set up." },
+];
 
 export const metadata: Metadata = { title: "Branding and features" };
 
@@ -12,7 +28,7 @@ export default async function SettingsPage() {
   const ctx = await requireAdmin();
   const [branding, features] = await Promise.all([
     getSetting<Record<string, string | null>>(db(), "branding"),
-    getSetting<{ desk?: boolean }>(db(), "features"),
+    getFeatures(db()),
   ]);
   return (
     <ActionForm action={saveBranding} className="max-w-xl space-y-4">
@@ -62,15 +78,22 @@ export default async function SettingsPage() {
       </label>
       <fieldset>
         <legend className="mb-1 text-[13px] font-medium text-ink">Features</legend>
-        <label className="flex items-center gap-2 text-[13.5px] text-ink-2">
-          <input
-            type="checkbox"
-            name="desk"
-            defaultChecked={features?.desk ?? false}
-            className="size-4 accent-[var(--accent)]"
-          />
-          Desk and My tickets
-        </label>
+        <div className="space-y-1.5">
+          {FEATURES.map((f) => (
+            <label key={f.name} className="flex items-start gap-2 text-[13.5px] text-ink-2">
+              <input
+                type="checkbox"
+                name={f.name}
+                defaultChecked={features[f.name]}
+                className="mt-0.5 size-4 accent-[var(--accent)]"
+              />
+              <span>
+                {f.label}
+                <span className="block text-[12.5px] text-muted">{f.hint}</span>
+              </span>
+            </label>
+          ))}
+        </div>
       </fieldset>
       <button type="submit" className={adminButton}>
         Save

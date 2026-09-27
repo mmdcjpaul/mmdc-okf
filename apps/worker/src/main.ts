@@ -3,20 +3,31 @@
  * and serves /health and the internal API. Shuts down gracefully on SIGINT and SIGTERM.
  */
 import { createServer } from "node:http";
-import { changesetsToProcess, listIngestItems, listVaults } from "@lore/db";
+import {
+  changesetsToProcess,
+  failStuckGardenerRuns,
+  getFeatures,
+  listIngestItems,
+  listVaults,
+} from "@lore/db";
 import { createApi } from "./api.ts";
+import { collectQuestions, queueQuestions } from "./batch/doc2query.ts";
+import { batchTick } from "./batch/tick.ts";
+import { aiSettings } from "./ai.ts";
 import { applyIndexEffects } from "./changesets/effects.ts";
 import { processChangeset, type ChangesetDeps } from "./changesets/process.ts";
 import { loadConfig } from "./config.ts";
 import { indexVault } from "./indexer/index-vault.ts";
 import { processIngestItem, type IngestDeps } from "./ingest/process.ts";
 import { refreshHealth } from "./indexer/refresh-stale.ts";
+import { runGardener } from "./gardener/run.ts";
 import { sendDigests } from "./notify/digest.ts";
 import { sendNotificationEmails } from "./notify/emails.ts";
 import { createMailer } from "./notify/mailer.ts";
 import {
   createRuntime,
   enqueueChangeset,
+  enqueueGardener,
   enqueueIndex,
   enqueueIngest,
   mirrorFor,
@@ -25,6 +36,7 @@ import {
   startBoss,
   VAULT_INDEXED,
   type ChangesetJobData,
+  type GardenerJobData,
   type IndexJobData,
   type IngestJobData,
 } from "./runtime.ts";
@@ -37,6 +49,15 @@ let lastIndex: { at: string; vaultId: string; head: string | null } | null = nul
 // Jobs are picked up within half a second, so a saved note is on its page in a moment.
 const POLL = { pollingIntervalSeconds: 0.5 };
 
+const questionDeps = {
+  db: rt.db,
+  meili: rt.deps.meili,
+  embedder: rt.deps.embedder,
+  gateway: rt.ai.gateway,
+  settings: () => aiSettings(rt.db),
+  log: rt.log,
+};
+
 await boss.work<IndexJobData>(QUEUES.index, POLL, async ([job]) => {
   if (!job) return;
   const result = await indexVault(rt.deps, job.data.vaultId);
@@ -45,6 +66,13 @@ await boss.work<IndexJobData>(QUEUES.index, POLL, async ([job]) => {
   if (effects.resolved.length) await refreshHealth(rt.deps, result.vaultId, effects.resolved);
   if (effects.notified || effects.flagged || effects.resolved.length)
     rt.log.info(effects, "index effects");
+  if (!result.skipped && config.BATCH_SCHEDULE === "on") {
+    await rt.ai.refresh();
+    const asked = await queueQuestions(questionDeps, result.vaultId, result.changed).catch(
+      (err) => (rt.log.warn({ err }, "questions not asked for"), 0),
+    );
+    if (asked) rt.log.info({ vaultId: result.vaultId, notes: asked }, "questions asked for");
+  }
   if (!result.skipped) {
     await boss.publish(VAULT_INDEXED, {
       vaultId: result.vaultId,
@@ -74,13 +102,68 @@ const ingestDeps: IngestDeps = {
   embedder: rt.deps.embedder,
   log: rt.log,
   mirrorFor,
+  batch: {
+    settings: () => aiSettings(rt.db),
+    providers: async () => new Set((await rt.ai.batchClients()).keys()),
+  },
 };
 await boss.work<IngestJobData>(QUEUES.ingest, POLL, async ([job]) => {
   if (!job) return;
   await rt.ai.refresh();
-  const outcome = await processIngestItem(ingestDeps, job.data.itemId);
+  const outcome = await processIngestItem(ingestDeps, job.data.itemId, {
+    mode: job.data.mode ?? "now",
+  });
   if (outcome.state === "done") await enqueueChangeset(boss, outcome.changesetId);
 });
+
+const gardenerDeps = {
+  db: rt.db,
+  meili: rt.deps.meili,
+  log: rt.log,
+  mirrorFor,
+  onChangeset: (id: string) => enqueueChangeset(boss, id),
+};
+await failStuckGardenerRuns(rt.db, new Date(Date.now() - 30 * 60_000));
+await boss.work<GardenerJobData>(QUEUES.gardener, async ([job]) => {
+  if (!job) return;
+  const { vaultId, namespace, requestedBy } = job.data;
+  if (vaultId) {
+    await runGardener(gardenerDeps, { vaultId, namespace, requestedBy });
+    return;
+  }
+  // The weekly run. Admins switch it off under Branding and features.
+  if (!(await getFeatures(rt.db)).gardener) return;
+  for (const vault of await listVaults(rt.db))
+    await runGardener(gardenerDeps, { vaultId: vault.id });
+});
+
+const tickDeps = {
+  db: rt.db,
+  log: rt.log,
+  clients: () => rt.ai.batchClients(),
+  gateway: rt.ai.gateway,
+  settings: () => aiSettings(rt.db),
+  usage: rt.ai.usage,
+  timeZone: config.TIME_ZONE,
+  startItem: (id: string) => enqueueIngest(boss, id, "batch"),
+  onAnswered: async (kind: string, id: string) => {
+    if (kind === "ingest") await enqueueIngest(boss, id, "batch");
+    else if (kind === "doc2query") await collectQuestions(questionDeps, id);
+  },
+};
+const runTick = async (force = false) => {
+  await rt.ai.refresh();
+  const tick = await batchTick(tickDeps, { force });
+  if (tick.started || tick.submitted.length || tick.polled.length) rt.log.info(tick, "batch tick");
+  return tick;
+};
+const batcher =
+  config.BATCH_SCHEDULE === "on"
+    ? setInterval(
+        () => void runTick().catch((err) => rt.log.error({ err }, "batch tick failed")),
+        60_000,
+      )
+    : null;
 
 const mailer = createMailer(config);
 const mail = { db: rt.db, mailer, log: rt.log, publicUrl: config.PUBLIC_URL.replace(/\/$/, "") };
@@ -143,6 +226,8 @@ const api = createApi({
   onChangeset: (id) => enqueueChangeset(boss, id),
   onIngest: (id) => enqueueIngest(boss, id),
   testKey: (provider) => rt.ai.testKey(provider),
+  onGardener: (data) => enqueueGardener(boss, data),
+  onBatchTick: () => runTick(true),
   providerFor: (repository) => providerFor(repository),
   fakeCalls: () =>
     rt.ai.fake && config.AI_MODE === "fake"
@@ -168,6 +253,7 @@ async function shutdown(signal: string) {
   clearInterval(sweeper);
   clearInterval(retrier);
   clearInterval(emailer);
+  if (batcher) clearInterval(batcher);
   await mailer.close?.();
   server.close();
   await boss.stop({ graceful: true, timeout: 30_000 });

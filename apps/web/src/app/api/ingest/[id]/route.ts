@@ -38,11 +38,11 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!canProcessItem(ctx, item))
     return NextResponse.json(
       {
-        error: ["queued", "waiting"].includes(item.state)
+        error: ["queued", "batched", "waiting"].includes(item.state)
           ? "Only writers in the namespace can start processing"
           : "This item is already being processed",
       },
-      { status: ["queued", "waiting"].includes(item.state) ? 403 : 409 },
+      { status: ["queued", "batched", "waiting"].includes(item.state) ? 403 : 409 },
     );
   return NextResponse.json({ id: item.id, queued: await requestIngest(item.id) }, { status: 202 });
 }

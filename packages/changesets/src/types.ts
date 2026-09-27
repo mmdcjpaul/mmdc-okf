@@ -148,6 +148,7 @@ export interface ReviewContext {
 
 export type ReviewCode =
   | "no-write-access"
+  | "gardener-proposal"
   | "ai-manual-namespace"
   | "ai-process-change"
   | "ai-changes-verified"

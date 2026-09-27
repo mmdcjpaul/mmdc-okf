@@ -12,6 +12,7 @@ import {
   cachedEmbeddings,
   getVault,
   noteRowHashes,
+  questionsFor,
   refreshNoteChangeInfo,
   storeEmbeddings,
   writeIndex,
@@ -237,9 +238,18 @@ async function buildDocs(
   const noteDocs: NoteDoc[] = [];
   const chunkDocs: ChunkDoc[] = [];
   const pending: { hash: string; text: string }[] = [];
+  // Questions written for a note stay with it across edits until new ones replace them, and
+  // across a full reindex, which would otherwise have to pay for them again.
+  const asked = await questionsFor(
+    deps.db,
+    changed[0]?.row.vaultId ?? "",
+    changed.map((d) => d.row.id),
+  );
   const chunked = changed.map((d) => {
     const chunks = d.row.hubKind ? [] : chunkNote(d.note, loaded);
-    const card = { hash: sha256("card\n" + d.cardText), text: d.cardText };
+    const questions = asked.get(d.row.id)?.questions ?? [];
+    const text = [d.cardText, ...questions].join("\n");
+    const card = { hash: sha256("card\n" + text), text, questions };
     pending.push(
       card,
       ...chunks.map((c) => ({ hash: c.contentHash, text: c.header + "\n\n" + c.text })),
@@ -280,7 +290,7 @@ async function buildDocs(
   }
 
   for (const { d, chunks, card } of chunked) {
-    const doc = noteDoc(d, vectors.get(card.hash) ?? null);
+    const doc = noteDoc(d, vectors.get(card.hash) ?? null, card.questions);
     noteDocs.push(doc);
     for (const c of chunks) {
       chunkDocs.push({

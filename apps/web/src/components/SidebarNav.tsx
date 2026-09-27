@@ -18,6 +18,7 @@ import {
   Settings,
   Shapes,
   Tags,
+  Waypoints,
 } from "lucide-react";
 import Link from "next/link";
 import { NavLink } from "./NavLink";
@@ -40,6 +41,9 @@ export interface SidebarCounts {
   admin: boolean;
   /** Proposed terms waiting for a decision. Null hides Taxonomy: they maintain nothing. */
   taxonomy: number | null;
+  /** Features admins can switch off. */
+  capture: boolean;
+  graph: boolean;
 }
 
 interface SidebarNavProps {
@@ -97,13 +101,15 @@ export function SidebarNav({ namespaces, counts, onNavigate }: SidebarNavProps) 
         <NavLink href="/upload" icon={<FileUp size={ICON} aria-hidden />} onNavigate={onNavigate}>
           Upload
         </NavLink>
-        <NavLink
-          href="/capture"
-          icon={<NotebookPen size={ICON} aria-hidden />}
-          onNavigate={onNavigate}
-        >
-          Capture
-        </NavLink>
+        {counts.capture ? (
+          <NavLink
+            href="/capture"
+            icon={<NotebookPen size={ICON} aria-hidden />}
+            onNavigate={onNavigate}
+          >
+            Capture
+          </NavLink>
+        ) : null}
         <NavLink
           href="/changes"
           icon={<FilePen size={ICON} aria-hidden />}
@@ -149,6 +155,15 @@ export function SidebarNav({ namespaces, counts, onNavigate }: SidebarNavProps) 
         <NavLink href="/tags" icon={<Hash size={ICON} aria-hidden />} onNavigate={onNavigate}>
           Tags
         </NavLink>
+        {counts.graph ? (
+          <NavLink
+            href="/graph"
+            icon={<Waypoints size={ICON} aria-hidden />}
+            onNavigate={onNavigate}
+          >
+            Graph
+          </NavLink>
+        ) : null}
         {counts.taxonomy === null ? null : (
           <NavLink
             href="/taxonomy"

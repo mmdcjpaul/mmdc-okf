@@ -3,11 +3,18 @@
  * changeset. It commits nothing itself. What it produces goes through the changeset
  * pipeline like every other write.
  */
-import type { Embedder, ModelGateway } from "@lore/ai";
+import {
+  DeferredError,
+  DeferringGateway,
+  type AiSettings,
+  type Embedder,
+  type ModelGateway,
+} from "@lore/ai";
 import { computeAccess } from "@lore/auth";
 import { newRecordId, prepareChangeset, toStoredOps } from "@lore/changesets";
 import {
   claimIngestItem,
+  clearBatchRequests,
   createChangeset,
   getIngestItem,
   getUser,
@@ -31,6 +38,7 @@ import {
 import { loadVault } from "@lore/okf";
 import { searchNotes, type Meilisearch } from "@lore/search";
 import type { Logger } from "pino";
+import { deferredStore } from "../batch/schedule.ts";
 
 export interface IngestDeps {
   db: Db;
@@ -40,11 +48,27 @@ export interface IngestDeps {
   embedder: Embedder | null;
   log: Logger;
   mirrorFor: (repository: string) => Mirror;
+  /** What batching needs. Without it every model call is made at once. */
+  batch?: {
+    settings: () => Promise<AiSettings> | AiSettings;
+    /** Providers whose batch API can be used right now. */
+    providers: () => Promise<ReadonlySet<string>> | ReadonlySet<string>;
+  };
   now?: () => Date;
+}
+
+export interface IngestOptions {
+  /**
+   * `batch` lets model calls wait for the provider's batch API, at about half the price.
+   * `now` is Process now: nothing waits. Answers a batch has already given are used either way.
+   */
+  mode?: "now" | "batch";
 }
 
 export type IngestOutcome =
   | { state: "done"; changesetId: string }
+  /** A model call is with the batch API. The item runs again when it has answered. */
+  | { state: "batched"; key: string }
   | { state: "waiting" | "failed"; reason: string }
   | { state: "skipped"; reason: string };
 
@@ -54,15 +78,20 @@ interface CaptureHints {
 }
 
 /** Processes one item. Safe to call twice: the item is claimed first. */
-export async function processIngestItem(deps: IngestDeps, id: string): Promise<IngestOutcome> {
+export async function processIngestItem(
+  deps: IngestDeps,
+  id: string,
+  opts: IngestOptions = {},
+): Promise<IngestOutcome> {
   const { db, log } = deps;
   const found = await getIngestItem(db, id);
   if (!found) return { state: "skipped", reason: "No such item" };
-  const item = await claimIngestItem(db, id, ["queued", "waiting"], "extracting");
+  const item = await claimIngestItem(db, id, ["queued", "waiting", "batched"], "extracting");
   if (!item) return { state: "skipped", reason: `Item is ${found.state}` };
 
   const fail = async (state: "waiting" | "failed", reason: string): Promise<IngestOutcome> => {
     await updateIngestItem(db, id, { state, stateReason: reason });
+    if (state === "failed") await clearBatchRequests(db, "ingest", id);
     if (state === "failed" && item.submitterId) {
       await notify(db, [
         {
@@ -163,6 +192,19 @@ export async function processIngestItem(deps: IngestDeps, id: string): Promise<I
         }));
     };
 
+    // Answers a batch has given are used whatever the mode. Only in batch mode does a new
+    // call wait for one.
+    const gateway = deps.batch
+      ? new DeferringGateway({
+          inner: deps.gateway,
+          store: deferredStore(db, { kind: "ingest", id }),
+          settings: deps.batch.settings,
+          batchProviders: opts.mode === "batch" ? await deps.batch.providers() : new Set(),
+          owner: `ingest:${id}`,
+          wait: opts.mode === "batch",
+        })
+      : deps.gateway;
+
     await updateIngestItem(db, id, { state: "atomizing" });
     const result = await runIngest(
       {
@@ -182,7 +224,7 @@ export async function processIngestItem(deps: IngestDeps, id: string): Promise<I
         vaultId: vault.id,
       },
       {
-        gateway: deps.gateway,
+        gateway,
         embedder: deps.embedder,
         vault: loaded,
         similar,
@@ -242,9 +284,15 @@ export async function processIngestItem(deps: IngestDeps, id: string): Promise<I
       submittedAt: deps.now?.() ?? new Date(),
     });
     await updateIngestItem(db, id, { state: "done", changesetId: cs.id, stateReason: null });
+    await clearBatchRequests(db, "ingest", id);
     log.info({ id, changeset: cs.id, calls: result.modelCalls }, "ingest item done");
     return { state: "done", changesetId: cs.id };
   } catch (err) {
+    if (err instanceof DeferredError) {
+      await updateIngestItem(db, id, { state: "batched", stateReason: null });
+      log.info({ id, key: err.key }, "ingest item waits for a batch");
+      return { state: "batched", key: err.key };
+    }
     await fail("failed", `Something went wrong: ${(err as Error).message.slice(0, 300)}`);
     throw err;
   }

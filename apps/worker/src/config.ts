@@ -36,6 +36,11 @@ const Env = z.object({
   INTERNAL_API_TOKEN: z.string().min(16).default("lore-dev-internal-token"),
   /** How often the worker checks every vault for new commits, in seconds. */
   POLL_SECONDS: z.coerce.number().int().positive().default(300),
+  /**
+   * `on` sends work that can wait through the providers' batch APIs every two hours in
+   * working hours. `off` leaves queued items until someone chooses Process now.
+   */
+  BATCH_SCHEDULE: z.enum(["on", "off"]).default("on"),
   /** For example `smtp://127.0.0.1:1025` for Mailpit. Without it no email is sent. */
   SMTP_URL: z.string().url().optional(),
   MAIL_FROM: z.string().default("Lore <lore@localhost>"),

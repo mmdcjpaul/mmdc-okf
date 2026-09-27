@@ -20,10 +20,14 @@ export const QUEUES = {
   ingest: "ingest",
   /** The weekly owner digest, on a schedule. */
   digest: "digest",
+  /** A Gardener run: weekly for every vault, or asked for from the Hygiene page. */
+  gardener: "gardener",
 } as const;
 
 export interface IngestJobData {
   itemId: string;
+  /** `batch` lets the item's model calls wait for a batch. Process now is `now`. */
+  mode?: "now" | "batch";
 }
 
 export interface ChangesetJobData {
@@ -128,13 +132,34 @@ export async function startBoss(config: Config, log: Logger): Promise<PgBoss> {
   // Not retried by the queue: a model call that failed is retried by the sweep, later.
   await boss.createQueue(QUEUES.ingest, { retryLimit: 0, expireInSeconds: 900 });
   await boss.createQueue(QUEUES.digest, { policy: "stately", retryLimit: 2, retryDelay: 600 });
+  await boss.createQueue(QUEUES.gardener, { retryLimit: 0, expireInSeconds: 1800 });
+  // Sunday night, so Monday's digest and review queue have what it found.
+  await boss.schedule(QUEUES.gardener, "0 22 * * 0", {}, { tz: config.TIME_ZONE });
   // Monday morning, in the organization's time zone.
   await boss.schedule(QUEUES.digest, "0 8 * * 1", {}, { tz: config.TIME_ZONE });
   return boss;
 }
 
-export async function enqueueIngest(boss: PgBoss, itemId: string): Promise<void> {
-  await boss.send(QUEUES.ingest, { itemId }, { singletonKey: itemId });
+export interface GardenerJobData {
+  /** Missing on the weekly schedule, which runs every vault. */
+  vaultId?: string;
+  namespace?: string | null;
+  requestedBy?: string | null;
+}
+
+export async function enqueueGardener(boss: PgBoss, data: GardenerJobData): Promise<void> {
+  // One waiting run per vault and namespace: asking twice does not run it twice.
+  await boss.send(QUEUES.gardener, data, {
+    singletonKey: `${data.vaultId ?? "all"}:${data.namespace ?? ""}`,
+  });
+}
+
+export async function enqueueIngest(
+  boss: PgBoss,
+  itemId: string,
+  mode: "now" | "batch" = "now",
+): Promise<void> {
+  await boss.send(QUEUES.ingest, { itemId, mode }, { singletonKey: itemId });
 }
 
 export async function enqueueChangeset(boss: PgBoss, changesetId: string): Promise<void> {

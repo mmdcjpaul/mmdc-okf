@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getNote } from "@lore/db";
+import { getFeatures, getNote } from "@lore/db";
 import { EmptyState } from "@lore/ui";
 import { IngestForm } from "@/components/IngestForm";
 import { PageHeader } from "@/components/PageHeader";
@@ -16,6 +16,7 @@ export default async function CapturePage({
   searchParams: Promise<{ note?: string; ns?: string }>;
 }) {
   const ctx = await requireContext();
+  if (!(await getFeatures(db())).capture) hidden();
   const query = await searchParams;
   const props = await ingestFormProps(ctx);
   const note = query.note ? await getNote(db(), ctx.scope, query.note) : null;

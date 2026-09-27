@@ -341,7 +341,14 @@ export async function saveBranding(_prev: Result | null, form: FormData): Promis
     accent: accent || null,
     deskGreeting: text(form, "deskGreeting").slice(0, 300) || null,
   };
-  const features = { desk: form.get("desk") === "on" };
+  const on = (name: string) => form.get(name) === "on";
+  const features = {
+    desk: on("desk"),
+    capture: on("capture"),
+    graph: on("graph"),
+    gardener: on("gardener"),
+    autoPublishing: on("autoPublishing"),
+  };
   await setSetting(db(), "branding", branding);
   await setSetting(db(), "features", features);
   await writeAudit(db(), {

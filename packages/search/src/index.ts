@@ -33,6 +33,8 @@ export interface NoteDoc {
   title: string;
   aliases: string[];
   description: string;
+  /** Questions the note answers, written by a model (doc2query). Empty until it has run. */
+  questions: string[];
   /** Body text for keyword search, capped so large notes do not dominate. */
   body: string;
   type: string;
@@ -92,7 +94,7 @@ const FILTERABLE = [...FACETS, "is_hub", "stale", "reported", "desk", "note_id",
 
 export function noteSettings(synonyms: Record<string, string[]>): Settings {
   return {
-    searchableAttributes: ["title", "aliases", "description", "body"],
+    searchableAttributes: ["title", "aliases", "description", "questions", "body"],
     displayedAttributes: ["*"],
     // Title and description matches outrank body proximity: people search the Library by name.
     rankingRules: [

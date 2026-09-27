@@ -53,3 +53,21 @@ export {
   type ProviderId,
   type Task,
 } from "./tasks.ts";
+export {
+  DeferredError,
+  DeferringGateway,
+  type DeferredStore,
+  type DeferringDeps,
+  type GatewayLike,
+  type StoredAnswer,
+} from "./batch/deferred.ts";
+export { FakeBatchClient } from "./batch/fake.ts";
+export {
+  customIdOf,
+  MAX_BATCH_IMAGE_BYTES,
+  type BatchClient,
+  type BatchItem,
+  type BatchItemResult,
+  type BatchRequestBody,
+  type BatchStatus,
+} from "./batch/types.ts";

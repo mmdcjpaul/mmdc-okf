@@ -85,6 +85,15 @@ test.describe("accessibility (WCAG 2.2 AA)", () => {
         }
       });
 
+      test("Graph", async ({ page }) => {
+        await signIn(page, "bob");
+        await page.goto("/graph");
+        await expect(page.getByTestId("global-graph")).toHaveAttribute("data-state", "ready", {
+          timeout: 30_000,
+        });
+        await expectNoViolations(page);
+      });
+
       test("Taxonomy", async ({ page }) => {
         await signIn(page, "bob");
         await page.goto("/taxonomy");

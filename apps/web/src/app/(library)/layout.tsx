@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { countBy, listChangesets, listNamespaces, unreadCount } from "@lore/db";
+import { countBy, getFeatures, listChangesets, listNamespaces, unreadCount } from "@lore/db";
 import { CommandPaletteProvider } from "@/components/CommandPaletteProvider";
 import { MobileNav } from "@/components/MobileNav";
 import { SidebarNav, type SidebarCounts, type SidebarNamespace } from "@/components/SidebarNav";
@@ -15,7 +15,7 @@ import { env } from "@/lib/env";
 export default async function LibraryLayout({ children }: { children: ReactNode }) {
   const ctx = await requireContext();
   const { vault, principal, scope } = ctx;
-  const [namespaces, counts, branding, inReview, mine, unread] = await Promise.all([
+  const [namespaces, counts, branding, inReview, mine, unread, features] = await Promise.all([
     listNamespaces(db(), vault.id),
     countBy(db(), scope, "namespace"),
     getBranding(vault.title),
@@ -32,6 +32,7 @@ export default async function LibraryLayout({ children }: { children: ReactNode 
       limit: 50,
     }),
     unreadCount(db(), principal.user.id, vault.id),
+    getFeatures(db()),
   ]);
   // Review appears for people who can approve something somewhere: writers and up.
   const approves = principal.isAdmin || [...principal.access.values()].some((l) => l !== "read");
@@ -40,6 +41,8 @@ export default async function LibraryLayout({ children }: { children: ReactNode 
     unread,
     mine: mine.length,
     admin: principal.isAdmin,
+    capture: features.capture,
+    graph: features.graph,
     taxonomy: maintainsVocabulary(ctx)
       ? inReview
           .filter((c) => canSeeChangeset(principal, c))

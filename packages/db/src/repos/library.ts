@@ -367,6 +367,68 @@ export async function linksAmong(db: Db, vaultId: string, ids: string[]) {
     );
 }
 
+export interface GraphData {
+  notes: {
+    id: string;
+    slug: string;
+    title: string;
+    type: string;
+    namespace: string;
+    themes: string[];
+  }[];
+  /** Body links between those notes, as ids. */
+  links: { source: string; target: string }[];
+}
+
+/**
+ * Every readable note and the links between them, for the global graph (LB-10). Hubs are
+ * left out: nearly every note links to one, so they would hide the links people wrote.
+ */
+export async function graphData(db: Db, scope: ReadScope): Promise<GraphData> {
+  if (scope.namespaces.length === 0) return { notes: [], links: [] };
+  const found = await db
+    .select({
+      id: notes.id,
+      slug: notes.slug,
+      title: notes.title,
+      type: notes.type,
+      namespace: notes.namespace,
+      themes: notes.themes,
+    })
+    .from(notes)
+    .where(
+      and(
+        eq(notes.vaultId, scope.vaultId),
+        inArray(notes.namespace, scope.namespaces),
+        isNull(notes.hubKind),
+        sql`${notes.status} <> 'deprecated'`,
+        sql`${notes.type} <> 'Source Document'`,
+      ),
+    )
+    .orderBy(asc(notes.id));
+  const ids = new Set(found.map((n) => n.id));
+  const links = await db
+    .selectDistinct({ source: noteLinks.sourceId, target: noteLinks.targetId })
+    .from(noteLinks)
+    .innerJoin(notes, and(eq(notes.vaultId, noteLinks.vaultId), eq(notes.id, noteLinks.sourceId)))
+    .where(
+      and(
+        eq(noteLinks.vaultId, scope.vaultId),
+        eq(noteLinks.kind, "body"),
+        inArray(notes.namespace, scope.namespaces),
+        sql`${noteLinks.targetId} is not null`,
+        sql`${noteLinks.targetId} <> ${noteLinks.sourceId}`,
+      ),
+    );
+  return {
+    notes: found.map((n) => ({ ...n, namespace: n.namespace! })),
+    // Both ends must be notes the reader can see.
+    links: links
+      .filter((l) => l.target !== null && ids.has(l.source) && ids.has(l.target))
+      .map((l) => ({ source: l.source, target: l.target! })),
+  };
+}
+
 /** Wanted notes: missing link targets, with how many readable notes want them. */
 export async function wantedNotes(db: Db, scope: ReadScope, limit = 50) {
   return db
@@ -464,4 +526,30 @@ export async function getAsset(db: Db, scope: ReadScope, path: string): Promise<
 export async function getSetting<T>(db: Db, key: string): Promise<T | null> {
   const [row] = await db.select().from(settings).where(eq(settings.key, key));
   return (row?.value as T | undefined) ?? null;
+}
+
+/** What admins switch on and off under Branding and features (PRD 9.4). */
+export interface Features {
+  desk: boolean;
+  capture: boolean;
+  graph: boolean;
+  gardener: boolean;
+  /** Off makes every namespace publish manually, whatever its own setting says. */
+  autoPublishing: boolean;
+}
+
+export const DEFAULT_FEATURES: Features = {
+  desk: false,
+  capture: true,
+  graph: true,
+  gardener: true,
+  autoPublishing: true,
+};
+
+export async function getFeatures(db: Db): Promise<Features> {
+  const stored = (await getSetting<Partial<Features>>(db, "features")) ?? {};
+  const out = { ...DEFAULT_FEATURES };
+  for (const key of Object.keys(out) as (keyof Features)[])
+    if (typeof stored[key] === "boolean") out[key] = stored[key];
+  return out;
 }

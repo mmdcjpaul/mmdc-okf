@@ -1,20 +1,29 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
+  getChangeset,
+  getFeatures,
   hygieneByNamespace,
   hygieneCounts,
   hygieneNotes,
+  listGardenerRuns,
   listNamespaces,
   type HygieneNote,
   type HygieneProblem,
 } from "@lore/db";
 import { EmptyState, TrustBadge } from "@lore/ui";
+import { GardenerPanel } from "@/components/GardenerPanel";
 import { PageHeader } from "@/components/PageHeader";
+import { RefreshWhile } from "@/components/RefreshWhile";
+import { RunGardener } from "@/components/RunGardener";
 import { TypeIcon } from "@/components/TypeIcon";
+import { canSeeChangeset } from "@/lib/changesets";
 import { requireContext } from "@/lib/context";
 import { db } from "@/lib/db";
 import { plural, shortDate } from "@/lib/format";
+import { visibleReport } from "@/lib/gardener";
 import { noteHref } from "@/lib/urls";
+import { runGardenerNow } from "./actions";
 
 export const metadata: Metadata = { title: "Hygiene" };
 
@@ -59,7 +68,7 @@ export default async function HygienePage({ searchParams }: Props) {
     ...(mine ? { ownerTeams: principal.teamIds } : {}),
     ...(namespace ? { namespace } : {}),
   };
-  const [counts, byNamespace, notes, namespaces] = await Promise.all([
+  const [counts, byNamespace, notes, namespaces, runs, features] = await Promise.all([
     hygieneCounts(db(), scope, filter),
     hygieneByNamespace(db(), scope),
     hygieneNotes(db(), scope, {
@@ -69,7 +78,23 @@ export default async function HygienePage({ searchParams }: Props) {
       offset: (page - 1) * PAGE,
     }),
     listNamespaces(db(), vault.id),
+    listGardenerRuns(db(), vault.id, { limit: 10 }),
+    getFeatures(db()),
   ]);
+  // A run for one namespace is shown to the people who can read that namespace.
+  const visible = runs.filter((r) => !r.namespace || scope.namespaces.includes(r.namespace));
+  const running = visible.find((r) => r.state === "running");
+  const last = visible.find((r) => r.state === "done");
+  const failed = visible[0]?.state === "failed" ? visible[0] : null;
+  const proposals = [];
+  for (const id of last?.proposals ?? []) {
+    const cs = await getChangeset(db(), id);
+    if (cs && canSeeChangeset(principal, cs))
+      proposals.push({ id: cs.id, title: cs.title, state: cs.state });
+  }
+  const mayRun = namespaces.filter(
+    (n) => principal.isAdmin || principal.access.get(n.slug) === "maintain",
+  );
   const nsTitle = new Map(namespaces.map((n) => [n.slug, n.title]));
   const href = (change: Record<string, string | undefined>) => {
     const next = {
@@ -138,6 +163,51 @@ export default async function HygienePage({ searchParams }: Props) {
           </table>
         </div>
       </section>
+
+      {features.gardener ? (
+        <section aria-label="Gardener" className="mb-8">
+          <h2 className="mb-2 text-[15px] font-semibold text-ink">Gardener</h2>
+          <RefreshWhile
+            active={
+              !!running ||
+              proposals.some((p) => ["submitted", "approved", "committing"].includes(p.state))
+            }
+            everyMs={2000}
+          />
+          {running ? (
+            <p role="status" className="mb-3 text-[13.5px] text-ink-2">
+              The Gardener is looking at{" "}
+              {running.namespace
+                ? (nsTitle.get(running.namespace) ?? running.namespace)
+                : "the vault"}
+              .
+            </p>
+          ) : null}
+          {failed && !running ? (
+            <p className="mb-3 text-[13.5px] text-warn">
+              The last run did not finish: {failed.error}
+            </p>
+          ) : null}
+          {last ? (
+            <GardenerPanel run={last} view={visibleReport(last, scope)} proposals={proposals} />
+          ) : running ? null : (
+            <p className="text-[13.5px] text-muted">
+              It has not run yet. It runs every week, and proposes fixes for review. It never
+              changes a note by itself.
+            </p>
+          )}
+          {mayRun.length ? (
+            <RunGardener
+              action={runGardenerNow}
+              namespaces={mayRun.map((n) => ({ slug: n.slug, title: n.title }))}
+              vault={principal.isAdmin}
+              selected={namespace && mayRun.some((n) => n.slug === namespace) ? namespace : ""}
+              latest={visible[0]?.id ?? null}
+              running={!!running}
+            />
+          ) : null}
+        </section>
+      ) : null}
 
       <section aria-label="Notes that need attention">
         <h2 className="mb-2 text-[15px] font-semibold text-ink">

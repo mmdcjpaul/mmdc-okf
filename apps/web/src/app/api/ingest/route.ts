@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { getFeatures } from "@lore/db";
 import { LIMITS } from "@lore/ingest";
 import { RequestError } from "@/lib/changesets";
 import { apiContext } from "@/lib/context";
+import { db } from "@/lib/db";
 import { saveCapture, saveUpload, type Hints } from "@/lib/ingest";
 import { crossSite } from "@/lib/same-origin";
 
@@ -52,6 +54,8 @@ export async function POST(req: NextRequest) {
   try {
     const hints = hintsOf(form);
     if (form.get("kind") === "capture") {
+      if (!(await getFeatures(db())).capture)
+        return NextResponse.json({ error: "Capture is switched off" }, { status: 403 });
       const images = form
         .getAll("images")
         .filter((f): f is File => f instanceof File && f.size > 0);

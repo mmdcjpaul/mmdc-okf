@@ -25,6 +25,14 @@ export interface ApiDeps {
   providerFor?: (repository: string) => GitProvider;
   /** Recomputes health for notes whose feedback changed. */
   onFeedback?: (vaultId: string, noteIds: string[]) => Promise<void>;
+  /** Runs one turn of the batch schedule now, whatever the clock says. */
+  onBatchTick?: () => Promise<unknown>;
+  /** Queues a Gardener run. */
+  onGardener?: (run: {
+    vaultId: string;
+    namespace: string | null;
+    requestedBy: string | null;
+  }) => Promise<void>;
 }
 
 /** Notes are capped at 2,500 words; anything far beyond that is not a note worth diffing. */
@@ -86,6 +94,24 @@ export function createApi(deps: ApiDeps) {
             return send(res, 400, { error: (err as Error).message });
           }
           return send(res, 201, { name: url.searchParams.get("name"), sha: head });
+        }
+        // POST /batches/tick: for operators and tests, which cannot wait for the window.
+        if (url.pathname === "/batches/tick" && deps.onBatchTick)
+          return send(res, 200, await deps.onBatchTick());
+        // POST /vaults/:id/gardener[?namespace=<slug>][&by=<user id>]
+        const gardener = /^\/vaults\/([^/]+)\/gardener$/.exec(url.pathname);
+        if (gardener && deps.onGardener) {
+          const vault = await getVault(deps.db, decodeURIComponent(gardener[1]!));
+          if (!vault) return send(res, 404, { error: "Unknown vault" });
+          const namespace = url.searchParams.get("namespace");
+          if (namespace && !/^[a-z0-9][a-z0-9-]*$/.test(namespace))
+            return send(res, 400, { error: "No such namespace" });
+          await deps.onGardener({
+            vaultId: vault.id,
+            namespace: namespace || null,
+            requestedBy: url.searchParams.get("by") || null,
+          });
+          return send(res, 202, { queued: true });
         }
         // POST /vaults/:id/health?note=<id>&note=<id>
         const health = /^\/vaults\/([^/]+)\/health$/.exec(url.pathname);

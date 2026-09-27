@@ -4,7 +4,7 @@ import {
   BudgetExceededError,
   InvalidOutputError,
   type Embedder,
-  type ModelGateway,
+  type GatewayLike,
 } from "@lore/ai";
 import type { ChangesetIntent, DuplicateFlag, Prepared } from "@lore/changesets";
 import type { FileOp, Issue, Vault } from "@lore/okf";
@@ -58,7 +58,7 @@ export interface IngestInput {
 }
 
 export interface IngestDeps {
-  gateway: ModelGateway;
+  gateway: GatewayLike;
   embedder: Embedder | null;
   /** The vault at the branch head: vocabulary, profile, and notes. */
   vault: Vault;

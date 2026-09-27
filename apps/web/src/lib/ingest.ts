@@ -166,7 +166,7 @@ export function canSeeItem(ctx: RequestContext, item: IngestItemRow): boolean {
 export function canProcessItem(ctx: RequestContext, item: IngestItemRow): boolean {
   return (
     item.vaultId === ctx.vault.id &&
-    ["queued", "waiting"].includes(item.state) &&
+    ["queued", "batched", "waiting"].includes(item.state) &&
     publishes(ctx.principal, item.namespace)
   );
 }

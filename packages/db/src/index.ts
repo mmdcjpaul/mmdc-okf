@@ -14,3 +14,5 @@ export * from "./repos/ai.ts";
 export * from "./repos/admin.ts";
 export * from "./repos/follows.ts";
 export * from "./repos/hygiene.ts";
+export * from "./repos/gardener.ts";
+export * from "./repos/batches.ts";

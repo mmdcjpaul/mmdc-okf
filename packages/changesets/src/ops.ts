@@ -35,6 +35,9 @@ export function isSafePath(path: string): boolean {
 const ulid = monotonicFactory();
 
 /** Ids for app records: a prefix plus a ULID, for example `cs_01J9ZB4M3FQ8R2T6V0X4Z8C2E6`. */
-export function newRecordId(prefix: "cs" | "fb" | "in", now: Date = new Date()): string {
+export function newRecordId(
+  prefix: "cs" | "fb" | "in" | "gr" | "lb",
+  now: Date = new Date(),
+): string {
   return `${prefix}_${ulid(now.getTime())}`;
 }

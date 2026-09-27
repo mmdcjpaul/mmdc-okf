@@ -53,9 +53,22 @@ export function decideReview(cs: ChangesetDraft, ctx: ReviewContext): ReviewDeci
   const { namespaces, taxonomy } = targets(cs.facts);
   const primary = cs.facts.notes.filter((n) => n.primary || n.kind !== "updated");
 
+  // The Gardener proposes and never publishes (AU-11), whatever else is true of the change.
+  if (cs.source === "gardener") {
+    reasons.push({
+      rule: 1,
+      code: "gardener-proposal",
+      message: "The Gardener proposed this. It publishes nothing by itself",
+      level: "write",
+    });
+  }
+
   // 1. The submitter cannot write to the target namespace.
-  const unwritable = namespaces.filter((ns) => !holds(ctx, ns, "write"));
-  if (unwritable.length) {
+  const unwritable =
+    cs.source === "gardener" ? [] : namespaces.filter((ns) => !holds(ctx, ns, "write"));
+  if (cs.source === "gardener") {
+    // Said above.
+  } else if (unwritable.length) {
     reasons.push({
       rule: 1,
       code: "no-write-access",

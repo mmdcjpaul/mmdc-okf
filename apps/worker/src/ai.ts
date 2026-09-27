@@ -3,6 +3,7 @@ import {
   AiSdkModelProvider,
   AiSettings,
   decryptSecret,
+  FakeBatchClient,
   FakeModelProvider,
   loadScripts,
   ModelGateway,
@@ -11,11 +12,13 @@ import {
   splitModelRef,
   taskConfig,
   TASKS,
+  type BatchClient,
   type ModelProvider,
   type ModelRequest,
   type ModelResponse,
   type UsageStore,
 } from "@lore/ai";
+import { AnthropicBatchClient, GoogleBatchClient, OpenAiBatchClient } from "@lore/ai/batch";
 import { getSetting, recordUsage, spentSince, type Db } from "@lore/db";
 import { z } from "zod";
 import type { Config } from "./config.ts";
@@ -42,6 +45,24 @@ class LiveProvider implements ModelProvider {
   constructor(db: Db, key: Buffer) {
     this.db = db;
     this.key = key;
+  }
+
+  /**
+   * Batch clients for the providers that have a key and a batch API. OpenRouter has none, so
+   * a setup with only OpenRouter runs everything at once, at the normal price.
+   */
+  async batchClients(): Promise<Map<string, BatchClient>> {
+    const stored = (await aiSettings(this.db)).keys;
+    const out = new Map<string, BatchClient>();
+    const key = (provider: "anthropic" | "openai" | "google") =>
+      stored[provider] ? decryptSecret(stored[provider], this.key, `keys.${provider}`) : null;
+    const anthropic = key("anthropic");
+    if (anthropic) out.set("anthropic", new AnthropicBatchClient({ apiKey: anthropic }));
+    const openai = key("openai");
+    if (openai) out.set("openai", new OpenAiBatchClient({ apiKey: openai }));
+    const google = key("google");
+    if (google) out.set("google", new GoogleBatchClient({ apiKey: google }));
+    return out;
   }
 
   /** Reads the keys again. Called before each use, so a key saved in Admin works at once. */
@@ -87,16 +108,21 @@ export interface Ai {
   fake: FakeModelProvider | null;
   /** Reads provider keys from settings again. */
   refresh(): Promise<void>;
+  /** The providers' batch APIs that can be used now. */
+  batchClients(): Promise<Map<string, BatchClient>>;
+  usage: UsageStore;
 }
 
 export function createAi(config: Config, db: Db): Ai {
   let provider: ModelProvider;
   let fake: FakeModelProvider | null = null;
   let refresh = async () => {};
+  let batchClients = async () => new Map<string, BatchClient>();
   if (config.AI_MODE === "live") {
     const live = new LiveProvider(db, parseEncryptionKey(config.APP_ENCRYPTION_KEY!));
     provider = live;
     refresh = async () => void (await live.refresh());
+    batchClients = () => live.batchClients();
   } else {
     fake = scriptedProvider(config.AI_MODE === "fake" ? loadScripts(config.AI_FAKE_SCRIPTS) : []);
     // A connection test has no script of its own; any key "works" against the fake.
@@ -104,6 +130,16 @@ export function createAi(config: Config, db: Db): Ai {
       call.instructions.startsWith("Reply with ok") ? { output: { ok: true } } : undefined,
     );
     provider = fake;
+    if (config.AI_MODE === "fake") {
+      // A batch that ends as soon as it is sent, answered by the same scripts.
+      const clients = new Map<string, BatchClient>(
+        (["anthropic", "openai", "google"] as const).map((p) => [
+          p,
+          new FakeBatchClient(p, fake!, { immediate: true }),
+        ]),
+      );
+      batchClients = async () => clients;
+    }
   }
   const testKey = async (name: string): Promise<KeyTest> => {
     const settings = await aiSettings(db);
@@ -145,6 +181,8 @@ export function createAi(config: Config, db: Db): Ai {
     fake,
     refresh,
     testKey,
+    batchClients,
+    usage: usageStore(db),
     gateway: new ModelGateway({
       mode: config.AI_MODE,
       provider,
