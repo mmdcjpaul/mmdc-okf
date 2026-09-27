@@ -234,3 +234,36 @@ flowchart LR
 | The narrower indexer pass in C2 reintroduces drift | The incremental-equals-full test runs on every pull request, now with a moving clock |
 | First CI run fails in ways local runs hide (ports, service start-up, turbo cache) | C0 exists to find this before more work piles on |
 | Imported MMDC notes stay unverified indefinitely | C1 sets a target of 30 verified notes and names owners |
+
+---
+
+## 8. Status on 2026-09-27
+
+Work is on the branch `completion/read-path-repairs` of `mmdcjpaul/mmdc-okf`, pull request 1.
+
+| Milestone | State | What is open |
+|---|---|---|
+| C0 Baseline and first commit | Done | |
+| C1 Close Plan 1 | Code done | Everything that needs a person: see below |
+| C2 Repair the read path | Done | |
+| C3 Real sign-in | Done | The Google and Entra round trips. Decision `0007` departs from the plan and wants the owner's agreement |
+| C4 Commit job and GitHub | Done | Measurements on GitHub; decision `0003` is Proposed until then |
+| C5 Changesets, editor, review, feedback | Done | |
+| C6 AI core and ingestion | Done | The PDF spike; decision `0004` is Proposed until then |
+| C7 Admin | Done | |
+| C8 Phase 2 and the standalone suite | Done | The `live` job skips until it has credentials |
+
+### What needs a person
+
+| What | Who | Plan |
+|---|---|---|
+| Obsidian link-style spike on macOS and Windows, then accept `0001` | Someone with Obsidian on both | 1, M3 |
+| Publish the CLI to GitHub Packages and put its name in `ci.yml` | Someone with a `write:packages` token | 1, M7 |
+| Push the MMDC vault to its own repository, and see its `kb` workflow pass and fail as it should | Repository owner | 1, M7 |
+| The three agent navigation tasks in `docs/demos/agent-navigation.md` | Anyone, with a fresh agent session | 1, M8 |
+| Real owner teams for the MMDC namespaces, and 30 notes verified by their owners | MMDC team leads | 1, M8 |
+| Test Google Workspace and Entra tenant with OAuth clients | Whoever administers them | 2, L1 |
+| Scratch GitHub repository, a test installation of the app, and the `LIVE_GITHUB_*` settings | Repository owner | 2, L2 |
+| Provider keys as `LIVE_*` secrets for the nightly batch check | Whoever holds the keys | 2, L10 |
+| Ten real PDFs for the extraction spike | MMDC | 2, L8 |
+| Merge pull request 1 | Repository owner | |

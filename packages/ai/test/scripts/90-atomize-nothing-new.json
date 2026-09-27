@@ -1,0 +1,11 @@
+{
+  "name": "Any other document: nothing new",
+  "when": {
+    "instructions": "You turn a source document into notes"
+  },
+  "output": {
+    "summary": "Nothing in the document is new to the vault.",
+    "items": [],
+    "proposedTerms": []
+  }
+}

@@ -1,6 +1,6 @@
 import { execFile, spawn } from "node:child_process";
 import { promisify } from "node:util";
-import type { CommitInfo, DiffEntry, TreeEntry } from "./types.ts";
+import type { CommitInfo, DiffEntry, FileChange, TreeEntry } from "./types.ts";
 
 const exec = promisify(execFile);
 
@@ -107,6 +107,35 @@ export class Mirror {
     return result;
   }
 
+  /**
+   * One file's text before and after a commit, relative to the commit's first parent.
+   * Follows a rename, so `before` is the text under the old path. Null when the commit did
+   * not touch the file.
+   */
+  async fileChange(sha: string, path: string): Promise<FileChange | null> {
+    if (!/^[0-9a-f]{40,64}$/.test(sha)) throw new Error(`Invalid commit ${sha}`);
+    const parent = await this.resolve(`${sha}^1`);
+    const args = parent
+      ? ["diff", "--raw", "-z", "-M", "--no-abbrev", parent, sha]
+      : ["diff-tree", "-r", "--root", "--no-commit-id", "--raw", "-z", "--no-abbrev", sha];
+    const entry = parseRaw((await git(this.gitDir, args)).split("\0")).find((e) => e.path === path);
+    if (!entry) return null;
+    const blobs = await this.readBlobs(
+      [entry.oldSha, entry.newSha].filter((s): s is string => !!s),
+    );
+    const text = (blob?: string) => {
+      const bytes = blob ? blobs.get(blob) : undefined;
+      return bytes ? new TextDecoder().decode(bytes) : null;
+    };
+    return {
+      status: entry.status,
+      path,
+      fromPath: entry.from ?? null,
+      before: text(entry.oldSha),
+      after: text(entry.newSha),
+    };
+  }
+
   async diff(from: string, to: string): Promise<DiffEntry[]> {
     const out = await git(this.gitDir, ["diff", "--name-status", "-z", "-M", from, to]);
     return parseNameStatus(out.split("\0"));
@@ -139,7 +168,10 @@ export class Mirror {
       const trailers: Record<string, string> = {};
       for (const line of (trailerText ?? "").split("\n")) {
         const m = /^([A-Za-z-]+):\s*(.+)$/.exec(line.trim());
-        if (m) trailers[m[1]!.toLowerCase()] = m[2]!;
+        if (!m) continue;
+        const key = m[1]!.toLowerCase();
+        // A trailer may repeat (several people credited, several reports resolved).
+        trailers[key] = key in trailers ? `${trailers[key]}\n${m[2]!}` : m[2]!;
       }
       commits.push({
         sha: sha!,

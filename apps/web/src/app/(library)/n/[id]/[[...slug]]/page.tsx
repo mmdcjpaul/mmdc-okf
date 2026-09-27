@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import {
   ChevronRight,
   ExternalLink,
+  FileText,
   GitCommitHorizontal,
   Hash,
   Layers,
@@ -11,28 +12,36 @@ import {
 } from "lucide-react";
 import {
   backlinks,
+  feedbackFor,
   getNote,
+  isFollowing,
   linksAmong,
   linksFrom,
+  linkTargets,
   listNamespaces,
   noteHistory,
+  openFlags,
   outgoing,
+  REPORT_REASONS,
   type NoteRow,
 } from "@lore/db";
 import { similarNotes } from "@lore/search";
-import { Banner } from "@/components/Banner";
+import { Banner, PanelSection, TrustBadge } from "@lore/ui";
 import { Chip } from "@/components/Chip";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { FollowButton } from "@/components/FollowButton";
 import { LinkList, type LinkListItem } from "@/components/LinkList";
 import { LocalGraph, type GraphNodeInput } from "@/components/LocalGraph";
+import { NoteActions } from "@/components/NoteActions";
 import { NoteBody } from "@/components/NoteBody";
-import { PanelSection } from "@/components/PanelSection";
-import { TrustBadge } from "@/components/TrustBadge";
+import { NoteFeedback } from "@/components/NoteFeedback";
 import { TypeIcon } from "@/components/TypeIcon";
+import { publishes } from "@/lib/changesets";
 import { currentVault, hidden, requireContext } from "@/lib/context";
 import { db, meili } from "@/lib/db";
 import { shortDate, timeAgo, titleCase } from "@/lib/format";
 import { outline } from "@/lib/markdown";
+import { resolveHref } from "@/lib/preview";
 import { folderHref, noteHref, termHref, typeHref } from "@/lib/urls";
 
 interface Props {
@@ -54,20 +63,32 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function NotePage({ params }: Props) {
   const p = await params;
   const id = decodeURIComponent(p.id);
-  const { vault, scope } = await requireContext();
+  const { vault, scope, principal } = await requireContext();
   const note = await getNote(db(), scope, id);
   if (!note) hidden();
   if (note.hubKind) redirect(termHref(note.hubKind, note.slug));
   const slug = p.slug?.map(decodeURIComponent).join("/");
   if (slug !== note.slug) redirect(noteHref(note));
 
-  const [inbound, outbound, history, related, namespaces] = await Promise.all([
+  const writes = publishes(principal, note.namespace);
+  const [inbound, outbound, history, related, namespaces, flags, given] = await Promise.all([
     backlinks(db(), scope, note.id),
     outgoing(db(), scope, note.id),
     noteHistory(db(), vault.id, note.id),
     similarNotes(meili(), { vaultSlug: vault.slug, scope, noteId: note.id, limit: 6 }),
     listNamespaces(db(), vault.id),
+    // Flags are for the people who can act on them.
+    writes ? openFlags(db(), vault.id, note.id) : Promise.resolve([]),
+    feedbackFor(db(), vault.id, note.id, principal.user.id),
   ]);
+  const label = (reason: string | null) =>
+    REPORT_REASONS.find((r) => r.value === reason)?.label ?? "Reported";
+  const serious = given.open.filter((r) => r.reason === "incorrect" || r.reason === "outdated");
+  const causes = (
+    await Promise.all(
+      flags.map(async (f) => ({ flag: f, cause: await getNote(db(), scope, f.causeNoteId) })),
+    )
+  ).filter((c) => c.cause !== null);
   const ns = namespaces.find((n) => n.slug === note.namespace);
   const owner = note.owner ?? ns?.ownerTeam ?? null;
   const headings = outline(note.body);
@@ -114,14 +135,79 @@ export default async function NotePage({ params }: Props) {
     <div className="mx-auto max-w-[1180px] px-5 pb-20 pt-8 md:px-10">
       <div className="grid gap-x-12 lg:grid-cols-[minmax(0,1fr)_288px]">
         <article className="min-w-0 max-w-[740px]">
-          <NoteHeader note={note} nsTitle={ns?.title ?? null} owner={owner} />
+          <NoteHeader
+            note={note}
+            nsTitle={ns?.title ?? null}
+            owner={owner}
+            following={await isFollowing(db(), principal.user.id, vault.id, note.id)}
+          />
+          <NoteActions
+            note={{
+              id: note.id,
+              title: note.title,
+              slug: note.slug,
+              namespace: note.namespace,
+              folder: note.folder,
+            }}
+            writes={writes}
+            namespaces={namespaces
+              .filter((n) => scope.namespaces.includes(n.slug))
+              .map((n) => ({ slug: n.slug, title: n.title }))}
+            deprecated={note.status === "deprecated"}
+            isHub={false}
+          />
           <NoteBanners note={note} />
+          {serious.length ? (
+            <div className="mb-8">
+              <Banner
+                kind="reported"
+                title={`Reported as ${label(serious[0]!.reason).toLowerCase()} on ${shortDate(serious[0]!.createdAt)}`}
+              >
+                The owner has been told. Check with them before relying on this note.
+              </Banner>
+            </div>
+          ) : null}
+          {causes.length ? (
+            <div className="mb-8 space-y-2">
+              {causes.map(({ flag, cause }) => (
+                <Banner
+                  key={flag.causeNoteId}
+                  kind="info"
+                  title="A process this note links to changed"
+                >
+                  <Link href={noteHref(cause!)} className="font-medium underline">
+                    {cause!.title}
+                  </Link>{" "}
+                  changed on {shortDate(flag.changedAt)}. Check whether this note needs updating
+                  too; editing it clears this notice.
+                </Banner>
+              ))}
+            </div>
+          ) : null}
           <NoteBody
             vaultId={vault.id}
             bundleRoot={vault.bundleRoot}
             noteId={note.id}
             body={note.body}
             readable={scope.namespaces}
+          />
+          <NoteFeedback
+            noteId={note.id}
+            helpful={given.helpful}
+            mine={given.mine}
+            reasons={REPORT_REASONS}
+            reports={
+              writes
+                ? given.open.map((r) => ({
+                    id: r.id,
+                    reason: r.reason ?? "other",
+                    reasonLabel: label(r.reason),
+                    comment: r.comment,
+                    reporter: r.reporterName ?? "Someone",
+                    when: timeAgo(r.createdAt),
+                  }))
+                : null
+            }
           />
         </article>
 
@@ -131,10 +217,13 @@ export default async function NotePage({ params }: Props) {
         >
           {headings.length > 2 ? (
             <PanelSection title="On this page">
-              <ul className="space-y-1 text-[13px]">
+              <ul className="text-[13px]">
                 {headings.map((h) => (
                   <li key={h.id} style={{ paddingLeft: (h.depth - 1) * 12 }}>
-                    <a href={`#${h.id}`} className="block truncate text-muted hover:text-ink">
+                    <a
+                      href={`#${h.id}`}
+                      className="block min-h-6 truncate py-[3px] text-muted hover:text-ink"
+                    >
                       {h.text}
                     </a>
                   </li>
@@ -156,7 +245,7 @@ export default async function NotePage({ params }: Props) {
               <LinkList items={related.map(toItem)} empty="" />
             </PanelSection>
           ) : null}
-          <Sources note={note} />
+          <Sources note={note} bundleRoot={vault.bundleRoot} readable={scope.namespaces} />
           <PanelSection title="History" count={history.length}>
             {history.length ? (
               <ol className="space-y-2.5">
@@ -168,9 +257,13 @@ export default async function NotePage({ params }: Props) {
                       aria-hidden
                     />
                     <div className="min-w-0">
-                      <p className="truncate text-ink-2" title={h.subject}>
+                      <Link
+                        href={`/n/${encodeURIComponent(note.id)}/history/${h.sha}`}
+                        className="block truncate text-ink-2 hover:text-accent hover:underline"
+                        title={h.subject}
+                      >
                         {h.subject}
-                      </p>
+                      </Link>
                       <p className="text-[11.5px] text-faint">
                         {h.authorName} · {shortDate(h.committedAt)}
                         {h.toVersion ? ` · v${h.toVersion}` : ""}
@@ -195,10 +288,12 @@ function NoteHeader({
   note,
   nsTitle,
   owner,
+  following,
 }: {
   note: NoteRow;
   nsTitle: string | null;
   owner: string | null;
+  following: boolean;
 }) {
   const folders = note.folder ? note.folder.split("/") : [];
   return (
@@ -255,7 +350,10 @@ function NoteHeader({
           {note.lastChangedBy ? ` by ${note.lastChangedBy}` : ""}
         </span>
         {owner ? <span>Owner {owner}</span> : null}
-        <span className="ml-auto">
+        <span className="ml-auto flex items-center gap-2">
+          {note.hubKind ? null : (
+            <FollowButton target={note.id} following={following} name="this note" />
+          )}
           <CopyLinkButton />
         </span>
       </div>
@@ -344,12 +442,40 @@ async function SupersededBy({ note }: { note: NoteRow }) {
   ) : null;
 }
 
-function Sources({ note }: { note: NoteRow }) {
+/**
+ * Where a note's content came from. A source inside the vault (a Source Document) links to
+ * its page when the reader can see it; a source elsewhere links out.
+ */
+async function Sources({
+  note,
+  bundleRoot,
+  readable,
+}: {
+  note: NoteRow;
+  bundleRoot: string;
+  readable: string[];
+}) {
   const raw = note.frontmatter.sources;
   const sources = Array.isArray(raw)
     ? raw.filter((s): s is Record<string, unknown> => !!s && typeof s === "object")
     : [];
   if (sources.length === 0) return null;
+  const root = bundleRoot.replace(/\/+$/, "");
+  const inVault = (s: Record<string, unknown>) =>
+    typeof s.resource === "string" && s.resource.endsWith(".md")
+      ? (resolveHref(root, note.path, s.resource)?.path ?? null)
+      : null;
+  const targets = new Map(
+    (
+      await linkTargets(
+        db(),
+        note.vaultId,
+        sources.map(inVault).filter((p): p is string => p !== null),
+      )
+    )
+      .filter((t) => t.namespace === null || readable.includes(t.namespace))
+      .map((t) => [t.path, t]),
+  );
   return (
     <PanelSection title="Sources" count={sources.length}>
       <ul className="space-y-2 text-[13px]">
@@ -362,6 +488,20 @@ function Sources({ note }: { note: NoteRow }) {
                 : `Source ${i + 1}`;
           const url =
             typeof s.resource === "string" && /^https?:\/\//.test(s.resource) ? s.resource : null;
+          const target = targets.get(inVault(s) ?? "");
+          if (target) {
+            return (
+              <li key={i} className="flex gap-2">
+                <FileText size={14} className="mt-0.5 shrink-0 text-faint" aria-hidden />
+                <Link
+                  href={noteHref(target)}
+                  className="min-w-0 break-words text-ink-2 hover:text-accent"
+                >
+                  {title}
+                </Link>
+              </li>
+            );
+          }
           return (
             <li key={i} className="flex gap-2">
               <ExternalLink size={14} className="mt-0.5 shrink-0 text-faint" aria-hidden />

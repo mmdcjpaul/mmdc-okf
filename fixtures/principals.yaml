@@ -1,8 +1,9 @@
 # Users, teams, and namespace grants for permission tests in Plans 2, 3, and 4.
 # Grants: read < write < maintain. Namespaces with visibility: company are readable by every member.
 teams:
-  admissions-ops: { title: Admissions Ops }
-  finance-systems: { title: Finance Systems }
+  # pinned_hubs appear on the Home page of the team's members.
+  admissions-ops: { title: Admissions Ops, pinned_hubs: ["theme:enrollment", "system:salesforce"] }
+  finance-systems: { title: Finance Systems, pinned_hubs: ["theme:month-end-close"] }
   it-support: { title: IT Support }
   people-ops: { title: People Ops }
 

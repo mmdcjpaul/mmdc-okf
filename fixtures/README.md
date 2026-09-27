@@ -10,7 +10,8 @@ diff, and say in the pull request which numbers moved.
 | Leak canaries | `zebra-payroll-canary` in `people-ops/payroll-calendar.md`; `okapi-runbook-canary` in `it-support/runbooks/lms-outage-response.md` | part of `vault-acme` |
 | `vault-acme/.kb/eval/questions.yaml` | 40 golden questions with expected note ids, intents, and request types | part of `build-vault-acme.mjs` |
 | `vault-dirty/` | `_base/` plus one folder per lint rule id (`okf/frontmatter`, `lore/required`, ...), each with `input/`, `expected-issues.json`, and `expected/` (files after `--fix`, fixable rules only) | `node scripts/fixtures/build-vault-dirty.mjs`, then `node packages/okf/test/update-goldens.ts` |
-| `principals.yaml` | Users `alice`, `bob`, `carol`, `dana`, `erin`, `svc-multica`, their teams, grants, and expected permissions | hand-edited |
+| `principals.yaml` | Users `alice`, `bob`, `carol`, `dana`, `erin`, `svc-multica`, their teams, grants, hubs pinned by each team, and expected permissions | hand-edited |
+| `patches/` | Patches for `lore simulate-push --file`, as Obsidian or a coding agent would push them | `git diff` in a copy of `vault-acme`; a test checks each one still applies and lints clean |
 | `uploads/` | Sample documents for ingestion tests | owned by Plan 2 (not created yet) |
 | synthetic vault | 20,000 notes with realistic link density for scale tests | `node scripts/gen-synthetic-vault.ts bench-out/synthetic-vault 20000` (not committed) |
 

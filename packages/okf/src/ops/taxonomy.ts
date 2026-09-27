@@ -4,7 +4,7 @@ import { buildNoteText, strList } from "../note.ts";
 import { fromBundlePath, hubPath } from "../paths.ts";
 import { TAGS_PATH } from "../profile.ts";
 import type { Actor, FileOp, TermKind } from "../types.ts";
-import { fieldForKind, hasTerm, type Vault } from "../vault.ts";
+import { fieldForKind, hasTerm, termLookup, type Vault } from "../vault.ts";
 import { MEMBERS_END, MEMBERS_START } from "../hubs.ts";
 import { appendLogEntry } from "./logmd.ts";
 import { moveInWorkspace, redirectInbound } from "./notes.ts";
@@ -108,6 +108,41 @@ export function addTerm(
     ws.put(path, buildNoteText(data, body));
   }
   logTaxonomy(ws, now, `Added ${kind} \`${slug}\` (${actor})`);
+  return ws.ops();
+}
+
+/**
+ * Adds another name for a term, so notes and searches that use it reach the canonical term.
+ * The linter rewrites the alias to the term wherever it is used.
+ */
+export function addAlias(
+  vault: Vault,
+  kind: TermKind,
+  slug: string,
+  alias: string,
+  now: Date = new Date(),
+): FileOp[] {
+  assertSlug(alias);
+  if (!hasTerm(vault, kind, slug)) throw new Error(`Unknown ${kind} "${slug}"`);
+  const taken = termLookup(vault, kind).get(alias);
+  if (taken === slug) return [];
+  if (taken !== undefined)
+    throw new Error(
+      hasTerm(vault, kind, alias)
+        ? `"${alias}" is a ${kind} of its own; use merge`
+        : `"${alias}" is already another name for "${taken}"`,
+    );
+  const ws = new Workspace(vault);
+  if (kind === "tag") {
+    editTags(ws, (tags, set) => {
+      set.set(slug, withAliases(tags[slug], [alias]));
+    });
+  } else {
+    ws.update(hubPath(vault.root, kind, slug), (n) => {
+      n.data.aliases = [...strList(n.data, "aliases"), alias];
+    });
+  }
+  logTaxonomy(ws, now, `Added \`${alias}\` as another name for ${kind} \`${slug}\``);
   return ws.ops();
 }
 

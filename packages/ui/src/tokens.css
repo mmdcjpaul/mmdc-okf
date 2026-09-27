@@ -1,0 +1,84 @@
+/*
+ * Lore design tokens, shared by the Library and the Desk. Import after Tailwind:
+ *   @import "tailwindcss";
+ *   @import "@lore/ui/tokens.css";
+ *   @source "<path to>/packages/ui/src";
+ */
+/* Design tokens. Branding (LB-8) overrides --accent at runtime from settings. */
+:root {
+  --bg: #f7f7f5;
+  --paper: #ffffff;
+  --ink: #1c1c1e;
+  --ink-2: #3d3d42;
+  /* Both pass 4.5:1 on every surface, including hover and tinted banners (WCAG 1.4.3). */
+  --muted: #5f5f67;
+  --faint: #6a6a72;
+  --line: #e7e6e2;
+  --line-2: #efeeea;
+  --hover: #efeeeb;
+  --accent: #4b50d8;
+  --accent-ink: #ffffff;
+  --accent-soft: #eceefe;
+  --ok: #1f7a4d;
+  --ok-soft: #e5f4ec;
+  --warn: #9a5b00;
+  --warn-soft: #fdf1dc;
+  --bad: #b42318;
+  --bad-soft: #fde9e7;
+  --info-soft: #e8f0fd;
+  --info: #1f4fb4;
+  --mark: #fff1a8;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161618;
+    --paper: #1c1c1f;
+    --ink: #ececef;
+    --ink-2: #cfcfd4;
+    --muted: #a9a9b2;
+    --faint: #9494a0;
+    --line: #2c2c31;
+    --line-2: #26262a;
+    --hover: #26262b;
+    --accent: #8b8ff5;
+    --accent-ink: #111114;
+    --accent-soft: #272944;
+    --ok: #5cc98e;
+    --ok-soft: #173125;
+    --warn: #f0b457;
+    --warn-soft: #36290f;
+    --bad: #f28b82;
+    --bad-soft: #3a1d1b;
+    --info: #8fb4f8;
+    --info-soft: #1b2740;
+    --mark: #5a4b12;
+    color-scheme: dark;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-paper: var(--paper);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-line: var(--line);
+  --color-line-2: var(--line-2);
+  --color-hover: var(--hover);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-bad: var(--bad);
+  --color-bad-soft: var(--bad-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono-face), ui-monospace, SFMono-Regular, Menlo, monospace;
+}

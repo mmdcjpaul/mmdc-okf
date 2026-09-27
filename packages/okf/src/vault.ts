@@ -21,6 +21,7 @@ export interface Hub {
   aliases: string[];
 }
 
+/** A loaded vault: configuration, vocabulary, and every parsed note. */
 export interface Vault {
   src: FileSource;
   /** The bundle root folder, `kb` by default. */
@@ -44,6 +45,7 @@ export interface Vault {
   systems: Map<string, Hub>;
 }
 
+/** Options for {@link loadVault}. */
 export interface LoadOptions {
   /** Parse only these notes (plus hubs). Vault-wide checks then see a partial vault. */
   only?: string[];
@@ -130,10 +132,12 @@ export function contentNotes(vault: Vault): ParsedNote[] {
   return [...vault.notes.values()].filter((n) => !isManagedPath(vault.root, n.path));
 }
 
+/** The namespace a note is in, or null for hubs and generated files. */
 export function noteNamespace(vault: Vault, note: ParsedNote): string | null {
   return namespaceOf(vault.root, note.path);
 }
 
+/** The note with this id. With duplicate ids, the first path in sort order. */
 export function findNoteById(vault: Vault, id: string): ParsedNote | undefined {
   const path = vault.byId.get(id)?.[0];
   return path ? vault.notes.get(path) : undefined;
@@ -156,11 +160,13 @@ export function termLookup(vault: Vault, kind: TermKind): Map<string, string> {
   return map;
 }
 
+/** True when the term exists in the vocabulary under its canonical name. */
 export function hasTerm(vault: Vault, kind: TermKind, slug: string): boolean {
   if (kind === "tag") return Object.hasOwn(vault.tags, slug);
   return (kind === "theme" ? vault.themes : vault.systems).has(slug);
 }
 
+/** The frontmatter key that holds terms of this kind. */
 export function fieldForKind(kind: TermKind): "themes" | "systems" | "tags" {
   return kind === "theme" ? "themes" : kind === "system" ? "systems" : "tags";
 }

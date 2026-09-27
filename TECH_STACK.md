@@ -49,7 +49,7 @@ How to build the product described in PRD.md. One choice per layer, with the rea
 | Embeddings | Provider embeddings through the AI SDK; optional local model with transformers.js | Anthropic has no embeddings API; a local model keeps semantic search working without any provider |
 | Extraction | mammoth plus turndown (DOCX), SheetJS (XLSX and CSV), JSZip (PPTX), a multimodal model (PDF and images), optional Docling sidecar | Deterministic wherever possible |
 | Git | GitHub App, Octokit, GraphQL `createCommitOnBranch`, git CLI mirrors in the worker | Atomic multi-file commits without a working copy on the web server |
-| CLI search | MiniSearch | Full-text search over the vault with no server |
+| CLI search | A compact cached index built into the CLI | Full-text search over the vault with no server. MiniSearch was too slow to load at 20,000 notes (`docs/decisions/0002-kb-query-index.md`) |
 | Secret scanning | secretlint | The same rules in CI, the CLI, and the pipeline |
 | Email | Amazon SES | Cheap and already on AWS |
 | Observability | pino logs, an `llm_usage` table, optional Sentry and Langfuse | Enough for a lean team |
@@ -177,7 +177,7 @@ The same lint code runs in `kb lint`, in CI, and in the ingestion pipeline:
 |---|---|
 | `kb lint [--fix] [paths]` | Validate notes and fix what is safe to fix |
 | `kb new <type> "<title>" --ns <namespace> --theme <theme>` | Create a note from the type's template with a fresh id |
-| `kb query "<text>"` | Offline full-text search over the vault (MiniSearch), printing paths and descriptions, with namespace and type filters |
+| `kb query "<text>"` | Offline full-text search over the vault (a cached index, see decision 0002), printing paths and descriptions, with namespace and type filters |
 | `kb related <path or id>` | Linked and similar notes; `--remote` uses the Lore API for semantic similarity |
 | `kb index` | Regenerate index files, hub member lists, `graph.json`, and `graph-report.md` |
 | `kb mv <from> <to>` | Move or rename a note and rewrite inbound links |

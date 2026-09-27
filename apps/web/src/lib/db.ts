@@ -2,9 +2,14 @@ import "server-only";
 import { createDb, type Db } from "@lore/db";
 import { Meilisearch } from "@lore/search";
 import { embedderFor, type Embedder } from "@lore/ai";
+import { S3ObjectStore, type ObjectStore } from "@lore/ingest";
 import { env } from "./env";
 
-const g = globalThis as unknown as { __loreDb?: Db; __loreMeili?: Meilisearch };
+const g = globalThis as unknown as {
+  __loreDb?: Db;
+  __loreMeili?: Meilisearch;
+  __loreObjects?: ObjectStore;
+};
 
 /** One pool per server process, kept across dev reloads. */
 export function db(): Db {
@@ -17,10 +22,30 @@ export function meili(): Meilisearch {
   return g.__loreMeili;
 }
 
+/**
+ * The object store. The web app signs URLs for assets and stores what people upload; it
+ * never reads a file back. Reading is the worker's job.
+ */
+export function objects(): ObjectStore {
+  g.__loreObjects ??= new S3ObjectStore({
+    endpoint: env().S3_ENDPOINT,
+    region: env().S3_REGION,
+    bucket: env().S3_BUCKET,
+    accessKeyId: env().S3_ACCESS_KEY_ID,
+    secretAccessKey: env().S3_SECRET_ACCESS_KEY,
+  });
+  return g.__loreObjects;
+}
+
 let embedder: Embedder | null | undefined;
 
 export function queryEmbedder(): Embedder | null {
-  if (embedder === undefined) embedder = embedderFor(env().EMBEDDINGS);
+  if (embedder === undefined) {
+    embedder = embedderFor(env().EMBEDDINGS, {
+      localModel: env().EMBEDDINGS_LOCAL_MODEL,
+      cacheDir: env().EMBEDDINGS_CACHE_DIR,
+    });
+  }
   return embedder;
 }
 
@@ -29,6 +54,7 @@ export async function embedQuery(q: string): Promise<number[] | null> {
   const e = queryEmbedder();
   if (!e || !q.trim()) return null;
   try {
+    if (e.embedQuery) return await e.embedQuery(q);
     const [v] = await e.embed([q]);
     return v ?? null;
   } catch {

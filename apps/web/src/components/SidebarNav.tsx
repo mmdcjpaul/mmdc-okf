@@ -1,6 +1,26 @@
 "use client";
 
-import { FolderClosed, Hash, Home, Layers, Lock, Search, Server, Shapes } from "lucide-react";
+import {
+  Bell,
+  ClipboardCheck,
+  FilePen,
+  FileUp,
+  FolderClosed,
+  Hash,
+  HeartPulse,
+  Home,
+  Layers,
+  Lock,
+  NotebookPen,
+  Plus,
+  Search,
+  Server,
+  Settings,
+  Shapes,
+  Tags,
+  Waypoints,
+} from "lucide-react";
+import Link from "next/link";
 import { NavLink } from "./NavLink";
 import { useCommandPalette } from "./CommandPaletteProvider";
 
@@ -11,14 +31,30 @@ export interface SidebarNamespace {
   restricted: boolean;
 }
 
+export interface SidebarCounts {
+  /** Changesets waiting for this person's decision. Null hides Review: they approve nothing. */
+  review: number | null;
+  unread: number;
+  /** Their own changes that came back to them. */
+  mine: number;
+  /** Whether to show Admin. */
+  admin: boolean;
+  /** Proposed terms waiting for a decision. Null hides Taxonomy: they maintain nothing. */
+  taxonomy: number | null;
+  /** Features admins can switch off. */
+  capture: boolean;
+  graph: boolean;
+}
+
 interface SidebarNavProps {
   namespaces: SidebarNamespace[];
+  counts: SidebarCounts;
   onNavigate?: () => void;
 }
 
 const ICON = 16;
 
-export function SidebarNav({ namespaces, onNavigate }: SidebarNavProps) {
+export function SidebarNav({ namespaces, counts, onNavigate }: SidebarNavProps) {
   const palette = useCommandPalette();
 
   function openSearch() {
@@ -38,6 +74,15 @@ export function SidebarNav({ namespaces, onNavigate }: SidebarNavProps) {
         <kbd className="rounded border border-line px-1 font-sans text-[10.5px] text-faint">⌘K</kbd>
       </button>
 
+      <Link
+        href="/new"
+        onClick={onNavigate}
+        className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-accent text-[13px] font-medium text-accent-ink hover:brightness-110"
+      >
+        <Plus size={15} aria-hidden />
+        New note
+      </Link>
+
       <div className="flex flex-col gap-0.5">
         <NavLink href="/" exact icon={<Home size={ICON} aria-hidden />} onNavigate={onNavigate}>
           Home
@@ -45,6 +90,53 @@ export function SidebarNav({ namespaces, onNavigate }: SidebarNavProps) {
         <NavLink href="/search" icon={<Search size={ICON} aria-hidden />} onNavigate={onNavigate}>
           Search
         </NavLink>
+        <NavLink
+          href="/notifications"
+          icon={<Bell size={ICON} aria-hidden />}
+          count={counts.unread || undefined}
+          onNavigate={onNavigate}
+        >
+          Notifications
+        </NavLink>
+        <NavLink href="/upload" icon={<FileUp size={ICON} aria-hidden />} onNavigate={onNavigate}>
+          Upload
+        </NavLink>
+        {counts.capture ? (
+          <NavLink
+            href="/capture"
+            icon={<NotebookPen size={ICON} aria-hidden />}
+            onNavigate={onNavigate}
+          >
+            Capture
+          </NavLink>
+        ) : null}
+        <NavLink
+          href="/changes"
+          icon={<FilePen size={ICON} aria-hidden />}
+          count={counts.mine || undefined}
+          onNavigate={onNavigate}
+        >
+          My changes
+        </NavLink>
+        {counts.admin ? (
+          <NavLink
+            href="/admin"
+            icon={<Settings size={ICON} aria-hidden />}
+            onNavigate={onNavigate}
+          >
+            Admin
+          </NavLink>
+        ) : null}
+        {counts.review === null ? null : (
+          <NavLink
+            href="/review"
+            icon={<ClipboardCheck size={ICON} aria-hidden />}
+            count={counts.review || undefined}
+            onNavigate={onNavigate}
+          >
+            Review
+          </NavLink>
+        )}
       </div>
 
       <div className="flex flex-col gap-0.5">
@@ -62,6 +154,32 @@ export function SidebarNav({ namespaces, onNavigate }: SidebarNavProps) {
         </NavLink>
         <NavLink href="/tags" icon={<Hash size={ICON} aria-hidden />} onNavigate={onNavigate}>
           Tags
+        </NavLink>
+        {counts.graph ? (
+          <NavLink
+            href="/graph"
+            icon={<Waypoints size={ICON} aria-hidden />}
+            onNavigate={onNavigate}
+          >
+            Graph
+          </NavLink>
+        ) : null}
+        {counts.taxonomy === null ? null : (
+          <NavLink
+            href="/taxonomy"
+            icon={<Tags size={ICON} aria-hidden />}
+            count={counts.taxonomy || undefined}
+            onNavigate={onNavigate}
+          >
+            Taxonomy
+          </NavLink>
+        )}
+        <NavLink
+          href="/hygiene"
+          icon={<HeartPulse size={ICON} aria-hidden />}
+          onNavigate={onNavigate}
+        >
+          Hygiene
         </NavLink>
       </div>
 

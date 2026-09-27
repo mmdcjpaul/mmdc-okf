@@ -12,3 +12,7 @@ bench-out/
 .next/
 next-env.d.ts
 *.tsbuildinfo
+test-results/
+playwright-report/
+.next-e2e/
+.next-scale/

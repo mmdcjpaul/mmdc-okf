@@ -217,6 +217,24 @@ export async function refreshNoteChangeInfo(db: Db, vaultId: string): Promise<vo
   `);
 }
 
+// Staleness and health depend on the clock and on feedback, not on the vault, so they are
+// refreshed outside the index run. See `healthInputs` in feedback.ts.
+
+export async function setHealth(
+  db: Db,
+  vaultId: string,
+  updates: { id: string; stale: boolean; healthScore: number }[],
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    for (const u of updates) {
+      await tx
+        .update(notes)
+        .set({ stale: u.stale, healthScore: u.healthScore })
+        .where(and(eq(notes.vaultId, vaultId), eq(notes.id, u.id)));
+    }
+  });
+}
+
 // Embedding cache.
 
 export async function cachedEmbeddings(

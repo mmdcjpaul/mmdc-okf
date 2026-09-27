@@ -1,0 +1,1 @@
+ALTER TABLE "notes" ADD COLUMN "stale" boolean DEFAULT false NOT NULL;

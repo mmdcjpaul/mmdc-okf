@@ -15,6 +15,7 @@ import {
 } from "./paths.ts";
 import type { Vault } from "./vault.ts";
 
+/** A link found in a note body, with its position for rewriting. */
 export interface Link {
   kind: "link" | "image" | "definition" | "wikilink";
   /** The href exactly as written, or the target of a wikilink. */
@@ -31,6 +32,7 @@ export interface Link {
   end: number;
 }
 
+/** Where a link points, and whether the target exists. */
 export interface ResolvedLink {
   href: string;
   /** Repository path of the target, or null for external links. */
@@ -46,6 +48,7 @@ export interface ResolvedLink {
   outside: boolean;
 }
 
+/** True for hrefs with a scheme (`https:`, `mailto:`) or a protocol-relative `//`. */
 export function isExternalHref(href: string): boolean {
   return /^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith("//");
 }
@@ -259,6 +262,7 @@ export function resolveWikilink(vault: Vault, target: string): string | null {
   return index.get(clean) ?? null;
 }
 
+/** A replacement of one span of text. */
 export interface TextEdit {
   start: number;
   end: number;

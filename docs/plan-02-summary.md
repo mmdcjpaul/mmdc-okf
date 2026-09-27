@@ -1,138 +1,70 @@
-# Plan 2 progress: the Library, read path first
+# Plan 2: the Library
 
-Status as of 2026-09-25. Covers `plans/02-library.md`. The goal of this first pass was to see the
-MMDC vault loaded into the Library, so it builds the read path end to end: a person signs in,
-browses, searches, and reads notes and hubs, and pushes made outside Lore reach the Library
-through the indexer. Editing, review, AI, and Admin come later.
-
-## Summary
-
-- The MMDC vault (`/Users/polaris/projects/mmdc/mmdc-vault`) is loaded into the Library: 239
-  notes and 25 hubs, 829 links, 35 images, and 1,578 vectors. `lore seed` copies the vault into a
-  bare repository under `.data/vaults/mmdc.git`; the vault folder itself is never changed.
-- Built: scaffolding (L0), dev sign-in with grants and the permission helpers (part of L1), the
-  local Git provider (L2 without GitHub), the indexer (L3), search (L4), and browse, note, and hub
-  pages (L5).
-- Not started: the editor and changesets (L6), review and feedback (L7), AI core and ingestion
-  (L8), Admin (L9), and phase 2 features (L10).
-- 229 tests pass across the workspace (61 new). Typecheck, ESLint, and `next build` are clean.
-- Nothing is committed yet.
-
-## How to run it
-
-```bash
-pnpm services:up                                                        # Postgres :5433, Meilisearch :7701, Mailpit :8025
-pnpm lore seed --vault ../mmdc/mmdc-vault --principals fixtures/principals.yaml
-pnpm dev:web                                                            # http://localhost:3000
-pnpm dev:worker                                                         # optional: indexes pushes, polls every 5 minutes
-```
-
-Seeding again is safe. When the vault folder has not changed it commits nothing and skips the
-index (`Indexed mmdc: already at 58000010`). Other commands:
-
-| Command | What it does |
-|---|---|
-| `pnpm lore simulate-push --vault mmdc --from ../mmdc/mmdc-vault` | Commits the vault folder's current state, as if pushed from Obsidian |
-| `pnpm lore simulate-push --vault mmdc --file edit.patch --now` | Applies a patch from outside Lore and indexes it inline |
-| `pnpm lore reindex --all` | Clears the vault's rows and search indexes and rebuilds them; vectors come from the cache |
-| `pnpm lore seed ... --fresh` | Deletes the Library's copy of the vault and loads it again |
+Status as of 2026-09-27. Covers `plans/02-library.md`. Every milestone, L0 to L10, is built
+and tested. What is left needs accounts and people that only the owner can arrange, and is
+listed under "What is left".
 
 ## Milestones
 
-| Milestone | Status | What exists |
+| Milestone | Status | Where to look |
 |---|---|---|
-| L0 Scaffolding | Done, except container images | `apps/web` (Next.js 16, Tailwind v4), `apps/worker` (pg-boss, `/health`, graceful shutdown), `@lore/db` (Drizzle schema, one migration, repositories), zod config, pino logs, `deploy/dev/library.compose.yml`, and the `lore` CLI |
-| L1 Auth, teams, grants | Partial | Dev sign-in with an HMAC-signed cookie, refused when `NODE_ENV=production`; `computeAccess`, `readableNamespaces`, `requireNamespace`; allowed-domain check; sign-in audit entries. Better Auth, Google, and Entra are not wired yet |
-| L2 Git provider | Partial | `GitProvider` interface; `LocalGitProvider` with compare-and-swap commits and push events; mirror reads (`ls-tree`, batched `cat-file`, `log --raw`); `GitTreeSource`, so `@lore/okf` loads a vault straight from Git. `GitHubProvider` and the commit job are not built |
-| L3 Indexer | Done | All nine steps from the plan: load the tree, derive rows, history with change classes, chunk and embed through the cache, assets, Meilisearch, one Postgres transaction ending with the head, and a `vault.indexed` event |
-| L4 Search | Done, except the k6 load test | Index settings, `buildReadFilter`, `searchNotes`, `searchChunks`, `similarNotes`, hybrid search at a 0.3 semantic ratio with keyword fallback, a search-only key for the web app, the Cmd-K palette, and a results page with facets |
-| L5 Browse, note pages, hubs | Mostly done | Home, Namespaces with folders, Themes, Systems, Types (table and card views), Tags, note pages (banners, outline, backlinks, related notes, sources, history, Sigma.js local graph), hub pages, stale-slug redirects, 404 for unreadable notes, a checked asset route, and branding from `settings`. The diff view and the Playwright and axe suites are not built |
-
-Design references came from Mobbin (Linear, Confluence, and Intercom note pages; Mintlify and
-Vapi command palettes): a quiet grey sidebar, a centred reading column, and a sticky details panel
-on the right. The layout works at 375 px and in dark mode.
+| L0 Scaffolding | Done | `apps/web`, `apps/worker`, `@lore/db` (8 migrations, checked to be additive), `deploy/docker`, `deploy/dev` |
+| L1 Sign-in, teams, grants, audit | Done, with one departure | Better Auth for sign-in: Google, Microsoft Entra, email link, dev login, allowed domains. Teams and roles stay in Lore's tables (`docs/decisions/0007-sign-in.md`). The provider round trips are untested: see below |
+| L2 Git provider and commit job | Done | `LocalGitProvider`, `GitHubProvider`, mirrors, the push webhook, one contract suite for both (`docs/decisions/0003-commit-api.md`, Proposed until measured on GitHub) |
+| L3 Indexer | Done | Incremental equals full, with a moving clock |
+| L4 Search | Done | Hybrid search, facets, Cmd-K, leak canary over HTTP, p95 under 300 ms on 20,000 notes |
+| L5 Browse, notes, hubs | Done | History diffs, pinned hubs, signed URLs for assets |
+| L6 Editor and changesets | Done | `docs/demos/library-L6.md` |
+| L7 Review and feedback | Done | `docs/demos/library-L7.md` |
+| L8 AI core and ingestion | Done | `docs/demos/library-L8.md`. PDF extraction decision is Proposed (`0004`) |
+| L9 Admin | Done | `docs/demos/library-L9.md` |
+| L10 Phase 2 features | Done | `docs/demos/library-L10.md`: follows, email, digest, Hygiene, taxonomy queue, Gardener, graph, batches, doc2query |
+| Section 5 suite | Done | 123 end-to-end tests, all twelve scenarios |
 
 ## Tests
 
-| Area | What is covered |
-|---|---|
-| Permissions | The capability matrix from `fixtures/principals.yaml`, run for every fixture principal; allowed domains; session tampering and expiry; dev login refused in production |
-| Git | Commits to an empty repository, a moved head, deletes, binary files, diffs, renames, trailers, and a commit served as a `FileSource` |
-| Indexer | `vault-acme` counts, trust tiers, draft and deprecated status, wanted notes, hub members, and history. A rerun at the same head does nothing. A commit that only touches generated files writes and embeds nothing. A rename keeps the id. A major version bump pushed from outside is a Process change. Writing a wanted note resolves the links to it |
-| Incremental equals full | 20 scripted commits (edits, renames, deletes, a folder move, assets, tags, broken frontmatter), indexed one at a time, then compared table by table with a rebuild from scratch. The rebuild takes every vector from the cache |
-| Leak canary | `zebra-payroll-canary` is found by `erin` and `dana` only, across `searchNotes`, `searchChunks` (with and without a vector), `getNote`, and `listNotes`. Similar notes and backlinks never cross into `people-ops` for `carol` |
-| No AI | With a failing embedder, indexing completes and keyword search works (LB-6) |
-| Rendering | Raw HTML and `javascript:` links are dropped; note links become `/n/<id>/<slug>`; links into unreadable namespaces become plain text; wanted notes, folder indexes, and images map correctly; heading ids match the outline |
-
-The worker tests need `pnpm services:up`. They skip locally when the services are down and fail
-in CI, where the `test` job now starts Postgres and Meilisearch (`LORE_REQUIRE_SERVICES=1`).
-
-Checked by hand in the browser: sign-in, Home, search with facets, Cmd-K, a theme hub with its
-graph, a runbook, a knowledge-transfer document with seven images, the Runbook collection in card
-view, and a note page at phone width. An edit pushed from outside Lore appeared on the note page
-about six seconds later, with "External editor" in its history. The demo edit was then removed
-with `lore seed --fresh`.
-
-## Issues encountered
-
-| Issue | Cause | Resolution |
+| Tier | Command | Count |
 |---|---|---|
-| Meilisearch would not start on port 7700 | The `mmdc-v3` stack already uses 7700, and 5432 for Postgres | The Library uses 5433 for Postgres and 7701 for Meilisearch |
-| Deleting a file in a Lore commit failed with "this operation must be run in a work tree" | `git update-index --force-remove` needs a work tree, and the local vault is a bare repository | Commits now write every change with `git update-index --index-info`, where mode 0 removes an entry |
-| Every page returned 500 with "Can't resolve '../migrations'" | Turbopack treats `new URL("../migrations", import.meta.url)` in `@lore/db` as an asset to bundle | Migrations moved to a separate entry point, `@lore/db/migrate`, which only the worker and CLI import |
-| The first search result for "salesforce stuck" was a long ledger, not the runbook | Meilisearch ranks body proximity before attribute by default, and long notes mention everything | Title and description matches now rank first (`attributeRank` before `proximity`) |
-| MMDC images were stored as body links | The MMDC import writes images as reference definitions (`[image1]: /platform/_assets/...`) | Any link into `_assets/` counts as an image link |
-| Incremental indexing and a rebuild disagreed on history (71 rows against 69) | History for deleted notes stayed after incremental runs. Also, a note whose frontmatter stopped parsing got a new id, and its old commits were mapped differently by the two paths | Deleting a note deletes its history, and each history entry takes its id from that revision's own file. Only notes that exist at the head keep history |
-| `next build` failed while prerendering `/login` | `.env.local` sets `AUTH_DEV_LOGIN=true`, and the production guard refused it. This is the guard working as intended | `/login` now renders per request (`connection()`). Production builds must set `AUTH_DEV_LOGIN=false` |
-| ESLint reported 17,745 problems | It was linting Next's `.next` build output | `.next`, `next-env.d.ts`, and `.data` are ignored |
-| Hub files list every member, including restricted notes | The generated member block in a hub file is written for the whole vault | The indexer strips the block. Hub pages build member lists from Postgres, filtered by what the reader can see |
-| Small UI problems found in the browser | Double focus ring on search inputs; hub "Owners" showed namespaces instead of teams; graph labels hidden on small graphs | Fixed |
-| The 21st.dev `magic` MCP server did not connect | Its API key is missing or was reset | Not needed; Mobbin was used for design references |
+| Unit | `pnpm test` | 591 across 11 packages |
+| Integration (Postgres, Meilisearch, object store, Mailpit) | `pnpm test:int` | 127 |
+| End to end (real web app and worker, fake models, local Git) | `pnpm --filter web e2e` | 123 |
+| Scale (20,000 notes) | `pnpm scale:library` | 9 checks |
+| Live (real providers and GitHub) | nightly `live` job | skipped until credentials exist |
 
-## Changes from the plan
+Scale, last run: full index 147 s, a one-note push searchable in 15 s (limit 30 s), search
+p95 122 ms and 149 ms (limit 300 ms), the graph draws 20,000 notes with a longest
+main-thread task of 435 ms (limit 1000 ms).
 
-- Postgres runs on port 5433 and Meilisearch on 7701 (see Issues). The compose file pins
-  `postgres:18.6` because that image was already local; the plan asks for 16 or later.
-- Assets go to a folder store (`.data/objects`) behind an `ObjectStore` interface, not MinIO.
-  The asset route checks the namespace and then streams the file. In production it should
-  redirect to a signed bucket URL instead.
-- Dev sign-in uses Lore's own `users`, `teams`, and `team_members` tables with a signed cookie.
-  Better Auth should take over these tables in L1 without changing the permission helpers.
-- The indexer derives every note on every run and writes only rows whose hash changed. This keeps
-  incremental and full runs identical. It will need a narrower pass for 20,000-note vaults.
-- Integration tests run against the dev compose services instead of Testcontainers.
-- `EMBEDDINGS=hash` (deterministic feature hashing) is the default locally. Its vectors are weak,
-  so hybrid ranking will improve once a real embedder arrives in L8.
+## Definition of done (Plan 2, section 6)
 
-## Open questions
-
-- The dev principals are the Acme fixture people (`alice`, `bob`, `carol`, `dana`, `erin`). MMDC
-  needs its own principals file with real people and teams.
-- Every MMDC note shows "Updated by Lore seed" because the vault has no Git history yet. Once
-  `mmdc-vault` has commits, `lore seed --fresh` pushes its real history.
-- The plan's commit-API decision record is numbered `0002`, which is already taken by
-  `docs/decisions/0002-kb-query-index.md`.
-
-## Remaining work
-
-| Item | Needs |
+| Item | State |
 |---|---|
-| Better Auth with Google, Entra, and magic link; organization and teams plugins | Test Google Workspace and Entra tenants |
-| `GitHubProvider`, the commit job, and the commit API spike | A scratch GitHub repository and a test app installation |
-| Diff view in note history (needs the worker's mirror API) | Nothing external |
-| Playwright suite, axe-core sweep, k6 search load test | Nothing external |
-| Container images for `apps/web` and `apps/worker` | Nothing external |
-| L6 to L10: editor, changesets, review, feedback, AI core, ingestion, Admin, phase 2 | Plan order; L8 needs AI keys for the `@live` job |
-| MMDC principals file | A list of real users and teams |
-| Commit the work | Your go-ahead |
+| Every milestone's tests pass in CI, and the standalone suite passes on a clean clone | Yes, on the pull request branch. Two editing tests failed once on a slow runner and passed on the next run with the same code |
+| Every read path is covered by the leak canary test | Yes: search, Cmd-K, note, lists, backlinks, similar notes, graph, Hygiene, the Gardener's report, follows. The route inventory test fails when a route skips the guard |
+| Works with `AI_MODE=off` and embeddings failing | Yes |
+| Decision records for the commit API and PDF extraction | Both exist, both Proposed: the measurements need GitHub and real PDFs |
+| Container images | Both build in CI |
+| Interfaces documented for Plans 3 and 4 | `docs/interfaces-for-plans-3-and-4.md` |
 
-## Where things are
+## Departures from the plan, each with its reason
 
-| Path | Contents |
-|---|---|
-| `apps/web` | Library pages (`src/app/(library)`), sign-in, `/api/search`, `/assets/...`, and the markdown renderer (`src/lib/markdown.ts`) |
-| `apps/worker` | Index job (`src/indexer`), pg-boss runtime, the `lore` CLI, and integration tests with their harness |
-| `packages/db` | Schema, migration, and repositories; `@lore/db/migrate` is separate so the web bundle never sees it |
-| `packages/git`, `search`, `auth`, `ai` | Git provider and mirrors, Meilisearch, permissions and sessions, embedders |
-| `deploy/dev/library.compose.yml` | Postgres, Meilisearch, and Mailpit |
-| `.claude/launch.json` | `library-web` and `library-worker` for the desktop preview |
+| Plan says | Built | Record |
+|---|---|---|
+| Better Auth organization, admin, and SSO plugins | Better Auth for sign-in only; teams, roles, and grants in Lore's tables | `0007` |
+| MinIO | Versity S3 gateway | `0006` |
+| Testcontainers | Compose services, and tiers that fail when they are down | `0005` |
+| msw for provider tests | A local HTTP server | `0003` |
+| Batch client tests against recorded responses | Replies written from the providers' documented shapes, not recorded | `docs/demos/library-L10.md` |
+| Pull-request mode | At the provider (`createBranch`, `openPullRequest`). Per vault, with auto-merge, is Plan 4 | `0003` |
+
+## What is left
+
+None of this can be done from a keyboard alone.
+
+| What | Needs | Then |
+|---|---|---|
+| Google and Entra sign-in, end to end | A test Google Workspace and a test Entra tenant, with OAuth clients for the deployment's URL | Sign in once with each; `docs/demos/library-L1-sign-in.md` |
+| GitHub commits, measured | A scratch repository and a test installation of the app | Set `LIVE_GITHUB_REPO` and `LIVE_GITHUB_TOKEN`; fill in `0003` and accept it |
+| Batch APIs, against the real services | Provider keys as repository secrets | The nightly `live` job stops skipping |
+| PDF extraction spike | Ten real PDFs from the company, scanned ones among them | Fill in `0004` and accept it |
+| Usability test of the editor (risk table) | Three contributors | Decide whether CodeMirror is enough |

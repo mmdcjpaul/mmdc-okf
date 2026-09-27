@@ -156,12 +156,26 @@ function rewriteLinks(opts: RenderOptions) {
   };
 }
 
+/**
+ * Moves body headings one level down. OKF notes start their sections at `#`, and the page
+ * already has an h1 (the note title), so rendering them as written gives several h1s.
+ */
+function demoteHeadings() {
+  return (tree: Root) => {
+    visit(tree, "element", (node: Element) => {
+      const m = /^h([1-6])$/.exec(node.tagName);
+      if (m) node.tagName = `h${Math.min(6, Number(m[1]) + 1)}`;
+    });
+  };
+}
+
 export async function renderMarkdown(body: string, opts: RenderOptions): Promise<string> {
   const file = await unified()
     .use(remarkParse)
     .use(remarkGfm)
     .use(remarkRehype)
     .use(rehypeSlug)
+    .use(demoteHeadings)
     .use(rewriteLinks(opts))
     .use(rehypeSanitize, SCHEMA)
     .use(rehypeStringify)

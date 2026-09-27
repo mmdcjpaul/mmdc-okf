@@ -18,6 +18,16 @@ export interface DiffEntry {
   newSha?: string;
 }
 
+/** One file's text on both sides of a commit. */
+export interface FileChange {
+  status: DiffEntry["status"];
+  path: string;
+  /** Path before the commit, when it was renamed. */
+  fromPath: string | null;
+  before: string | null;
+  after: string | null;
+}
+
 export interface TreeEntry {
   path: string;
   blobSha: string;
@@ -32,7 +42,10 @@ export interface CommitInfo {
   committedAt: Date;
   subject: string;
   body: string;
-  /** Git trailers such as `Change-Class`, keyed by lowercase name. */
+  /**
+   * Git trailers such as `Change-Class`, keyed by lowercase name. A trailer that appears
+   * more than once has its values joined by newlines.
+   */
   trailers: Record<string, string>;
   files: DiffEntry[];
 }
@@ -63,6 +76,11 @@ export interface GitProvider {
   ): Promise<{ content: Uint8Array; blobSha: string } | null>;
   diff(vault: VaultRef, from: string, to: string): Promise<DiffEntry[]>;
   commit(vault: VaultRef, input: CommitInput): Promise<CommitResult>;
+  /** Tags a commit, for audit snapshots such as `vault-2026-09`. */
+  tag?(vault: VaultRef, name: string, sha: string, message: string): Promise<void>;
+  listTags?(vault: VaultRef): Promise<{ name: string; sha: string; taggedAt: Date | null }[]>;
+  /** A branch for a change that is to be reviewed as a pull request. */
+  createBranch?(vault: VaultRef, name: string, from: string): Promise<void>;
   openPullRequest?(
     vault: VaultRef,
     input: { branch: string; title: string; body: string },

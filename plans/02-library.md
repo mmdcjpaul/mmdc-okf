@@ -31,9 +31,9 @@ The Library must run end to end on a laptop with no GitHub, no AI keys, and no D
 
 ```text
 deploy/dev/library.compose.yml
-  postgres:16
-  meilisearch:<pinned>
-  minio            (S3-compatible object store)
+  postgres:18      (port 5433)
+  meilisearch:<pinned>  (port 7701)
+  objects          (S3-compatible object store, port 9002; see docs/decisions/0006)
   mailpit          (catches email)
 ```
 
@@ -142,7 +142,7 @@ export interface GitProvider {
 - `GitHubProvider`: Octokit, GraphQL `createCommitOnBranch` with `expectedHeadOid`, REST Git Data API fallback for large payloads, webhook signature verification, pull-request mode.
 - Mirror clones in the worker (`/data/vaults/<vault-id>`), fetched on push events and every 5 minutes.
 - Commit job: load the changeset, check base blob SHAs, build the commit message in the TECH_STACK 6 format with `Change-Class`, `Changeset`, `Source`, `Co-authored-by`, and optional `Resolves-Report` trailers, commit, and on a moved head refetch, compare blob SHAs of touched files, retry up to 3 times, otherwise mark the changeset conflicted.
-- GitHub commits spike: measure the payload limit with images and confirm branch protection bypass. Record in `docs/decisions/0002-commit-api.md` and set the REST fallback threshold.
+- GitHub commits spike: measure the payload limit with images and confirm branch protection bypass. Record in `docs/decisions/0003-commit-api.md` and set the REST fallback threshold.
 
 Tests and acceptance:
 
@@ -167,7 +167,7 @@ Build the `index` job in the worker:
 
 Tests and acceptance:
 
-- Integration test with Testcontainers: seed `vault-acme`, index, and assert row and document counts, trust tiers, stale flags, broken links as wanted notes, and hub memberships.
+- Integration test (`pnpm test:int`, against the dev compose services; see `docs/decisions/0005-test-tiers.md`): seed `vault-acme`, index, and assert row and document counts, trust tiers, stale flags, broken links as wanted notes, and hub memberships.
 - Incremental equals full: apply 20 scripted commits one at a time with incremental indexing, then rebuild from scratch, and compare a normalized dump of Postgres note tables and Meilisearch documents. They must be identical.
 - A commit that only touches generated files embeds zero new chunks.
 - Re-running an index job for the same head is a no-op.
@@ -277,7 +277,7 @@ Build `packages/ingest` and the ingestion jobs:
 | Changeset | Source Document note in `references/`, images in `_assets/`, summary and warnings |
 | Gate | `decideReview`; in phase 1 everything AI drafts goes to review |
 
-Also: the per-namespace "AI processing allowed" flag (uploads become drafts with no model call), Process now, and the PDF extraction spike (model versus Docling on 10 real SOPs, recorded in `docs/decisions/0003-pdf-extraction.md`).
+Also: the per-namespace "AI processing allowed" flag (uploads become drafts with no model call), Process now, and the PDF extraction spike (model versus Docling on 10 real SOPs, recorded in `docs/decisions/0004-pdf-extraction.md`).
 
 Tests and acceptance:
 

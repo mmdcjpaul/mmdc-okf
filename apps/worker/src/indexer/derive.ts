@@ -3,7 +3,14 @@
  * No I/O here, so incremental and full runs derive exactly the same rows from the same tree.
  */
 import { createHash } from "node:crypto";
-import type { LinkInput, NewNoteRow, TermRow, NamespaceRow, AssetRow } from "@lore/db";
+import {
+  healthScore,
+  type AssetRow,
+  type LinkInput,
+  type NamespaceRow,
+  type NewNoteRow,
+  type TermRow,
+} from "@lore/db";
 import {
   countWords,
   extractLinks,
@@ -60,15 +67,6 @@ function noteSlug(path: string): string {
   return base.replace(/\.md$/i, "");
 }
 
-/** Health score from PRD 7.7 and plans/02-library.md L7; feedback terms join in L7. */
-export function healthScore(input: { stale: boolean; trust: string; brokenLinks: number }): number {
-  let score = 100;
-  if (input.stale) score -= 20;
-  if (input.trust === "unverified") score -= 10;
-  score -= 5 * input.brokenLinks;
-  return Math.max(0, Math.min(100, score));
-}
-
 export interface DeriveResult {
   notes: DerivedNote[];
   /** Ids used by more than one file. The first path in sort order wins. */
@@ -108,14 +106,12 @@ export function deriveNotes(
 
     const members = hubKind ? memberRange(note) : null;
     const links: LinkInput[] = [];
-    let broken = 0;
     for (const link of extractLinks(note)) {
       if (link.kind === "wikilink") continue;
       if (members && link.start >= members[0] && link.end <= members[1]) continue;
       const r = resolveLink(vault, path, link.href);
       if (r.external || !r.path) continue;
       const isImage = link.kind === "image" || r.path.includes("/_assets/");
-      if (r.wanted) broken++;
       links.push({
         href: link.href,
         targetPath: r.path,
@@ -148,9 +144,10 @@ export function deriveNotes(
       (l, i) => i === 0 || l.href !== links[i - 1]!.href || l.kind !== links[i - 1]!.kind,
     );
 
+    const broken = dedup.filter((l) => l.wanted).length;
     const aliases = strList(data, "aliases");
     const staleAfter = toDate(data.stale_after);
-    const row: Omit<NewNoteRow, "rowHash"> = {
+    const row: Omit<NewNoteRow, "rowHash" | "stale" | "healthScore"> = {
       vaultId: "",
       id,
       path,
@@ -176,11 +173,18 @@ export function deriveNotes(
       contentHash: sha256(note.text),
       blobSha: blobShaOf(path),
       wordCount: countWords(note),
-      healthScore: healthScore({ stale, trust, brokenLinks: broken }),
     };
+    // `stale` and the health score depend on the clock and on feedback, so they stay out of
+    // the hash: the same tree gives the same hash on any day, and the health refresh, which
+    // runs after every index, sets them from everything they depend on.
     const rowHash = sha256(JSON.stringify([row, dedup]));
     out.push({
-      row: { ...row, rowHash },
+      row: {
+        ...row,
+        stale,
+        healthScore: healthScore({ stale, trust, brokenLinks: broken }),
+        rowHash,
+      },
       links: dedup,
       cardText: [title, str(data, "description") ?? "", aliases.join(", ")]
         .filter(Boolean)
@@ -316,7 +320,11 @@ export function deriveAssets(
   return out;
 }
 
-export function noteDoc(d: DerivedNote, vector: number[] | null, now: Date): NoteDoc {
+export function noteDoc(
+  d: DerivedNote,
+  vector: number[] | null,
+  questions: string[] = [],
+): NoteDoc {
   const r = d.row;
   return {
     id: r.id,
@@ -325,6 +333,7 @@ export function noteDoc(d: DerivedNote, vector: number[] | null, now: Date): Not
     title: r.title,
     aliases: r.aliases ?? [],
     description: r.description ?? "",
+    questions,
     body: (r.body ?? "").slice(0, 20_000),
     type: r.type,
     namespace: r.namespace ?? null,
@@ -334,7 +343,9 @@ export function noteDoc(d: DerivedNote, vector: number[] | null, now: Date): Not
     tags: r.tags ?? [],
     trust_tier: r.trustTier,
     status: r.status ?? "stable",
-    stale: r.staleAfter ? r.staleAfter.getTime() <= now.getTime() : false,
+    stale: r.stale ?? false,
+    // Set by the health refresh, which runs after every index and knows about feedback.
+    reported: false,
     desk: d.desk,
     health: r.healthScore ?? 100,
     updated_at: 0,

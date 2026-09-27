@@ -4,6 +4,7 @@ import { noteAst, type ParsedNote } from "./note.ts";
 
 const WORD_RE = /[\p{L}\p{N}][\p{L}\p{N}'’._-]*/gu;
 
+/** Words in a string, counting hyphenated and dotted terms once. */
 export function countWordsIn(text: string): number {
   return text.match(WORD_RE)?.length ?? 0;
 }

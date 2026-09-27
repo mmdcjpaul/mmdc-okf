@@ -1,10 +1,41 @@
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
+  // The end-to-end suite builds into its own folder so it can run beside a dev server.
+  distDir: process.env.NEXT_DIST_DIR ?? ".next",
+  // Container images run the standalone server, traced from the workspace root.
+  ...(process.env.NEXT_OUTPUT === "standalone"
+    ? {
+        output: "standalone" as const,
+        outputFileTracingRoot: fileURLToPath(new URL("../..", import.meta.url)),
+      }
+    : {}),
   // Workspace packages ship TypeScript source.
-  transpilePackages: ["@lore/ai", "@lore/auth", "@lore/db", "@lore/search"],
-  serverExternalPackages: ["postgres"],
+  transpilePackages: [
+    "@lore/ai",
+    "@lore/auth",
+    "@lore/changesets",
+    "@lore/db",
+    "@lore/ingest",
+    "@lore/okf",
+    "@lore/search",
+    "@lore/ui",
+  ],
+  serverExternalPackages: [
+    "postgres",
+    "@huggingface/transformers",
+    "onnxruntime-node",
+    "pdfjs-dist",
+    "mammoth",
+    "xlsx",
+    "jszip",
+  ],
   poweredByHeader: false,
+  // `forbidden()` answers 403 for Admin pages opened by people who are not admins.
+  experimental: { authInterrupts: true },
+  // The repository has its own agent instructions; Next should not write more into apps/web.
+  agentRules: false,
 };
 
 export default config;

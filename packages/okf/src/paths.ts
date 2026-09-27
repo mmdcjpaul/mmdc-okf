@@ -1,21 +1,26 @@
 import { posix } from "node:path";
 
+/** File names OKF reserves in every folder. They are generated, not written. */
 export const RESERVED_FILES = new Set(["index.md", "log.md"]);
 
+/** The last segment of a repository path. */
 export function basename(path: string): string {
   const i = path.lastIndexOf("/");
   return i < 0 ? path : path.slice(i + 1);
 }
 
+/** A repository path without its last segment. */
 export function dirname(path: string): string {
   const i = path.lastIndexOf("/");
   return i < 0 ? "" : path.slice(0, i);
 }
 
+/** True for paths ending in `.md`. */
 export function isMarkdown(path: string): boolean {
   return path.toLowerCase().endsWith(".md");
 }
 
+/** True for `index.md` and `log.md` in any folder. */
 export function isReserved(path: string): boolean {
   return RESERVED_FILES.has(basename(path));
 }
@@ -58,6 +63,7 @@ export function isManagedPath(root: string, repoPath: string): boolean {
   return bundleSegments(root, repoPath).some((s) => s === "_meta" || s === "_assets");
 }
 
+/** `theme` or `system` for files in `_themes/` or `_systems/`, null for anything else. */
 export function hubKindOf(root: string, repoPath: string): "theme" | "system" | null {
   const segs = bundleSegments(root, repoPath);
   if (segs.length !== 2 || isReserved(repoPath)) return null;
@@ -66,10 +72,12 @@ export function hubKindOf(root: string, repoPath: string): "theme" | "system" | 
   return null;
 }
 
+/** Repository path of the hub note for a theme or system. */
 export function hubPath(root: string, kind: "theme" | "system", slug: string): string {
   return fromBundlePath(root, `/${kind === "theme" ? "_themes" : "_systems"}/${slug}.md`);
 }
 
+/** A note's slug: its file name without `.md`. */
 export function slugOf(path: string): string {
   return basename(path).replace(/\.md$/i, "");
 }

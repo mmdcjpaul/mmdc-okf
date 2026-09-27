@@ -8,7 +8,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    # The worker's integration tests (indexer, leak canary) need Postgres and Meilisearch.
+    # The integration tests (indexer, leak canary, object store) need Postgres, Meilisearch,
+    # and an S3-compatible store.
     services:
       postgres:
         image: postgres:18.6-bookworm
@@ -19,10 +20,18 @@ jobs:
         image: getmeili/meilisearch:v1.51.0
         env: { MEILI_MASTER_KEY: lore-dev-master-key, MEILI_NO_ANALYTICS: "true" }
         ports: ["7701:7700"]
-    env:
-      LORE_REQUIRE_SERVICES: "1"
+      # The digest test sends real email and reads it back.
+      mailpit:
+        image: axllent/mailpit:v1.27
+        ports: ["8025:8025", "1025:1025"]
     steps:
       - uses: actions/checkout@v4
+      # Started by hand because service containers cannot take a command.
+      - name: Start the object store
+        run: |
+          docker run -d --name objects -p 9002:7070 \
+            -e ROOT_ACCESS_KEY=lore -e ROOT_SECRET_KEY=lore-dev-secret \
+            versity/versitygw:v1.0.18 posix /tmp
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with: { node-version: 24, cache: pnpm }
@@ -33,8 +42,63 @@ jobs:
           key: turbo-${{ runner.os }}-${{ github.sha }}
           restore-keys: turbo-${{ runner.os }}-
       - run: pnpm turbo run typecheck test --cache-dir=.turbo
+      - run: pnpm test:int
       - run: pnpm lint
       - run: pnpm format:check
+
+  # The standalone suite (plans/02-library.md, section 5): the real web app and worker against
+  # the Acme fixture, with local Git, fake AI, and hash embeddings.
+  e2e:
+    needs: test
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6-bookworm
+        env: { POSTGRES_USER: lore, POSTGRES_PASSWORD: lore, POSTGRES_DB: lore }
+        ports: ["5433:5432"]
+        options: --health-cmd "pg_isready -U lore" --health-interval 2s --health-retries 30
+      meilisearch:
+        image: getmeili/meilisearch:v1.51.0
+        env: { MEILI_MASTER_KEY: lore-dev-master-key, MEILI_NO_ANALYTICS: "true" }
+        ports: ["7701:7700"]
+      # Sign-in links are sent by email and read back.
+      mailpit:
+        image: axllent/mailpit:v1.27
+        ports: ["8025:8025", "1025:1025"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start the object store
+        run: |
+          docker run -d --name objects -p 9002:7070 \
+            -e ROOT_ACCESS_KEY=lore -e ROOT_SECRET_KEY=lore-dev-secret \
+            versity/versitygw:v1.0.18 posix /tmp
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter web exec playwright install --with-deps chromium
+      - run: pnpm --filter web e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-traces
+          path: apps/web/test-results
+          retention-days: 7
+
+  # The images Plan 4 deploys. Built on every change so a broken image is caught here.
+  images:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - run: docker build -f deploy/docker/worker.Dockerfile -t lore-worker:ci .
+      - run: docker build -f deploy/docker/web.Dockerfile -t lore-web:ci .
+      - name: The worker image starts and refuses the development token in production
+        run: |
+          out=$(docker run --rm -e DATABASE_URL=postgres://x:y@127.0.0.1:1/db lore-worker:ci 2>&1 || true)
+          echo "$out"
+          echo "$out" | grep -q "INTERNAL_API_TOKEN"
 
   vault-template:
     needs: test
@@ -52,6 +116,59 @@ jobs:
         run: |
           node "$GITHUB_WORKSPACE/packages/cli/dist/kb.js" lint --format github,human
           node "$GITHUB_WORKSPACE/packages/cli/dist/kb.js" index --check
+
+  # Nightly: Library freshness and search latency on the 20,000-note vault.
+  scale:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18.6-bookworm
+        env: { POSTGRES_USER: lore, POSTGRES_PASSWORD: lore, POSTGRES_DB: lore }
+        ports: ["5433:5432"]
+        options: --health-cmd "pg_isready -U lore" --health-interval 2s --health-retries 30
+      meilisearch:
+        image: getmeili/meilisearch:v1.51.0
+        env: { MEILI_MASTER_KEY: lore-dev-master-key, MEILI_NO_ANALYTICS: "true" }
+        ports: ["7701:7700"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start the object store
+        run: |
+          docker run -d --name objects -p 9002:7070 \
+            -e ROOT_ACCESS_KEY=lore -e ROOT_SECRET_KEY=lore-dev-secret \
+            versity/versitygw:v1.0.18 posix /tmp
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      # The graph is checked in a real browser.
+      - run: pnpm --filter web exec playwright install --with-deps chromium
+      - run: pnpm scale:library
+
+  # Nightly, against the real services: one tiny batch per model provider that has a key,
+  # and the Git provider's contract suite on a scratch GitHub repository. What has no
+  # credentials in the repository's secrets is skipped, and the job says which were.
+  live:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.LIVE_ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.LIVE_OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.LIVE_GEMINI_API_KEY }}
+      LIVE_OPENAI_MODEL: ${{ vars.LIVE_OPENAI_MODEL }}
+      LIVE_GOOGLE_MODEL: ${{ vars.LIVE_GOOGLE_MODEL }}
+      # A scratch repository for the Git provider's contract suite.
+      LIVE_GITHUB_REPO: ${{ vars.LIVE_GITHUB_REPO }}
+      LIVE_GITHUB_TOKEN: ${{ secrets.LIVE_GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: pnpm }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @lore/ai test:live
+      - run: pnpm --filter @lore/git test:live
 
   bench:
     if: github.event_name == 'schedule'

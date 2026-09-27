@@ -1,22 +1,54 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { countBy, listNamespaces } from "@lore/db";
+import { countBy, getFeatures, listChangesets, listNamespaces, unreadCount } from "@lore/db";
 import { CommandPaletteProvider } from "@/components/CommandPaletteProvider";
 import { MobileNav } from "@/components/MobileNav";
-import { SidebarNav, type SidebarNamespace } from "@/components/SidebarNav";
+import { SidebarNav, type SidebarCounts, type SidebarNamespace } from "@/components/SidebarNav";
 import { UserMenu } from "@/components/UserMenu";
 import { getBranding } from "@/lib/branding";
-import { requireContext } from "@/lib/context";
+import { proposedTerms } from "@lore/changesets";
+import { canApproveChangeset, canSeeChangeset } from "@/lib/changesets";
+import { maintainsVocabulary, requireContext } from "@/lib/context";
 import { db } from "@/lib/db";
 import { env } from "@/lib/env";
 
 export default async function LibraryLayout({ children }: { children: ReactNode }) {
-  const { vault, principal, scope } = await requireContext();
-  const [namespaces, counts, branding] = await Promise.all([
+  const ctx = await requireContext();
+  const { vault, principal, scope } = ctx;
+  const [namespaces, counts, branding, inReview, mine, unread, features] = await Promise.all([
     listNamespaces(db(), vault.id),
     countBy(db(), scope, "namespace"),
     getBranding(vault.title),
+    listChangesets(db(), {
+      vaultId: vault.id,
+      states: ["in_review"],
+      namespaces: scope.namespaces,
+      limit: 200,
+    }),
+    listChangesets(db(), {
+      vaultId: vault.id,
+      submitterId: principal.user.id,
+      states: ["draft", "conflicted", "changes_requested"],
+      limit: 50,
+    }),
+    unreadCount(db(), principal.user.id, vault.id),
+    getFeatures(db()),
   ]);
+  // Review appears for people who can approve something somewhere: writers and up.
+  const approves = principal.isAdmin || [...principal.access.values()].some((l) => l !== "read");
+  const sidebarCounts: SidebarCounts = {
+    review: approves ? inReview.filter((c) => canApproveChangeset(principal, c)).length : null,
+    unread,
+    mine: mine.length,
+    admin: principal.isAdmin,
+    capture: features.capture,
+    graph: features.graph,
+    taxonomy: maintainsVocabulary(ctx)
+      ? inReview
+          .filter((c) => canSeeChangeset(principal, c))
+          .flatMap((c) => proposedTerms(c.intents).filter((t) => !t.acceptedBy)).length
+      : null,
+  };
   const countOf = new Map(counts.map((c) => [c.key, c.count]));
   const readable = new Set(scope.namespaces);
   const nav: SidebarNamespace[] = namespaces
@@ -67,11 +99,11 @@ export default async function LibraryLayout({ children }: { children: ReactNode 
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-[248px] flex-col border-r border-line bg-bg px-3 pb-3 pt-4 md:flex">
         <div className="mb-4 pl-2">{brand}</div>
         <div className="-mx-1 min-h-0 flex-1 overflow-y-auto px-1">
-          <SidebarNav namespaces={nav} />
+          <SidebarNav namespaces={nav} counts={sidebarCounts} />
         </div>
         <div className="border-t border-line pt-2">{user}</div>
       </aside>
-      <MobileNav brand={brand} namespaces={nav} footer={user} />
+      <MobileNav brand={brand} namespaces={nav} counts={sidebarCounts} footer={user} />
       <main id="main" className="min-h-dvh bg-paper md:ml-[248px]">
         {children}
       </main>

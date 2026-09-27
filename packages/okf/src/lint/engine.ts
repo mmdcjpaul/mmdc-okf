@@ -4,9 +4,12 @@ import { compactOps } from "../source.ts";
 import type { FileOp, Issue, Severity } from "../types.ts";
 import type { Vault } from "../vault.ts";
 
+/** A profile or caller override for one rule. */
 export type RuleSetting = "off" | "warning" | "error";
+/** Overrides by rule id. */
 export type RuleConfig = Record<string, RuleSetting>;
 
+/** What a rule sees when it runs. */
 export interface RuleContext {
   vault: Vault;
   /** Notes to check. Vault-wide rules still see every note through `vault`. */
@@ -14,6 +17,7 @@ export interface RuleContext {
   now: Date;
 }
 
+/** One lint rule: an id, a default severity, a check, and optionally a fix. */
 export interface Rule {
   id: string;
   severity: Severity;
@@ -25,6 +29,7 @@ export interface Rule {
   fix?(fc: FixContext, issues: Issue[]): void | Promise<void>;
 }
 
+/** The result of a lint run. */
 export interface LintReport {
   issues: Issue[];
   errors: number;
@@ -33,6 +38,7 @@ export interface LintReport {
   checked: number;
 }
 
+/** Options for {@link fix}. */
 export interface FixOptions {
   now?: Date;
   /** Id generator, injectable for deterministic tests. */
@@ -90,12 +96,14 @@ export class FixContext {
   }
 }
 
+/** True for notes Lore rules apply to: outside managed folders, with frontmatter that parses. */
 export function isLoreTarget(vault: Vault, note: ParsedNote): boolean {
   return (
     !isManagedPath(vault.root, note.path) && !note.issues.some((i) => i.rule === "okf/frontmatter")
   );
 }
 
+/** A rule's severity after overrides, or null when it is turned off. */
 export function effectiveSeverity(rule: Rule, config: RuleConfig): Severity | null {
   const setting = config[rule.id];
   if (setting === "off") return null;

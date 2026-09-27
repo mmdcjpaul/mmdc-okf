@@ -5,16 +5,21 @@
   "type": "module",
   "description": "Namespace permissions, per-request principals, and dev login sessions.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./sign-in": "./src/sign-in.ts"
   },
   "scripts": {
     "test": "vitest run",
+    "test:int": "LORE_REQUIRE_SERVICES=1 vitest run --config vitest.int.config.ts",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@lore/db": "workspace:*"
+    "@lore/db": "workspace:*",
+    "better-auth": "^1.7.6",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
+    "postgres": "^3.4.9",
     "yaml": "^2.9.1"
   }
 }

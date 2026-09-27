@@ -20,7 +20,10 @@
     "dev:web": "pnpm --filter web dev",
     "dev:library": "turbo run dev --filter web --filter worker",
     "services:up": "docker compose -f deploy/dev/library.compose.yml up -d",
-    "services:down": "docker compose -f deploy/dev/library.compose.yml down"
+    "services:down": "docker compose -f deploy/dev/library.compose.yml down",
+    "scale:library": "node scripts/scale/library.ts",
+    "test:int": "turbo run test:int",
+    "e2e": "turbo run e2e"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.0",
@@ -31,6 +34,7 @@
     "turbo": "^2.11.3",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.70.1",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.1",
+    "postgres": "^3.4.9"
   }
 }

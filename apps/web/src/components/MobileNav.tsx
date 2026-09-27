@@ -3,16 +3,17 @@
 import { Menu, Search, X } from "lucide-react";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useCommandPalette } from "./CommandPaletteProvider";
-import { SidebarNav, type SidebarNamespace } from "./SidebarNav";
+import { SidebarNav, type SidebarCounts, type SidebarNamespace } from "./SidebarNav";
 
 interface MobileNavProps {
   brand: ReactNode;
   namespaces: SidebarNamespace[];
+  counts: SidebarCounts;
   footer: ReactNode;
 }
 
 /** Top bar and slide-out navigation below the `md` breakpoint. */
-export function MobileNav({ brand, namespaces, footer }: MobileNavProps) {
+export function MobileNav({ brand, namespaces, counts, footer }: MobileNavProps) {
   const [open, setOpen] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -88,7 +89,7 @@ export function MobileNav({ brand, namespaces, footer }: MobileNavProps) {
                 <X size={17} aria-hidden />
               </button>
             </div>
-            <SidebarNav namespaces={namespaces} onNavigate={close} />
+            <SidebarNav namespaces={namespaces} counts={counts} onNavigate={close} />
             <div className="mt-auto pt-6">{footer}</div>
           </div>
         </div>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { countBy, listTerms } from "@lore/db";
 import { PageHeader } from "@/components/PageHeader";
-import { Section } from "@/components/Section";
+import { Section } from "@lore/ui";
 import { requireContext } from "@/lib/context";
 import { db } from "@/lib/db";
 import { titleCase } from "@/lib/format";

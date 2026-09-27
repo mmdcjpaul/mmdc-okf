@@ -13,6 +13,7 @@ export type ChangeClass = "fix" | "addition" | "process";
 /** Vocabulary kinds that `renameTerm` and `mergeTerms` operate on. */
 export type TermKind = "theme" | "system" | "tag";
 
+/** Errors fail `kb lint`; warnings do not. */
 export type Severity = "error" | "warning";
 
 /** One problem found by the linter or the parser. */
@@ -30,6 +31,7 @@ export interface Issue {
   data?: Record<string, unknown>;
 }
 
+/** A record that someone checked a note: who, and when (ISO 8601). */
 export interface Verification {
   by: Actor;
   at: string;

@@ -1,0 +1,11 @@
+{
+  "name": "Any other file a model has to read",
+  "when": {
+    "instructions": "You convert a document to markdown"
+  },
+  "output": {
+    "title": "Untitled",
+    "markdown": "Nothing could be read.\n",
+    "unreadable": ["The whole file"]
+  }
+}

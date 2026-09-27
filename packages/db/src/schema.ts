@@ -1,5 +1,6 @@
 /**
- * Library tables from TECH_STACK section 7, minus the Desk, ticket, and action tables (Plan 3).
+ * Library tables from TECH_STACK section 7, minus the Desk, ticket, and action tables (Plan 3)
+ * and the Better Auth tables, which arrive with real sign-in (L1).
  *
  * Everything in the note tables (`notes`, `note_links`, `taxonomy_terms`, `commits`,
  * `note_commits`, `assets`) can be rebuilt from the vault with `lore reindex`. The rest is
@@ -35,8 +36,71 @@ export const users = pgTable("users", {
     .notNull()
     .default("member"),
   serviceAccount: boolean("service_account").notNull().default(false),
+  /** Set when the person proved the address is theirs: by their identity provider or a link. */
+  emailVerified: boolean("email_verified").notNull().default(false),
+  image: text("image"),
   createdAt: created(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
 });
+
+// Sign-in state, written by Better Auth (packages/auth). Nothing else writes these tables.
+
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    token: text("token").notNull().unique(),
+    expiresAt: ts("expires_at").notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: created(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("sessions_user").on(t.userId)],
+);
+
+/** A person's sign-in with one identity provider. Tokens are the provider's, not Lore's. */
+export const accounts = pgTable(
+  "accounts",
+  {
+    id: text("id").primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: ts("access_token_expires_at"),
+    refreshTokenExpiresAt: ts("refresh_token_expires_at"),
+    scope: text("scope"),
+    password: text("password"),
+    createdAt: created(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("accounts_user").on(t.userId),
+    uniqueIndex("accounts_provider").on(t.providerId, t.accountId),
+  ],
+);
+
+/** Short-lived values, such as the token in a sign-in link. */
+export const verifications = pgTable(
+  "verifications",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: ts("expires_at").notNull(),
+    createdAt: created(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("verifications_identifier").on(t.identifier)],
+);
 
 export const teams = pgTable("teams", {
   id: text("id").primaryKey(),
@@ -155,6 +219,8 @@ export const notes = pgTable(
     status: text("status").notNull().default("stable"),
     trustTier: text("trust_tier").$type<TrustTier>().notNull(),
     staleAfter: ts("stale_after"),
+    /** Whether `stale_after` has passed. Kept current by the worker's staleness refresh. */
+    stale: boolean("stale").notNull().default(false),
     owner: text("owner"),
     supersededBy: text("superseded_by"),
     contentHash: text("content_hash").notNull(),
@@ -308,6 +374,503 @@ export const auditLog = pgTable(
   (t) => [index("audit_log_at").on(t.at)],
 );
 
+// Changesets: every write, whatever its source, is one of these (plans/02-library.md, L6).
+
+/** A file operation as stored: binary content is base64, so the column stays valid JSON. */
+export type StoredOp =
+  | { op: "put"; path: string; content: string; encoding?: "utf8" | "base64" }
+  | { op: "delete"; path: string };
+
+/**
+ * An operation the submitter asked for that needs the whole vault to carry out, such as a
+ * move that rewrites inbound links. The worker expands it into file operations.
+ */
+export type ChangesetIntent =
+  | {
+      /** Changes a note's body and chosen frontmatter keys, leaving every other byte alone. */
+      type: "edit";
+      path: string;
+      /** The new body, or undefined to keep it. */
+      body?: string;
+      set?: Record<string, unknown>;
+      unset?: string[];
+    }
+  | {
+      type: "create";
+      namespace: string;
+      /** Subfolder inside the namespace. */
+      folder?: string;
+      data: Record<string, unknown>;
+      body: string;
+    }
+  | { type: "move"; from: string; to: string }
+  | { type: "delete"; path: string }
+  | { type: "deprecate"; path: string; supersededBy: string }
+  | { type: "verify"; path: string }
+  | { type: "rename_term"; kind: "theme" | "system" | "tag"; from: string; to: string }
+  | { type: "merge_terms"; kind: "theme" | "system" | "tag"; from: string[]; into: string }
+  | {
+      type: "add_term";
+      kind: "theme" | "system" | "tag";
+      slug: string;
+      description: string;
+      /**
+       * Actor of the maintainer who accepted the term in the taxonomy queue. Only the queue
+       * sets it: anything that takes intents from outside must drop it.
+       */
+      acceptedBy?: string;
+    }
+  | {
+      type: "add_alias";
+      kind: "theme" | "system" | "tag";
+      slug: string;
+      alias: string;
+      /** Actor of the maintainer who chose this in the taxonomy queue. */
+      acceptedBy?: string;
+    }
+  | {
+      /** Registers a namespace or changes its settings. Admins only. */
+      type: "set_namespace";
+      slug: string;
+      patch: {
+        title?: string;
+        description?: string;
+        owner?: string | null;
+        visibility?: "company" | "restricted";
+        publishing?: "auto" | "manual";
+        ai_processing?: boolean;
+      };
+    }
+  /** Sets the team slugs the vault knows, for checking owners offline. Admins only. */
+  | { type: "set_teams"; teams: string[] };
+
+export type ChangesetState =
+  | "draft"
+  | "submitted"
+  | "in_review"
+  | "changes_requested"
+  | "approved"
+  | "committing"
+  | "committed"
+  | "conflicted"
+  | "rejected";
+
+export type ChangesetSource = "editor" | "suggest" | "upload" | "capture" | "gardener" | "agent";
+
+export interface StoredIssue {
+  rule: string;
+  severity: "error" | "warning";
+  path: string;
+  line?: number;
+  message: string;
+}
+
+export interface StoredReviewReason {
+  /** Rule number in PRD 7.3, 1 to 8. */
+  rule: number;
+  code: string;
+  message: string;
+  /** Who may approve a changeset this reason applies to. */
+  level: "write" | "maintain";
+}
+
+export const changesets = pgTable(
+  "changesets",
+  {
+    id: text("id").primaryKey(),
+    vaultId: text("vault_id")
+      .notNull()
+      .references(() => vaults.id, { onDelete: "cascade" }),
+    submitterId: text("submitter_id").references(() => users.id, { onDelete: "set null" }),
+    /** OKF actor of the writer: `human:<id>`, or `<job>/<model>` when AI drafted it. */
+    actor: text("actor").notNull(),
+    source: text("source").$type<ChangesetSource>().notNull(),
+    aiDrafted: boolean("ai_drafted").notNull().default(false),
+    changeClass: text("change_class", { enum: ["fix", "addition", "process"] }).notNull(),
+    state: text("state").$type<ChangesetState>().notNull().default("draft"),
+    /** Subject line of the commit, without the `kb(<namespace>):` prefix. */
+    title: text("title").notNull(),
+    /** Why the change was made. Required for suggestions. */
+    reason: text("reason"),
+    /** One line for the namespace log when the change class is process. */
+    summary: text("summary"),
+    /** The submitter ticked "I checked this is accurate". */
+    verify: boolean("verify").notNull().default(false),
+    /** What the submitter sent. */
+    ops: jsonb("ops").$type<StoredOp[]>().notNull(),
+    intents: jsonb("intents").$type<ChangesetIntent[]>().notNull().default([]),
+    /** Blob SHA of each file the submitter started from; null for a file that did not exist. */
+    baseShas: jsonb("base_shas").$type<Record<string, string | null>>().notNull().default({}),
+    /** `ops` plus version bumps, verification, and log entries: what is committed. */
+    finalOps: jsonb("final_ops").$type<StoredOp[]>(),
+    /** The head `final_ops` was prepared and linted against. */
+    preparedHead: text("prepared_head"),
+    namespaces: text("namespaces")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    /** Ids of the notes the changeset creates, changes, moves, or deletes. */
+    noteIds: text("note_ids")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    aiSummary: text("ai_summary"),
+    /** Notes this changeset's new notes resemble or contradict, from the ingestion pipeline. */
+    duplicates: jsonb("duplicates")
+      .$type<
+        { path: string; otherId: string; kind: "duplicate" | "contradiction"; score?: number }[]
+      >()
+      .notNull()
+      .default([]),
+    /** The upload or capture this changeset came from. */
+    ingestItemId: text("ingest_item_id"),
+    warnings: jsonb("warnings").$type<string[]>().notNull().default([]),
+    issues: jsonb("issues").$type<StoredIssue[]>().notNull().default([]),
+    reviewReasons: jsonb("review_reasons").$type<StoredReviewReason[]>().notNull().default([]),
+    approverLevel: text("approver_level", { enum: ["write", "maintain"] }),
+    /** Feedback reports this changeset resolves (`Resolves-Report` trailers). */
+    resolvesReports: text("resolves_reports")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    /** Files that changed in Git after the draft was made, when state is conflicted. */
+    conflicts: jsonb("conflicts").$type<string[]>().notNull().default([]),
+    commitSha: text("commit_sha"),
+    attempts: integer("attempts").notNull().default(0),
+    error: text("error"),
+    createdAt: created(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+    submittedAt: ts("submitted_at"),
+    committedAt: ts("committed_at"),
+  },
+  (t) => [
+    index("changesets_vault_state").on(t.vaultId, t.state),
+    index("changesets_submitter").on(t.submitterId, t.createdAt),
+    index("changesets_note_ids").using("gin", t.noteIds),
+  ],
+);
+
+export const reviews = pgTable(
+  "reviews",
+  {
+    id: serial("id").primaryKey(),
+    changesetId: text("changeset_id")
+      .notNull()
+      .references(() => changesets.id, { onDelete: "cascade" }),
+    reviewerId: text("reviewer_id").references(() => users.id, { onDelete: "set null" }),
+    decision: text("decision", { enum: ["approve", "request_changes", "reject"] }).notNull(),
+    comment: text("comment"),
+    createdAt: created(),
+  },
+  (t) => [index("reviews_changeset").on(t.changesetId)],
+);
+
+export const ingestItems = pgTable(
+  "ingest_items",
+  {
+    id: text("id").primaryKey(),
+    vaultId: text("vault_id")
+      .notNull()
+      .references(() => vaults.id, { onDelete: "cascade" }),
+    changesetId: text("changeset_id").references(() => changesets.id, { onDelete: "set null" }),
+    submitterId: text("submitter_id").references(() => users.id, { onDelete: "set null" }),
+    kind: text("kind", { enum: ["upload", "capture"] }).notNull(),
+    namespace: text("namespace").notNull(),
+    /** Optional hints from the submitter: theme, tags, and the note a capture updates. */
+    hints: jsonb("hints").$type<Record<string, unknown>>().notNull().default({}),
+    fileKey: text("file_key"),
+    fileName: text("file_name"),
+    fileType: text("file_type"),
+    fileSize: integer("file_size"),
+    fileHash: text("file_hash"),
+    /** An earlier item with the same file hash. */
+    duplicateOf: text("duplicate_of"),
+    state: text("state", {
+      // `batched`: a model call is with the provider's batch API; the item resumes when it answers.
+      enum: ["queued", "extracting", "atomizing", "batched", "waiting", "done", "failed"],
+    })
+      .notNull()
+      .default("queued"),
+    /** Why the item is waiting or failed, in words a person can act on. */
+    stateReason: text("state_reason"),
+    batchId: text("batch_id"),
+    extractedText: text("extracted_text"),
+    createdAt: created(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("ingest_items_vault_state").on(t.vaultId, t.state),
+    index("ingest_items_hash").on(t.vaultId, t.fileHash),
+  ],
+);
+
+export const feedback = pgTable(
+  "feedback",
+  {
+    id: text("id").primaryKey(),
+    vaultId: text("vault_id")
+      .notNull()
+      .references(() => vaults.id, { onDelete: "cascade" }),
+    noteId: text("note_id").notNull(),
+    userId: text("user_id").references(() => users.id, { onDelete: "set null" }),
+    kind: text("kind", { enum: ["helpful", "report"] }).notNull(),
+    reason: text("reason", {
+      enum: ["outdated", "incorrect", "unclear", "missing", "duplicate", "other"],
+    }),
+    comment: text("comment"),
+    /** Where it came from: the note page, or a rating on a Desk answer that cited the note. */
+    origin: text("origin", { enum: ["library", "desk"] })
+      .notNull()
+      .default("library"),
+    state: text("state", { enum: ["open", "resolved", "dismissed"] })
+      .notNull()
+      .default("open"),
+    /** The commit that resolved it, or the reason an owner dismissed it. */
+    resolution: text("resolution"),
+    resolvedBy: text("resolved_by"),
+    createdAt: created(),
+    closedAt: ts("closed_at"),
+  },
+  (t) => [
+    index("feedback_note").on(t.vaultId, t.noteId, t.state),
+    index("feedback_user_day").on(t.userId, t.createdAt),
+  ],
+);
+
+export const follows = pgTable(
+  "follows",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    vaultId: text("vault_id")
+      .notNull()
+      .references(() => vaults.id, { onDelete: "cascade" }),
+    /** A note id, or a hub as `theme:<slug>` or `system:<slug>`. */
+    target: text("target").notNull(),
+    createdAt: created(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.vaultId, t.target] })],
+);
+
+/** What a person wants by email. A missing row means everything is on. */
+export const userPrefs = pgTable("user_prefs", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  emailNotifications: boolean("email_notifications").notNull().default(true),
+  emailDigest: boolean("email_digest").notNull().default(true),
+  /** When the last weekly digest went out, so a restart does not send it twice. */
+  digestSentAt: ts("digest_sent_at"),
+});
+
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    vaultId: text("vault_id").notNull(),
+    kind: text("kind").notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull().default(""),
+    /** Path in the Library the notification opens. */
+    href: text("href"),
+    /** Stops the same event from notifying a person twice. */
+    dedupeKey: text("dedupe_key"),
+    readAt: ts("read_at"),
+    emailedAt: ts("emailed_at"),
+    createdAt: created(),
+  },
+  (t) => [
+    index("notifications_user").on(t.userId, t.readAt, t.createdAt),
+    uniqueIndex("notifications_dedupe").on(t.userId, t.dedupeKey),
+  ],
+);
+
+/** Notes flagged for their owners because a note they link to had a Process change. */
+export const noteFlags = pgTable(
+  "note_flags",
+  {
+    vaultId: text("vault_id").notNull(),
+    noteId: text("note_id").notNull(),
+    /** The note whose process changed. */
+    causeNoteId: text("cause_note_id").notNull(),
+    causeSha: text("cause_sha").notNull(),
+    changedAt: ts("changed_at").notNull(),
+    clearedAt: ts("cleared_at"),
+    createdAt: created(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.vaultId, t.noteId, t.causeNoteId, t.causeSha] }),
+    index("note_flags_open").on(t.vaultId, t.clearedAt),
+  ],
+);
+
+/** A model request as stored for a batch. Images are base64, so large ones are not batched. */
+export interface StoredModelRequest {
+  instructions: string;
+  context: string[];
+  input: string;
+  images: { base64: string; mediaType: string }[];
+  /** JSON Schema of the answer. */
+  schema: Record<string, unknown>;
+  maxOutputTokens: number;
+}
+
+/** One submission to a provider's batch API. */
+export const llmBatches = pgTable(
+  "llm_batches",
+  {
+    id: text("id").primaryKey(),
+    provider: text("provider").notNull(),
+    /** The provider's id for the batch. */
+    externalId: text("external_id").notNull(),
+    state: text("state", { enum: ["submitted", "ended", "failed"] })
+      .notNull()
+      .default("submitted"),
+    requests: integer("requests").notNull().default(0),
+    error: text("error"),
+    submittedAt: ts("submitted_at").notNull().defaultNow(),
+    polledAt: ts("polled_at"),
+    endedAt: ts("ended_at"),
+  },
+  (t) => [index("llm_batches_state").on(t.state, t.submittedAt)],
+);
+
+/**
+ * A model call that can wait for the provider's batch API (AU-6). The key names the work
+ * (`ingest:<item>:<task>:<n>`), so the job that asked can find the answer when it runs again.
+ */
+export const llmBatchRequests = pgTable(
+  "llm_batch_requests",
+  {
+    key: text("key").primaryKey(),
+    task: text("task").notNull(),
+    provider: text("provider").notNull(),
+    model: text("model").notNull(),
+    request: jsonb("request").$type<StoredModelRequest>().notNull(),
+    /** What is waiting for the answer, for example `ingest` and an item id. */
+    ownerKind: text("owner_kind").notNull(),
+    ownerId: text("owner_id").notNull(),
+    userId: text("user_id"),
+    vaultId: text("vault_id"),
+    namespace: text("namespace"),
+    state: text("state", { enum: ["pending", "submitted", "done", "failed"] })
+      .notNull()
+      .default("pending"),
+    batchId: text("batch_id").references(() => llmBatches.id, { onDelete: "set null" }),
+    /** The model's answer as JSON text, not yet checked against the schema. */
+    answer: text("answer"),
+    usage: jsonb("usage").$type<{
+      input: number;
+      output: number;
+      cacheRead: number;
+      cacheWrite: number;
+    }>(),
+    error: text("error"),
+    createdAt: created(),
+    finishedAt: ts("finished_at"),
+  },
+  (t) => [
+    index("llm_batch_requests_state").on(t.state, t.provider),
+    index("llm_batch_requests_owner").on(t.ownerKind, t.ownerId),
+    index("llm_batch_requests_batch").on(t.batchId),
+  ],
+);
+
+/** Example questions a note answers (doc2query), embedded into its card vector. */
+export const noteQuestions = pgTable(
+  "note_questions",
+  {
+    vaultId: text("vault_id")
+      .notNull()
+      .references(() => vaults.id, { onDelete: "cascade" }),
+    noteId: text("note_id").notNull(),
+    /** The content the questions were written for. Questions for older content are replaced. */
+    contentHash: text("content_hash").notNull(),
+    questions: text("questions")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    model: text("model").notNull(),
+    generatedAt: ts("generated_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.vaultId, t.noteId] })],
+);
+
+/** What one Gardener run found. Shapes are owned by the worker (`gardener/report.ts`). */
+export interface StoredGardenerReport {
+  [section: string]: unknown;
+}
+
+export const gardenerRuns = pgTable(
+  "gardener_runs",
+  {
+    id: text("id").primaryKey(),
+    vaultId: text("vault_id")
+      .notNull()
+      .references(() => vaults.id, { onDelete: "cascade" }),
+    /** The namespace that was checked, or null for the whole vault. */
+    namespace: text("namespace"),
+    /** Who asked for the run. Null for the weekly schedule. */
+    requestedBy: text("requested_by").references(() => users.id, { onDelete: "set null" }),
+    state: text("state", { enum: ["running", "done", "failed"] })
+      .notNull()
+      .default("running"),
+    report: jsonb("report").$type<StoredGardenerReport>().notNull().default({}),
+    /** Changesets the run put in the review queue. */
+    proposals: text("proposals")
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    error: text("error"),
+    startedAt: ts("started_at").notNull().defaultNow(),
+    finishedAt: ts("finished_at"),
+  },
+  (t) => [index("gardener_runs_vault").on(t.vaultId, t.startedAt)],
+);
+
+/** What the Gardener has already proposed, so a run does not propose it again. */
+export const gardenerProposals = pgTable(
+  "gardener_proposals",
+  {
+    vaultId: text("vault_id")
+      .notNull()
+      .references(() => vaults.id, { onDelete: "cascade" }),
+    /** For example `duplicate:<id>:<id>` or `wanted:/finance/x.md`. */
+    key: text("key").notNull(),
+    changesetId: text("changeset_id").notNull(),
+    createdAt: created(),
+  },
+  (t) => [primaryKey({ columns: [t.vaultId, t.key] })],
+);
+
+export const llmUsage = pgTable(
+  "llm_usage",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    task: text("task").notNull(),
+    provider: text("provider").notNull(),
+    model: text("model").notNull(),
+    inputTokens: integer("input_tokens").notNull().default(0),
+    outputTokens: integer("output_tokens").notNull().default(0),
+    cachedTokens: integer("cached_tokens").notNull().default(0),
+    /** US dollars, priced from the per-model table at the time of the call. */
+    costUsd: real("cost_usd").notNull().default(0),
+    userId: text("user_id"),
+    vaultId: text("vault_id"),
+    namespace: text("namespace"),
+    latencyMs: integer("latency_ms").notNull().default(0),
+    batch: boolean("batch").notNull().default(false),
+    ok: boolean("ok").notNull().default(true),
+    error: text("error"),
+    at: ts("at").notNull().defaultNow(),
+  },
+  (t) => [index("llm_usage_at").on(t.at), index("llm_usage_user_day").on(t.userId, t.at)],
+);
+
 export type User = typeof users.$inferSelect;
 export type Vault = typeof vaults.$inferSelect;
 export type NamespaceRow = typeof namespaces.$inferSelect;
@@ -319,3 +882,15 @@ export type TermRow = typeof taxonomyTerms.$inferSelect;
 export type CommitRow = typeof commits.$inferSelect;
 export type NoteCommitRow = typeof noteCommits.$inferSelect;
 export type AssetRow = typeof assets.$inferSelect;
+export type ChangesetRow = typeof changesets.$inferSelect;
+export type NewChangesetRow = typeof changesets.$inferInsert;
+export type ReviewRow = typeof reviews.$inferSelect;
+export type IngestItemRow = typeof ingestItems.$inferSelect;
+export type FeedbackRow = typeof feedback.$inferSelect;
+export type NotificationRow = typeof notifications.$inferSelect;
+export type GardenerRunRow = typeof gardenerRuns.$inferSelect;
+export type LlmBatchRow = typeof llmBatches.$inferSelect;
+export type LlmBatchRequestRow = typeof llmBatchRequests.$inferSelect;
+export type NoteQuestionsRow = typeof noteQuestions.$inferSelect;
+export type NoteFlagRow = typeof noteFlags.$inferSelect;
+export type LlmUsageRow = typeof llmUsage.$inferSelect;

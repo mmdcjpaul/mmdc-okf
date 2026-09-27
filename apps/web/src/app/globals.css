@@ -1,82 +1,8 @@
 @import "tailwindcss";
 
-/* Design tokens. Branding (LB-8) overrides --accent at runtime from settings. */
-:root {
-  --bg: #f7f7f5;
-  --paper: #ffffff;
-  --ink: #1c1c1e;
-  --ink-2: #3d3d42;
-  --muted: #6b6b73;
-  --faint: #9a9aa2;
-  --line: #e7e6e2;
-  --line-2: #efeeea;
-  --hover: #efeeeb;
-  --accent: #4b50d8;
-  --accent-ink: #ffffff;
-  --accent-soft: #eceefe;
-  --ok: #1f7a4d;
-  --ok-soft: #e5f4ec;
-  --warn: #9a5b00;
-  --warn-soft: #fdf1dc;
-  --bad: #b42318;
-  --bad-soft: #fde9e7;
-  --info-soft: #e8f0fd;
-  --info: #1f4fb4;
-  --mark: #fff1a8;
-  color-scheme: light;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #161618;
-    --paper: #1c1c1f;
-    --ink: #ececef;
-    --ink-2: #cfcfd4;
-    --muted: #9c9ca5;
-    --faint: #6e6e77;
-    --line: #2c2c31;
-    --line-2: #26262a;
-    --hover: #26262b;
-    --accent: #8b8ff5;
-    --accent-ink: #111114;
-    --accent-soft: #272944;
-    --ok: #5cc98e;
-    --ok-soft: #173125;
-    --warn: #f0b457;
-    --warn-soft: #36290f;
-    --bad: #f28b82;
-    --bad-soft: #3a1d1b;
-    --info: #8fb4f8;
-    --info-soft: #1b2740;
-    --mark: #5a4b12;
-    color-scheme: dark;
-  }
-}
-
-@theme inline {
-  --color-bg: var(--bg);
-  --color-paper: var(--paper);
-  --color-ink: var(--ink);
-  --color-ink-2: var(--ink-2);
-  --color-muted: var(--muted);
-  --color-faint: var(--faint);
-  --color-line: var(--line);
-  --color-line-2: var(--line-2);
-  --color-hover: var(--hover);
-  --color-accent: var(--accent);
-  --color-accent-ink: var(--accent-ink);
-  --color-accent-soft: var(--accent-soft);
-  --color-ok: var(--ok);
-  --color-ok-soft: var(--ok-soft);
-  --color-warn: var(--warn);
-  --color-warn-soft: var(--warn-soft);
-  --color-bad: var(--bad);
-  --color-bad-soft: var(--bad-soft);
-  --color-info: var(--info);
-  --color-info-soft: var(--info-soft);
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono-face), ui-monospace, SFMono-Regular, Menlo, monospace;
-}
+@import "@lore/ui/tokens.css";
+/* Shared components live outside this app, so Tailwind has to be told to read them. */
+@source "../../../../packages/ui/src";
 
 html,
 body {
@@ -97,8 +23,9 @@ body {
 }
 
 mark {
+  /* Not inherited: muted text on the highlight colour falls below 4.5:1. */
+  color: var(--ink);
   background: var(--mark);
-  color: inherit;
   border-radius: 2px;
   padding: 0 1px;
 }
@@ -113,27 +40,28 @@ mark {
 .note-body > * + * {
   margin-top: 0.9em;
 }
-.note-body h1,
+/* Body headings render one level down: the note title is the page's only h1. */
 .note-body h2,
 .note-body h3,
-.note-body h4 {
+.note-body h4,
+.note-body h5 {
   color: var(--ink);
   font-weight: 620;
   letter-spacing: -0.01em;
   line-height: 1.3;
   scroll-margin-top: 80px;
 }
-.note-body h1 {
+.note-body h2 {
   font-size: 1.35em;
   margin-top: 1.8em;
   padding-bottom: 0.3em;
   border-bottom: 1px solid var(--line-2);
 }
-.note-body h2 {
+.note-body h3 {
   font-size: 1.18em;
   margin-top: 1.6em;
 }
-.note-body h3 {
+.note-body h4 {
   font-size: 1.04em;
   margin-top: 1.4em;
 }
@@ -251,7 +179,7 @@ mark {
   padding-top: 1em;
   margin-top: 2.5em;
 }
-.note-body .footnotes h2 {
+.note-body .footnotes h3 {
   font-size: 0.95em;
   margin-top: 0;
 }
@@ -270,4 +198,12 @@ mark {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--faint);
+}
+
+/* Native dialogs: centred, and the page behind does not scroll. */
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.3);
+}
+html:has(dialog[open]) {
+  overflow: hidden;
 }

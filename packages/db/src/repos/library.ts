@@ -125,6 +125,15 @@ export async function getNote(db: Db, scope: ReadScope, id: string): Promise<Not
   return row ?? null;
 }
 
+/** Readable notes with these ids, in no particular order. */
+export async function notesByIds(db: Db, scope: ReadScope, ids: string[]): Promise<NoteRow[]> {
+  if (ids.length === 0) return [];
+  return db
+    .select()
+    .from(notes)
+    .where(and(readable(scope), inArray(notes.id, ids)));
+}
+
 export async function getNoteByPath(
   db: Db,
   scope: ReadScope,
@@ -276,6 +285,46 @@ export async function linksFrom(db: Db, vaultId: string, noteId: string) {
     .where(and(eq(noteLinks.vaultId, vaultId), eq(noteLinks.sourceId, noteId)));
 }
 
+export interface LinkTarget {
+  id: string;
+  path: string;
+  slug: string;
+  title: string;
+  namespace: string | null;
+}
+
+/**
+ * Notes at the given paths, in any namespace. For resolving links in text that is not
+ * indexed yet (the editor's preview). The caller decides what the reader may see: a link
+ * into an unreadable namespace renders as plain text, exactly as on a note page.
+ */
+export async function linkTargets(db: Db, vaultId: string, paths: string[]): Promise<LinkTarget[]> {
+  if (paths.length === 0) return [];
+  return db
+    .select({
+      id: notes.id,
+      path: notes.path,
+      slug: notes.slug,
+      title: notes.title,
+      namespace: notes.namespace,
+    })
+    .from(notes)
+    .where(and(eq(notes.vaultId, vaultId), inArray(notes.path, paths)));
+}
+
+/** Which of these asset paths exist and are readable. */
+export async function readableAssets(db: Db, scope: ReadScope, paths: string[]): Promise<string[]> {
+  if (paths.length === 0) return [];
+  const ns = scope.namespaces.length
+    ? or(inArray(assets.namespace, scope.namespaces), isNull(assets.namespace))
+    : isNull(assets.namespace);
+  const rows = await db
+    .select({ path: assets.path })
+    .from(assets)
+    .where(and(eq(assets.vaultId, scope.vaultId), inArray(assets.path, paths), ns));
+  return rows.map((r) => r.path);
+}
+
 /** Readable notes that link to `noteId` in their body. */
 export async function backlinks(db: Db, scope: ReadScope, noteId: string): Promise<NoteCard[]> {
   return db
@@ -318,6 +367,68 @@ export async function linksAmong(db: Db, vaultId: string, ids: string[]) {
     );
 }
 
+export interface GraphData {
+  notes: {
+    id: string;
+    slug: string;
+    title: string;
+    type: string;
+    namespace: string;
+    themes: string[];
+  }[];
+  /** Body links between those notes, as ids. */
+  links: { source: string; target: string }[];
+}
+
+/**
+ * Every readable note and the links between them, for the global graph (LB-10). Hubs are
+ * left out: nearly every note links to one, so they would hide the links people wrote.
+ */
+export async function graphData(db: Db, scope: ReadScope): Promise<GraphData> {
+  if (scope.namespaces.length === 0) return { notes: [], links: [] };
+  const found = await db
+    .select({
+      id: notes.id,
+      slug: notes.slug,
+      title: notes.title,
+      type: notes.type,
+      namespace: notes.namespace,
+      themes: notes.themes,
+    })
+    .from(notes)
+    .where(
+      and(
+        eq(notes.vaultId, scope.vaultId),
+        inArray(notes.namespace, scope.namespaces),
+        isNull(notes.hubKind),
+        sql`${notes.status} <> 'deprecated'`,
+        sql`${notes.type} <> 'Source Document'`,
+      ),
+    )
+    .orderBy(asc(notes.id));
+  const ids = new Set(found.map((n) => n.id));
+  const links = await db
+    .selectDistinct({ source: noteLinks.sourceId, target: noteLinks.targetId })
+    .from(noteLinks)
+    .innerJoin(notes, and(eq(notes.vaultId, noteLinks.vaultId), eq(notes.id, noteLinks.sourceId)))
+    .where(
+      and(
+        eq(noteLinks.vaultId, scope.vaultId),
+        eq(noteLinks.kind, "body"),
+        inArray(notes.namespace, scope.namespaces),
+        sql`${noteLinks.targetId} is not null`,
+        sql`${noteLinks.targetId} <> ${noteLinks.sourceId}`,
+      ),
+    );
+  return {
+    notes: found.map((n) => ({ ...n, namespace: n.namespace! })),
+    // Both ends must be notes the reader can see.
+    links: links
+      .filter((l) => l.target !== null && ids.has(l.source) && ids.has(l.target))
+      .map((l) => ({ source: l.source, target: l.target! })),
+  };
+}
+
 /** Wanted notes: missing link targets, with how many readable notes want them. */
 export async function wantedNotes(db: Db, scope: ReadScope, limit = 50) {
   return db
@@ -358,6 +469,46 @@ export async function noteHistory(db: Db, vaultId: string, noteId: string, limit
     .limit(limit);
 }
 
+/** One entry of a note's history, or null when the commit did not touch the note. */
+/** True once the indexer has seen the commit. */
+export async function commitIndexed(db: Db, vaultId: string, sha: string): Promise<boolean> {
+  const rows = await db
+    .select({ sha: commits.sha })
+    .from(commits)
+    .where(and(eq(commits.vaultId, vaultId), eq(commits.sha, sha)))
+    .limit(1);
+  return rows.length > 0;
+}
+
+export async function noteCommit(db: Db, vaultId: string, noteId: string, sha: string) {
+  const [row] = await db
+    .select({
+      sha: noteCommits.sha,
+      status: noteCommits.status,
+      path: noteCommits.path,
+      fromVersion: noteCommits.fromVersion,
+      toVersion: noteCommits.toVersion,
+      changeClass: noteCommits.changeClass,
+      committedAt: noteCommits.committedAt,
+      authorName: commits.authorName,
+      subject: commits.subject,
+      body: commits.body,
+    })
+    .from(noteCommits)
+    .innerJoin(
+      commits,
+      and(eq(commits.vaultId, noteCommits.vaultId), eq(commits.sha, noteCommits.sha)),
+    )
+    .where(
+      and(
+        eq(noteCommits.vaultId, vaultId),
+        eq(noteCommits.noteId, noteId),
+        eq(noteCommits.sha, sha),
+      ),
+    );
+  return row ?? null;
+}
+
 /** An asset, only when its namespace is readable. */
 export async function getAsset(db: Db, scope: ReadScope, path: string): Promise<AssetRow | null> {
   const ns = scope.namespaces.length
@@ -375,4 +526,30 @@ export async function getAsset(db: Db, scope: ReadScope, path: string): Promise<
 export async function getSetting<T>(db: Db, key: string): Promise<T | null> {
   const [row] = await db.select().from(settings).where(eq(settings.key, key));
   return (row?.value as T | undefined) ?? null;
+}
+
+/** What admins switch on and off under Branding and features (PRD 9.4). */
+export interface Features {
+  desk: boolean;
+  capture: boolean;
+  graph: boolean;
+  gardener: boolean;
+  /** Off makes every namespace publish manually, whatever its own setting says. */
+  autoPublishing: boolean;
+}
+
+export const DEFAULT_FEATURES: Features = {
+  desk: false,
+  capture: true,
+  graph: true,
+  gardener: true,
+  autoPublishing: true,
+};
+
+export async function getFeatures(db: Db): Promise<Features> {
+  const stored = (await getSetting<Partial<Features>>(db, "features")) ?? {};
+  const out = { ...DEFAULT_FEATURES };
+  for (const key of Object.keys(out) as (keyof Features)[])
+    if (typeof stored[key] === "boolean") out[key] = stored[key];
+  return out;
 }

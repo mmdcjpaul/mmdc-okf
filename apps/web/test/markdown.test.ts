@@ -83,6 +83,14 @@ describe("renderMarkdown", () => {
     expect(html).toContain('target="_blank"');
   });
 
+  it("renders body headings one level down, so the note title is the only h1", async () => {
+    const html = await render("# Steps\n\n## Details\n\n###### Deepest\n");
+    expect(html).toContain('<h2 id="steps">Steps</h2>');
+    expect(html).toContain('<h3 id="details">Details</h3>');
+    expect(html).toContain('<h6 id="deepest">Deepest</h6>');
+    expect(html).not.toContain("<h1");
+  });
+
   it("gives headings ids that match the outline", async () => {
     const md = "# Steps\n\n## Check the queue\n\n#### Deep\n\n## Check the queue\n";
     const html = await render(md);

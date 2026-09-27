@@ -1,7 +1,7 @@
 /**
  * `pnpm lore <command>`: local operations for the Library.
  *
- *   seed --vault <dir> [--principals <yaml>] [--slug <slug>] [--fresh]
+ *   seed --vault <dir> [--principals <yaml>] [--slug <slug>] [--fresh] [--web-env <file|none>]
  *       Create (or update) the bare repository from a vault folder, register the vault,
  *       load users, teams, and grants, and run a full index.
  *   reindex [--vault <slug>] [--all]
@@ -9,11 +9,20 @@
  *   simulate-push --vault <slug> (--file <patch> | --from <dir>) [--message <text>] [--now]
  *       Commit to the bare repository from outside Lore, the way Obsidian or an agent would,
  *       then queue an index job (or run it inline with --now).
+ *   digest [--user <id>] [--force]
+ *       Send the weekly owner digest now. --force sends it to people who had one this week.
  *   migrate
  *       Apply database migrations.
  */
-import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync, type ExecFileSyncOptionsWithStringEncoding } from "node:child_process";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
@@ -31,6 +40,8 @@ import { parse as parseYaml } from "yaml";
 import { loadConfig, type Config } from "./config.ts";
 import { loadPrincipals } from "./principals.ts";
 import { indexVault, type IndexResult } from "./indexer/index-vault.ts";
+import { sendDigests } from "./notify/digest.ts";
+import { createMailer } from "./notify/mailer.ts";
 import { createRuntime, enqueueIndex, startBoss, type Runtime } from "./runtime.ts";
 
 const [command, ...rest] = process.argv.slice(2);
@@ -52,11 +63,17 @@ function repoPathFor(slug: string): string {
   return join(config.DATA_DIR, "vaults", `${slug}.git`);
 }
 
+/** True when `dir` is the root of its own repository and has commits. */
 function hasCommits(dir: string): boolean {
   try {
-    execFileSync("git", ["-C", dir, "rev-parse", "--verify", "--quiet", "HEAD"], {
-      stdio: "ignore",
-    });
+    const opts: ExecFileSyncOptionsWithStringEncoding = {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    };
+    // A vault folder inside another repository (a fixture, say) has no history of its own.
+    const top = execFileSync("git", ["-C", dir, "rev-parse", "--show-toplevel"], opts).trim();
+    if (realpathSync(top) !== realpathSync(dir)) return false;
+    execFileSync("git", ["-C", dir, "rev-parse", "--verify", "--quiet", "HEAD"], opts);
     return true;
   } catch {
     return false;
@@ -64,12 +81,11 @@ function hasCommits(dir: string): boolean {
 }
 
 /** Writes the web app's local env file, including Meilisearch's search-only key. */
-async function writeWebEnv(cfg: Config, slug: string): Promise<void> {
+async function writeWebEnv(cfg: Config, slug: string, file: string): Promise<void> {
   const meili = new Meilisearch({ host: cfg.MEILI_URL, apiKey: cfg.MEILI_MASTER_KEY });
   const keys = await meili.getKeys();
   const search = keys.results.find((k) => k.actions.length === 1 && k.actions[0] === "search");
   if (!search) fail("Meilisearch has no search-only key");
-  const file = join(cfg.repoRoot, "apps/web/.env.local");
   const existing = existsSync(file) ? readFileSync(file, "utf8") : "";
   const secret = /^APP_SECRET=(.+)$/m.exec(existing)?.[1] ?? crypto.randomUUID().replace(/-/g, "");
   writeFileSync(
@@ -79,11 +95,26 @@ async function writeWebEnv(cfg: Config, slug: string): Promise<void> {
       `DATABASE_URL=${cfg.DATABASE_URL}`,
       `MEILI_URL=${cfg.MEILI_URL}`,
       `MEILI_SEARCH_KEY=${search.key}`,
-      `DATA_DIR=${cfg.DATA_DIR}`,
+      `S3_ENDPOINT=${cfg.S3_PUBLIC_ENDPOINT ?? cfg.S3_ENDPOINT}`,
+      `S3_REGION=${cfg.S3_REGION}`,
+      `S3_BUCKET=${cfg.S3_BUCKET}`,
+      `S3_ACCESS_KEY_ID=${cfg.S3_ACCESS_KEY_ID}`,
+      `S3_SECRET_ACCESS_KEY=${cfg.S3_SECRET_ACCESS_KEY}`,
+      `WORKER_URL=http://${cfg.WORKER_HOST}:${cfg.WORKER_PORT}`,
+      `INTERNAL_API_TOKEN=${cfg.INTERNAL_API_TOKEN}`,
       `LORE_VAULT=${slug}`,
       `APP_SECRET=${secret}`,
       "AUTH_DEV_LOGIN=true",
+      `PUBLIC_URL=${cfg.PUBLIC_URL}`,
+      // Sign in by email link works when the worker has SMTP_URL (Mailpit, in development).
+      `AUTH_EMAIL_LINK=${cfg.SMTP_URL ? "true" : "false"}`,
+      `AI_MODE=${cfg.AI_MODE}`,
+      ...(cfg.APP_ENCRYPTION_KEY ? [`APP_ENCRYPTION_KEY=${cfg.APP_ENCRYPTION_KEY}`] : []),
       `EMBEDDINGS=${cfg.EMBEDDINGS}`,
+      ...(cfg.EMBEDDINGS_LOCAL_MODEL
+        ? [`EMBEDDINGS_LOCAL_MODEL=${cfg.EMBEDDINGS_LOCAL_MODEL}`]
+        : []),
+      ...(cfg.EMBEDDINGS_CACHE_DIR ? [`EMBEDDINGS_CACHE_DIR=${cfg.EMBEDDINGS_CACHE_DIR}`] : []),
       "FEATURE_DESK=false",
       "",
     ].join("\n"),
@@ -114,6 +145,7 @@ async function seed(args: string[]) {
       title: { type: "string" },
       branch: { type: "string", default: "main" },
       fresh: { type: "boolean", default: false },
+      "web-env": { type: "string" },
     },
   });
   if (!values.vault) fail("seed needs --vault <dir>");
@@ -171,8 +203,11 @@ async function seed(args: string[]) {
     }
     const result = await indexVault(rt.deps, slug);
     console.log(`Indexed ${slug}: ${summary(result)}`);
-    await writeWebEnv(config, slug);
-    console.log(`Wrote apps/web/.env.local (LORE_VAULT=${slug})`);
+    const webEnv = values["web-env"] ?? join(config.repoRoot, "apps/web/.env.local");
+    if (webEnv !== "none") {
+      await writeWebEnv(config, slug, resolve(webEnv));
+      console.log(`Wrote ${webEnv} (LORE_VAULT=${slug})`);
+    }
   });
 }
 
@@ -276,7 +311,29 @@ async function simulatePush(args: string[]) {
   });
 }
 
+async function digest(args: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args,
+    options: { user: { type: "string" }, force: { type: "boolean", default: false } },
+  });
+  const mailer = createMailer(config);
+  if (!mailer.enabled) fail("set SMTP_URL to send email, for example smtp://127.0.0.1:1025");
+  await withRuntime(async (rt) => {
+    const run = await sendDigests(
+      { db: rt.db, mailer, log: rt.log, publicUrl: config.PUBLIC_URL.replace(/\/$/, "") },
+      { force: values.force, ...(values.user ? { userId: values.user } : {}) },
+    );
+    await mailer.close?.();
+    console.log(
+      `Sent ${run.sent}, nothing to say to ${run.empty}, skipped ${run.skipped}, failed ${run.failed}`,
+    );
+  });
+}
+
 switch (command) {
+  case "digest":
+    await digest(rest);
+    break;
   case "seed":
     await seed(rest);
     break;
@@ -291,7 +348,7 @@ switch (command) {
     break;
   default:
     console.error(
-      "Usage: lore <seed|reindex|simulate-push|migrate> [options]. See apps/worker/src/cli.ts.",
+      "Usage: lore <seed|reindex|simulate-push|digest|migrate> [options]. See apps/worker/src/cli.ts.",
     );
     process.exit(command ? 1 : 0);
 }

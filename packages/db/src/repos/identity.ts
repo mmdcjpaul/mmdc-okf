@@ -3,6 +3,7 @@ import type { Db } from "../client.ts";
 import {
   auditLog,
   namespaceGrants,
+  settings,
   teamMembers,
   teams,
   users,
@@ -54,6 +55,47 @@ export interface PrincipalSeed {
   }[];
   teams: { id: string; title: string }[];
   grants: { namespace: string; teamId?: string; userId?: string; level: Grant["level"] }[];
+  /** Hubs each team pins to its members' Home page, keyed by team id. */
+  pins?: Record<string, PinnedHub[]>;
+}
+
+export interface PinnedHub {
+  kind: "theme" | "system";
+  slug: string;
+}
+
+const pinsKey = (vaultId: string) => `pinned_hubs:${vaultId}`;
+
+/** Hubs pinned by the given teams, in team order, without repeats. */
+export async function pinnedHubs(db: Db, vaultId: string, teamIds: string[]): Promise<PinnedHub[]> {
+  if (teamIds.length === 0) return [];
+  const [row] = await db
+    .select()
+    .from(settings)
+    .where(eq(settings.key, pinsKey(vaultId)));
+  const byTeam = (row?.value ?? {}) as Record<string, PinnedHub[]>;
+  const seen = new Set<string>();
+  const out: PinnedHub[] = [];
+  for (const team of [...teamIds].sort()) {
+    for (const pin of byTeam[team] ?? []) {
+      const key = `${pin.kind}:${pin.slug}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(pin);
+    }
+  }
+  return out;
+}
+
+export async function setPinnedHubs(
+  db: Db,
+  vaultId: string,
+  byTeam: Record<string, PinnedHub[]>,
+): Promise<void> {
+  await db
+    .insert(settings)
+    .values({ key: pinsKey(vaultId), value: byTeam })
+    .onConflictDoUpdate({ target: settings.key, set: { value: byTeam, updatedAt: new Date() } });
 }
 
 /** Replaces users, teams, and one vault's grants. Used by `lore seed`. */
@@ -93,6 +135,7 @@ export async function seedPrincipals(db: Db, vaultId: string, seed: PrincipalSee
       );
     }
   });
+  if (seed.pins) await setPinnedHubs(db, vaultId, seed.pins);
 }
 
 export async function writeAudit(

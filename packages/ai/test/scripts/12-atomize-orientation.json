@@ -1,0 +1,32 @@
+{
+  "name": "Atomize the orientation slides (fixtures/uploads/orientation.pptx), proposing a tag",
+  "when": {
+    "instructions": "You turn a source document into notes",
+    "input": "<document label=\"orientation.pptx\">"
+  },
+  "output": {
+    "summary": "The slides describe the first day for new students, so they became one How-To. No tag covers orientation day, so one is proposed.",
+    "items": [
+      {
+        "action": "create",
+        "type": "How-To",
+        "namespace": "admissions",
+        "title": "Welcome new students on day one",
+        "description": "What the admissions team does on the first day of orientation.",
+        "themes": ["enrollment"],
+        "systems": [],
+        "tags": ["new-students", "orientation-day"],
+        "body": "# When to use this\n\nOn the first day of orientation for a new intake.\n\n# Steps\n\n1. Open the welcome desk before the first session.\n2. Hand out student ID cards.\n3. Walk each group to its first session.\n\n# Related\n\n- [Enrollment](/_themes/enrollment.md)\n",
+        "reason": "The slides describe one task."
+      }
+    ],
+    "proposedTerms": [
+      {
+        "kind": "tag",
+        "slug": "orientation-day",
+        "description": "The first day of orientation for new students.",
+        "reason": "No existing tag covers the orientation day itself."
+      }
+    ]
+  }
+}

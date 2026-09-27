@@ -1,0 +1,25 @@
+{
+  "name": "Atomize the leave request PDF",
+  "when": {
+    "instructions": "You turn a source document into notes",
+    "input": "<document label=\"leave-request.pdf\">"
+  },
+  "output": {
+    "summary": "One How-To for requesting leave. Carry-over is part of the leave policy and was skipped.",
+    "items": [
+      {
+        "action": "create",
+        "type": "How-To",
+        "namespace": "it-support",
+        "title": "Request leave in the HR portal",
+        "description": "Ask for leave in the HR portal and know when to expect an answer.",
+        "themes": ["onboarding"],
+        "systems": [],
+        "tags": [],
+        "body": "# When to use this\n\nYou want time off. Ask at least two weeks before the first day.\n\n# Steps\n\n1. Open the HR portal and choose Request leave.\n2. Pick the dates and the type of leave.\n3. Your manager approves or declines within three working days.\n\n# Related\n\n- [Onboarding](/_themes/onboarding.md)\n",
+        "reason": "The document describes one task."
+      }
+    ],
+    "proposedTerms": []
+  }
+}

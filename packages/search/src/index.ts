@@ -33,6 +33,8 @@ export interface NoteDoc {
   title: string;
   aliases: string[];
   description: string;
+  /** Questions the note answers, written by a model (doc2query). Empty until it has run. */
+  questions: string[];
   /** Body text for keyword search, capped so large notes do not dominate. */
   body: string;
   type: string;
@@ -45,6 +47,8 @@ export interface NoteDoc {
   trust_tier: string;
   status: string;
   stale: boolean;
+  /** An open report says the note is incorrect or outdated. The Desk warns and ranks it down. */
+  reported: boolean;
   desk: string;
   health: number;
   /** Unix seconds of the last change, for sorting. */
@@ -67,6 +71,7 @@ export interface ChunkDoc {
   status: string;
   trust_tier: string;
   stale: boolean;
+  reported: boolean;
   desk: string;
   themes: string[];
   systems: string[];
@@ -85,11 +90,11 @@ export const FACETS = [
 ] as const;
 export type Facet = (typeof FACETS)[number];
 
-const FILTERABLE = [...FACETS, "is_hub", "stale", "desk", "note_id", "id"];
+const FILTERABLE = [...FACETS, "is_hub", "stale", "reported", "desk", "note_id", "id"];
 
 export function noteSettings(synonyms: Record<string, string[]>): Settings {
   return {
-    searchableAttributes: ["title", "aliases", "description", "body"],
+    searchableAttributes: ["title", "aliases", "description", "questions", "body"],
     displayedAttributes: ["*"],
     // Title and description matches outrank body proximity: people search the Library by name.
     rankingRules: [

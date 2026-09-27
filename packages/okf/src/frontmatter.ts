@@ -32,6 +32,7 @@ export const KEY_ORDER = [
 
 const KEY_RANK = new Map<string, number>(KEY_ORDER.map((k, i) => [k, i]));
 
+/** A note file split at its frontmatter delimiters. */
 export interface SplitNote {
   hasFrontmatter: boolean;
   /** True when an opening `---` has no closing delimiter. */
@@ -75,12 +76,14 @@ export function splitFrontmatter(text: string): SplitNote {
   };
 }
 
+/** Frontmatter as a YAML document (for editing in place) and as plain data. */
 export interface ParsedFrontmatter {
   doc: Document.Parsed | null;
   data: Record<string, unknown>;
   errors: { message: string; line?: number; column?: number }[];
 }
 
+/** Parses frontmatter text. Never throws: YAML errors are returned in `errors`. */
 export function parseFrontmatter(raw: string): ParsedFrontmatter {
   let doc: Document.Parsed;
   try {

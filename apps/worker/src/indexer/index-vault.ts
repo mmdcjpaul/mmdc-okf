@@ -12,6 +12,7 @@ import {
   cachedEmbeddings,
   getVault,
   noteRowHashes,
+  questionsFor,
   refreshNoteChangeInfo,
   storeEmbeddings,
   writeIndex,
@@ -29,7 +30,8 @@ import {
   type NoteDoc,
 } from "@lore/search";
 import type { Logger } from "pino";
-import type { ObjectStore } from "../objects.ts";
+import { blobKey, type ObjectStore } from "@lore/ingest";
+import { refreshHealth } from "./refresh-stale.ts";
 import {
   classFromVersions,
   deriveAssets,
@@ -47,6 +49,8 @@ export interface IndexDeps {
   db: Db;
   meili: Meilisearch;
   mirrorFor: (repository: string) => Mirror;
+  /** Fetches the mirror of a repository that lives elsewhere. Nothing to do for a local one. */
+  syncMirror?: (repository: string) => Promise<void>;
   embedder: Embedder | null;
   objects: ObjectStore;
   log: Logger;
@@ -62,6 +66,8 @@ export interface IndexResult {
   deleted: string[];
   embedded: number;
   processChanged: string[];
+  /** Feedback reports that commits in this run say they resolve, with the commit. */
+  resolvedReports: { id: string; sha: string }[];
   skipped: boolean;
 }
 
@@ -72,6 +78,7 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
   const now = deps.now?.() ?? new Date();
   const vault = await getVault(db, vaultId);
   if (!vault) throw new Error(`Unknown vault ${vaultId}`);
+  await deps.syncMirror?.(vault.repository);
   const mirror = deps.mirrorFor(vault.repository);
   const head = await mirror.resolve(`refs/heads/${vault.branch}`);
   const base: IndexResult = {
@@ -83,13 +90,18 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
     deleted: [],
     embedded: 0,
     processChanged: [],
+    resolvedReports: [],
     skipped: false,
   };
   if (!head) {
     log.warn({ vaultId }, "vault branch has no commits; nothing to index");
     return { ...base, skipped: true };
   }
-  if (head === vault.lastIndexedHead) return { ...base, skipped: true };
+  if (head === vault.lastIndexedHead) {
+    // Nothing was pushed, but a note may have passed its review date since the last run.
+    await refreshHealth(deps, vaultId);
+    return { ...base, skipped: true };
+  }
 
   // 1. Load the tree at head.
   const root = vault.bundleRoot.replace(/\/+$/, "");
@@ -119,7 +131,7 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
   const history = await readHistory(mirror, vault.lastIndexedHead, head, root, liveIds);
 
   // 6. Chunk and embed only what is missing from the cache.
-  const { noteDocs, chunkDocs, embedded } = await buildDocs(deps, changed, loaded, now);
+  const { noteDocs, chunkDocs, embedded } = await buildDocs(deps, changed, loaded);
 
   // 7. Assets into the object store under their blob SHA.
   const assets = deriveAssets(root, tree.values());
@@ -129,7 +141,9 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
     const blobs = await mirror.readBlobs(newAssets.map((a) => a.blobSha));
     for (const a of newAssets) {
       const bytes = blobs.get(a.blobSha);
-      if (bytes && !(await deps.objects.has(a.blobSha))) await deps.objects.put(a.blobSha, bytes);
+      const key = blobKey(a.blobSha);
+      if (bytes && !(await deps.objects.has(key)))
+        await deps.objects.put(key, bytes, { contentType: a.mime });
     }
   }
   const livePaths = new Set(assets.map((a) => a.path));
@@ -185,6 +199,11 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
   });
   await refreshNoteChangeInfo(db, vaultId);
   await syncUpdatedAt(deps, vault.slug, vaultId, changed, history.noteCommits);
+  await refreshHealth(
+    deps,
+    vaultId,
+    changed.map((d) => d.row.id),
+  );
 
   const result: IndexResult = {
     ...base,
@@ -197,6 +216,7 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
         history.noteCommits.filter((c) => c.changeClass === "process").map((c) => c.noteId),
       ),
     ],
+    resolvedReports: history.resolved,
   };
   log.info(
     {
@@ -217,14 +237,22 @@ async function buildDocs(
   deps: IndexDeps,
   changed: DerivedNote[],
   loaded: Awaited<ReturnType<typeof loadVault>>,
-  now: Date,
 ) {
   const noteDocs: NoteDoc[] = [];
   const chunkDocs: ChunkDoc[] = [];
   const pending: { hash: string; text: string }[] = [];
+  // Questions written for a note stay with it across edits until new ones replace them, and
+  // across a full reindex, which would otherwise have to pay for them again.
+  const asked = await questionsFor(
+    deps.db,
+    changed[0]?.row.vaultId ?? "",
+    changed.map((d) => d.row.id),
+  );
   const chunked = changed.map((d) => {
     const chunks = d.row.hubKind ? [] : chunkNote(d.note, loaded);
-    const card = { hash: sha256("card\n" + d.cardText), text: d.cardText };
+    const questions = asked.get(d.row.id)?.questions ?? [];
+    const text = [d.cardText, ...questions].join("\n");
+    const card = { hash: sha256("card\n" + text), text, questions };
     pending.push(
       card,
       ...chunks.map((c) => ({ hash: c.contentHash, text: c.header + "\n\n" + c.text })),
@@ -265,7 +293,7 @@ async function buildDocs(
   }
 
   for (const { d, chunks, card } of chunked) {
-    const doc = noteDoc(d, vectors.get(card.hash) ?? null, now);
+    const doc = noteDoc(d, vectors.get(card.hash) ?? null, card.questions);
     noteDocs.push(doc);
     for (const c of chunks) {
       chunkDocs.push({
@@ -283,6 +311,7 @@ async function buildDocs(
         status: doc.status,
         trust_tier: doc.trust_tier,
         stale: doc.stale,
+        reported: doc.reported,
         desk: doc.desk,
         themes: doc.themes,
         systems: doc.systems,
@@ -309,6 +338,7 @@ async function readHistory(
 ): Promise<{
   commits: Omit<CommitRow, "vaultId">[];
   noteCommits: Omit<NoteCommitRow, "vaultId">[];
+  resolved: { id: string; sha: string }[];
 }> {
   const log = await mirror.log(from, to);
   const isNote = (p: string) => p.startsWith(root + "/") && p.endsWith(".md");
@@ -324,7 +354,11 @@ async function readHistory(
 
   const commits: Omit<CommitRow, "vaultId">[] = [];
   const noteCommits: Omit<NoteCommitRow, "vaultId">[] = [];
+  const resolved: { id: string; sha: string }[] = [];
   for (const c of log) {
+    for (const id of (c.trailers["resolves-report"] ?? "").split("\n"))
+      if (/^fb_[0-9A-HJKMNP-TV-Z]{26}$/.test(id.trim()))
+        resolved.push({ id: id.trim(), sha: c.sha });
     const trailer = c.trailers["change-class"]?.toLowerCase();
     const declared =
       trailer === "fix" || trailer === "addition" || trailer === "process" ? trailer : null;
@@ -361,7 +395,7 @@ async function readHistory(
       changeClass: commitClass,
     });
   }
-  return { commits, noteCommits };
+  return { commits, noteCommits, resolved };
 }
 
 /** Puts the last-change time on search documents so results can sort by it. */
