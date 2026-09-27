@@ -18,6 +18,16 @@ export interface DiffEntry {
   newSha?: string;
 }
 
+/** One file's text on both sides of a commit. */
+export interface FileChange {
+  status: DiffEntry["status"];
+  path: string;
+  /** Path before the commit, when it was renamed. */
+  fromPath: string | null;
+  before: string | null;
+  after: string | null;
+}
+
 export interface TreeEntry {
   path: string;
   blobSha: string;

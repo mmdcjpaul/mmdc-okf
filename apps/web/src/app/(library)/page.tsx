@@ -1,6 +1,13 @@
 import Link from "next/link";
-import { Search } from "lucide-react";
-import { countBy, listNamespaces, listTerms, processChangesSince, recentlyChanged } from "@lore/db";
+import { Pin, Search } from "lucide-react";
+import {
+  countBy,
+  listNamespaces,
+  listTerms,
+  pinnedHubs,
+  processChangesSince,
+  recentlyChanged,
+} from "@lore/db";
 import { EmptyState } from "@/components/EmptyState";
 import { NoteList } from "@/components/NoteList";
 import { Section } from "@/components/Section";
@@ -15,15 +22,20 @@ const DAY_MS = 24 * 3600 * 1000;
 export default async function HomePage() {
   const { vault, principal, scope } = await requireContext();
   const since = new Date(Date.now() - 30 * DAY_MS);
-  const [changes, recent, themes, themeCounts, types, namespaces, nsCounts] = await Promise.all([
-    processChangesSince(db(), scope, since),
-    recentlyChanged(db(), scope, 8),
-    listTerms(db(), vault.id, "theme"),
-    countBy(db(), scope, "theme"),
-    countBy(db(), scope, "type"),
-    listNamespaces(db(), vault.id),
-    countBy(db(), scope, "namespace"),
-  ]);
+  const [changes, recent, themes, themeCounts, types, namespaces, nsCounts, systems, pins] =
+    await Promise.all([
+      processChangesSince(db(), scope, since),
+      recentlyChanged(db(), scope, 8),
+      listTerms(db(), vault.id, "theme"),
+      countBy(db(), scope, "theme"),
+      countBy(db(), scope, "type"),
+      listNamespaces(db(), vault.id),
+      countBy(db(), scope, "namespace"),
+      listTerms(db(), vault.id, "system"),
+      pinnedHubs(db(), vault.id, principal.teamIds),
+    ]);
+  const hubOf = new Map([...themes, ...systems].map((t) => [`${t.kind}:${t.slug}`, t] as const));
+  const pinned = pins.flatMap((p) => hubOf.get(`${p.kind}:${p.slug}`) ?? []);
   const themeCount = new Map(themeCounts.map((c) => [c.key, c.count]));
   const nsCount = new Map(nsCounts.map((c) => [c.key, c.count]));
   const total = nsCounts.reduce((s, c) => s + c.count, 0);
@@ -57,6 +69,24 @@ export default async function HomePage() {
           </div>
         </form>
       </header>
+
+      {pinned.length ? (
+        <Section title="Pinned by your team">
+          <ul className="flex flex-wrap gap-2">
+            {pinned.map((t) => (
+              <li key={`${t.kind}:${t.slug}`}>
+                <Link
+                  href={termHref(t.kind as "theme" | "system", t.slug)}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-3 py-1.5 text-[13.5px] text-ink-2 transition-colors hover:border-faint/50 hover:bg-bg hover:text-ink"
+                >
+                  <Pin size={13} className="text-muted" aria-hidden />
+                  {t.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      ) : null}
 
       {changes.length ? (
         <Section title="Process changes in the last 30 days">

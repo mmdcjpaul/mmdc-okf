@@ -25,6 +25,8 @@ const Env = z.object({
   WORKER_PORT: z.coerce.number().int().default(8081),
   /** Interface for /health and the mirror API. Containers set 0.0.0.0. */
   WORKER_HOST: z.string().default("127.0.0.1"),
+  /** Shared with the web app; guards the worker's internal API. */
+  INTERNAL_API_TOKEN: z.string().min(16).default("lore-dev-internal-token"),
   /** How often the worker checks every vault for new commits, in seconds. */
   POLL_SECONDS: z.coerce.number().int().positive().default(300),
   LOG_LEVEL: z.string().default("info"),
@@ -38,6 +40,12 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   if (!parsed.success) {
     const lines = parsed.error.issues.map((i) => `  ${i.path.join(".")}: ${i.message}`);
     throw new Error(`Invalid worker configuration:\n${lines.join("\n")}`);
+  }
+  if (
+    parsed.data.NODE_ENV === "production" &&
+    parsed.data.INTERNAL_API_TOKEN === "lore-dev-internal-token"
+  ) {
+    throw new Error("Invalid worker configuration:\n  INTERNAL_API_TOKEN: set a secret value");
   }
   return { ...parsed.data, repoRoot: REPO_ROOT };
 }

@@ -14,6 +14,9 @@ const Env = z.object({
   S3_BUCKET: z.string().min(1),
   S3_ACCESS_KEY_ID: z.string().min(1),
   S3_SECRET_ACCESS_KEY: z.string().min(1),
+  /** The worker's internal API, for anything that needs Git (history diffs). */
+  WORKER_URL: z.string().url().default("http://127.0.0.1:8081"),
+  INTERNAL_API_TOKEN: z.string().min(16).default("lore-dev-internal-token"),
   /** Slug of the vault to show. The data model supports several; the picker is phase 3. */
   LORE_VAULT: z.string().optional(),
   APP_SECRET: z.string().min(16),
@@ -37,6 +40,12 @@ export function env(): WebEnv {
     );
   }
   assertDevLoginAllowed(parsed.data);
+  if (
+    parsed.data.NODE_ENV === "production" &&
+    parsed.data.INTERNAL_API_TOKEN === "lore-dev-internal-token"
+  ) {
+    throw new Error("Invalid web configuration:\n  INTERNAL_API_TOKEN: set a secret value");
+  }
   cached = parsed.data;
   return cached;
 }

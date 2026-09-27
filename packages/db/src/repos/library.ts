@@ -358,6 +358,36 @@ export async function noteHistory(db: Db, vaultId: string, noteId: string, limit
     .limit(limit);
 }
 
+/** One entry of a note's history, or null when the commit did not touch the note. */
+export async function noteCommit(db: Db, vaultId: string, noteId: string, sha: string) {
+  const [row] = await db
+    .select({
+      sha: noteCommits.sha,
+      status: noteCommits.status,
+      path: noteCommits.path,
+      fromVersion: noteCommits.fromVersion,
+      toVersion: noteCommits.toVersion,
+      changeClass: noteCommits.changeClass,
+      committedAt: noteCommits.committedAt,
+      authorName: commits.authorName,
+      subject: commits.subject,
+      body: commits.body,
+    })
+    .from(noteCommits)
+    .innerJoin(
+      commits,
+      and(eq(commits.vaultId, noteCommits.vaultId), eq(commits.sha, noteCommits.sha)),
+    )
+    .where(
+      and(
+        eq(noteCommits.vaultId, vaultId),
+        eq(noteCommits.noteId, noteId),
+        eq(noteCommits.sha, sha),
+      ),
+    );
+  return row ?? null;
+}
+
 /** An asset, only when its namespace is readable. */
 export async function getAsset(db: Db, scope: ReadScope, path: string): Promise<AssetRow | null> {
   const ns = scope.namespaces.length

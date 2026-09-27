@@ -9,6 +9,7 @@ export type {
   CommitInput,
   CommitResult,
   DiffEntry,
+  FileChange,
   GitProvider,
   PushEvent,
   TreeEntry,

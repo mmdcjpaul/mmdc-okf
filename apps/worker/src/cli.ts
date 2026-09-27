@@ -84,6 +84,8 @@ async function writeWebEnv(cfg: Config, slug: string): Promise<void> {
       `S3_BUCKET=${cfg.S3_BUCKET}`,
       `S3_ACCESS_KEY_ID=${cfg.S3_ACCESS_KEY_ID}`,
       `S3_SECRET_ACCESS_KEY=${cfg.S3_SECRET_ACCESS_KEY}`,
+      `WORKER_URL=http://${cfg.WORKER_HOST}:${cfg.WORKER_PORT}`,
+      `INTERNAL_API_TOKEN=${cfg.INTERNAL_API_TOKEN}`,
       `LORE_VAULT=${slug}`,
       `APP_SECRET=${secret}`,
       "AUTH_DEV_LOGIN=true",

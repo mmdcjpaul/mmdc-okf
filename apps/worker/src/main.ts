@@ -1,14 +1,16 @@
 /**
  * The worker process: runs index jobs from pg-boss, polls vaults for pushes made outside Lore,
- * and serves /health. Shuts down gracefully on SIGINT and SIGTERM.
+ * and serves /health and the internal API. Shuts down gracefully on SIGINT and SIGTERM.
  */
 import { createServer } from "node:http";
 import { listVaults } from "@lore/db";
+import { createApi } from "./api.ts";
 import { loadConfig } from "./config.ts";
 import { indexVault } from "./indexer/index-vault.ts";
 import {
   createRuntime,
   enqueueIndex,
+  mirrorFor,
   QUEUES,
   startBoss,
   VAULT_INDEXED,
@@ -44,14 +46,13 @@ const poller = setInterval(
   config.POLL_SECONDS * 1000,
 );
 
-const server = createServer((req, res) => {
-  if (req.url === "/health") {
-    res.writeHead(200, { "content-type": "application/json" });
-    res.end(JSON.stringify({ ok: true, lastIndex }));
-    return;
-  }
-  res.writeHead(404).end();
+const api = createApi({
+  db: rt.db,
+  mirrorFor,
+  token: config.INTERNAL_API_TOKEN,
+  health: () => ({ lastIndex }),
 });
+const server = createServer((req, res) => void api(req, res));
 server.listen(config.WORKER_PORT, config.WORKER_HOST, () =>
   rt.log.info({ host: config.WORKER_HOST, port: config.WORKER_PORT }, "worker started"),
 );

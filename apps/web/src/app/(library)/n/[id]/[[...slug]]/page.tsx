@@ -168,9 +168,13 @@ export default async function NotePage({ params }: Props) {
                       aria-hidden
                     />
                     <div className="min-w-0">
-                      <p className="truncate text-ink-2" title={h.subject}>
+                      <Link
+                        href={`/n/${encodeURIComponent(note.id)}/history/${h.sha}`}
+                        className="block truncate text-ink-2 hover:text-accent hover:underline"
+                        title={h.subject}
+                      >
                         {h.subject}
-                      </p>
+                      </Link>
                       <p className="text-[11.5px] text-faint">
                         {h.authorName} · {shortDate(h.committedAt)}
                         {h.toVersion ? ` · v${h.toVersion}` : ""}
