@@ -9,7 +9,7 @@
     "build": "next build",
     "start": "next start --port 3000",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "node -e \"for (const d of ['.next', '.next-e2e']) require('node:fs').rmSync(d + '/dev/types', { recursive: true, force: true })\" && tsc -p tsconfig.json --noEmit",
     "e2e": "playwright test"
   },
   "dependencies": {

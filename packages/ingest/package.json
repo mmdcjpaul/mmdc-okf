@@ -18,6 +18,7 @@
     "@aws-sdk/s3-request-presigner": "^3.1141.0",
     "@lore/ai": "workspace:*",
     "@lore/changesets": "workspace:*",
+    "@lore/db": "workspace:*",
     "@lore/okf": "workspace:*",
     "hast": "^1.0.0",
     "jszip": "^3.10.2",

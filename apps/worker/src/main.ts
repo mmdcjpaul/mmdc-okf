@@ -80,6 +80,7 @@ await boss.work<IndexJobData>(QUEUES.index, POLL, async ([job]) => {
       vaultId: result.vaultId,
       head: result.head,
       changed: result.changed,
+      deleted: result.deleted,
       processChanged: result.processChanged,
     });
   }

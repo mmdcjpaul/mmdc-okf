@@ -359,6 +359,9 @@ importers:
       '@lore/changesets':
         specifier: workspace:*
         version: link:../changesets
+      '@lore/db':
+        specifier: workspace:*
+        version: link:../db
       '@lore/okf':
         specifier: workspace:*
         version: link:../okf

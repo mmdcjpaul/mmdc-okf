@@ -9,7 +9,13 @@ import {
   listTerms,
   type IngestItemRow,
 } from "@lore/db";
-import { inspect, LIMITS, MEDIA_TYPES, UploadRefused } from "@lore/ingest";
+import {
+  CaptureRefused,
+  createCaptureItem,
+  inspect,
+  MEDIA_TYPES,
+  UploadRefused,
+} from "@lore/ingest";
 import { publishes, RequestError } from "./changesets";
 import type { RequestContext } from "./context";
 import { db, objects } from "./db";
@@ -29,11 +35,6 @@ export interface Saved {
   /** Whether processing started. When false, the item waits in the queue. */
   processing: boolean;
 }
-
-const IMAGE_SIGNATURES: [string, string, number[]][] = [
-  ["png", "image/png", [0x89, 0x50, 0x4e, 0x47]],
-  ["jpg", "image/jpeg", [0xff, 0xd8, 0xff]],
-];
 
 async function checkHints(ctx: RequestContext, namespace: string, hints: Hints): Promise<Hints> {
   if (!ctx.scope.namespaces.includes(namespace)) throw new RequestError(404, "No such namespace");
@@ -122,35 +123,24 @@ export async function saveCapture(
     processNow: boolean;
   },
 ): Promise<Saved> {
-  const text = input.text.trim();
-  if (text.length < 20 && input.images.length === 0)
-    throw new RequestError(400, "Write a few words, or add a screenshot");
-  if (text.length > 60_000) throw new RequestError(413, "The text is too long for one capture");
-  if (input.images.length > LIMITS.maxCaptureImages)
-    throw new RequestError(400, `A capture can have up to ${LIMITS.maxCaptureImages} images`);
   const hints = await checkHints(ctx, input.namespace, input.hints);
-
-  const id = newRecordId("in");
-  const stored: { key: string; name: string; mediaType: string }[] = [];
-  for (const [i, img] of input.images.entries()) {
-    if (img.bytes.length > 5 * 1024 * 1024)
-      throw new RequestError(413, `${img.name} is larger than 5 MB`);
-    const kind = IMAGE_SIGNATURES.find(([, , sig]) => sig.every((b, j) => img.bytes[j] === b));
-    if (!kind) throw new RequestError(400, `${img.name} is not a PNG or JPEG image`);
-    const key = `uploads/${id}/image-${i + 1}.${kind[0]}`;
-    await objects().put(key, img.bytes, { contentType: kind[1] });
-    stored.push({ key, name: `capture-${i + 1}.${kind[0]}`, mediaType: kind[1] });
+  let id: string;
+  try {
+    ({ id } = await createCaptureItem(
+      { db: db(), objects: objects() },
+      {
+        vaultId: ctx.vault.id,
+        submitterId: ctx.principal.user.id,
+        namespace: input.namespace,
+        text: input.text,
+        images: input.images,
+        hints,
+      },
+    ));
+  } catch (err) {
+    if (err instanceof CaptureRefused) throw new RequestError(err.status, err.message);
+    throw err;
   }
-  await createIngestItem(db(), {
-    id,
-    vaultId: ctx.vault.id,
-    submitterId: ctx.principal.user.id,
-    kind: "capture",
-    namespace: input.namespace,
-    hints: { ...hints, text, images: stored },
-    fileName: null,
-    fileHash: createHash("sha256").update(text).digest("hex"),
-  });
   const now = input.processNow && (await mayProcessNow(ctx, input.namespace));
   return { id, duplicateOf: null, processing: now ? await requestIngest(id) : false };
 }

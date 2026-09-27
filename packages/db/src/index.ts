@@ -16,3 +16,4 @@ export * from "./repos/follows.ts";
 export * from "./repos/hygiene.ts";
 export * from "./repos/gardener.ts";
 export * from "./repos/batches.ts";
+export { NO_GAPS, type GapSource, type KnowledgeGap } from "./gaps.ts";

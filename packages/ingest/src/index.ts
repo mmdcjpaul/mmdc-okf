@@ -15,6 +15,7 @@ export {
   type S3Options,
   type SignedUrlOptions,
 } from "./object-store.ts";
+export { CAPTURE_LIMITS, CaptureRefused, createCaptureItem, type CaptureInput } from "./capture.ts";
 export {
   detectType,
   extractPdfText,
