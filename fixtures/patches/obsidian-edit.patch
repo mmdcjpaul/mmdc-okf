@@ -1,0 +1,21 @@
+diff --git a/kb/it-support/reset-a-staff-password.md b/kb/it-support/reset-a-staff-password.md
+index c00c032..2367b74 100644
+--- a/kb/it-support/reset-a-staff-password.md
++++ b/kb/it-support/reset-a-staff-password.md
+@@ -3,7 +3,7 @@ type: How-To
+ title: Reset a staff password
+ description: Reset a staff member's single sign-on password after verifying who they are.
+ id: kb_01J9ZHEXJ1HEYSGWPXF2ZXZV97
+-version: 1.0.0
++version: 1.0.1
+ themes: [access-management]
+ tags: [passwords]
+ generated: { by: human:tnguyen, at: 2026-08-03T09:00:00Z }
+@@ -27,3 +27,7 @@ A staff member forgot their password. Locked accounts follow
+ # Related
+ 
+ - [Access management](/_themes/access-management.md)
++
++# Notes
++
++Edited in Obsidian: confirm the person's identity by video call before resetting.

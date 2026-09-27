@@ -6,6 +6,7 @@ export default defineConfig({
       "packages/okf",
       "packages/cli",
       "packages/git",
+      "packages/db",
       "packages/ai",
       "packages/auth",
       "packages/search",

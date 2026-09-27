@@ -1,0 +1,17 @@
+**/node_modules
+**/.next
+**/.next-e2e
+**/dist
+**/.turbo
+**/test-results
+**/playwright-report
+**/*.tsbuildinfo
+.git
+.data
+bench-out
+.env*
+**/.env*
+docs
+plans
+fixtures
+eval
