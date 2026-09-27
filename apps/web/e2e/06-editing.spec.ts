@@ -393,7 +393,8 @@ test.describe("two people, one note", () => {
     await signIn(dana, "dana");
     await dana.goto(`/edit/${note.id}`);
     const original = await bodyText(dana);
-    const firstLine = original.split("\n").find((l) => /^\d+\. /.test(l))!;
+    const firstLine = original.split("\n").find((l) => /^\d+\. /.test(l));
+    if (!firstLine) throw new Error("The fixture note has no numbered step to edit");
     await replaceBody(dana, original.replace(firstLine, `${firstLine} Dana's wording.`));
     await dana.getByRole("button", { name: "Save" }).click();
     await expect(dana).toHaveURL(noteUrl(note));

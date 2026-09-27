@@ -116,6 +116,7 @@ export function filesInLastCommit(): string[] {
 /** Puts the caret at the end of the editor's text and types. */
 export async function appendToBody(page: Page, text: string): Promise<void> {
   const editor = page.getByRole("textbox", { name: "Note body" });
+  await bodyText(page);
   await editor.click();
   await page.keyboard.press("ControlOrMeta+a");
   await page.keyboard.press("ArrowRight");
@@ -125,16 +126,20 @@ export async function appendToBody(page: Page, text: string): Promise<void> {
 /** Replaces the editor's whole text. */
 export async function replaceBody(page: Page, text: string): Promise<void> {
   const editor = page.getByRole("textbox", { name: "Note body" });
+  await bodyText(page);
   await editor.click();
   await page.keyboard.press("ControlOrMeta+a");
   await page.keyboard.insertText(text);
 }
 
-/** The editor's text, line by line as CodeMirror holds it. */
+/**
+ * The editor's text, line by line as CodeMirror holds it. Waits for the editor to have its
+ * text first: on a slow machine the page is visible a moment before the editor is filled.
+ */
 export async function bodyText(page: Page): Promise<string> {
-  return page
-    .getByRole("textbox", { name: "Note body" })
-    .locator(".cm-line")
-    .allInnerTexts()
-    .then((lines) => lines.join("\n"));
+  const lines = page.getByRole("textbox", { name: "Note body" }).locator(".cm-line");
+  await expect
+    .poll(async () => (await lines.allInnerTexts()).join("").trim().length, { timeout: 15_000 })
+    .toBeGreaterThan(0);
+  return (await lines.allInnerTexts()).join("\n");
 }
