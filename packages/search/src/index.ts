@@ -45,6 +45,8 @@ export interface NoteDoc {
   trust_tier: string;
   status: string;
   stale: boolean;
+  /** An open report says the note is incorrect or outdated. The Desk warns and ranks it down. */
+  reported: boolean;
   desk: string;
   health: number;
   /** Unix seconds of the last change, for sorting. */
@@ -67,6 +69,7 @@ export interface ChunkDoc {
   status: string;
   trust_tier: string;
   stale: boolean;
+  reported: boolean;
   desk: string;
   themes: string[];
   systems: string[];
@@ -85,7 +88,7 @@ export const FACETS = [
 ] as const;
 export type Facet = (typeof FACETS)[number];
 
-const FILTERABLE = [...FACETS, "is_hub", "stale", "desk", "note_id", "id"];
+const FILTERABLE = [...FACETS, "is_hub", "stale", "reported", "desk", "note_id", "id"];
 
 export function noteSettings(synonyms: Record<string, string[]>): Settings {
   return {

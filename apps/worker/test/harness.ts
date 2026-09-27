@@ -28,6 +28,7 @@ import {
   type ProcessOutcome,
 } from "../src/changesets/process.ts";
 import { indexVault, type IndexDeps } from "../src/indexer/index-vault.ts";
+import { refreshHealth } from "../src/indexer/refresh-stale.ts";
 import { FsObjectStore } from "@lore/ingest";
 import { loadPrincipals } from "../src/principals.ts";
 import { mirrorFor, providerFor } from "../src/runtime.ts";
@@ -108,6 +109,8 @@ export interface SaveInput {
   summary?: string;
   aiDrafted?: boolean;
   actor?: string;
+  /** Feedback reports the changeset resolves. */
+  resolves?: string[];
 }
 
 export async function createHarness(name: string): Promise<Harness> {
@@ -189,6 +192,7 @@ export async function createHarness(name: string): Promise<Harness> {
       ops: toStoredOps(ops),
       intents: input.intents ?? [],
       baseShas,
+      resolvesReports: input.resolves ?? [],
       submittedAt: clock.now,
     });
   };
@@ -207,7 +211,9 @@ export async function createHarness(name: string): Promise<Harness> {
       return run(id);
     },
     async indexWithEffects() {
-      return applyIndexEffects(db, await indexVault(deps, slug));
+      const effects = await applyIndexEffects(db, await indexVault(deps, slug));
+      if (effects.resolved.length) await refreshHealth(deps, slug, effects.resolved);
+      return effects;
     },
     clock,
     db,

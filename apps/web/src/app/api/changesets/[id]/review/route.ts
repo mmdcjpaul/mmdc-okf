@@ -3,6 +3,7 @@ import { addReview, getChangeset, notify, transitionChangeset, writeAudit } from
 import { z } from "zod";
 import { canApproveChangeset } from "@/lib/changesets";
 import { apiContext } from "@/lib/context";
+import { crossSite } from "@/lib/same-origin";
 import { db } from "@/lib/db";
 import { requestProcessing } from "@/lib/worker";
 
@@ -24,9 +25,8 @@ const Body = z
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await apiContext();
   if (!ctx) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
-  const origin = req.headers.get("origin");
-  if (origin && new URL(origin).host !== req.headers.get("host"))
-    return NextResponse.json({ error: "Cross-site request refused" }, { status: 403 });
+  const refused = crossSite(req);
+  if (refused) return refused;
 
   const id = (await params).id;
   const cs = await getChangeset(db(), id);

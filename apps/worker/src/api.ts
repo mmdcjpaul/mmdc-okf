@@ -16,6 +16,8 @@ export interface ApiDeps {
   health: () => Record<string, unknown>;
   /** Queues a changeset for processing. The web app calls this right after it saves one. */
   onChangeset?: (id: string) => Promise<void>;
+  /** Recomputes health for notes whose feedback changed. */
+  onFeedback?: (vaultId: string, noteIds: string[]) => Promise<void>;
 }
 
 /** Notes are capped at 2,500 words; anything far beyond that is not a note worth diffing. */
@@ -44,6 +46,13 @@ export function createApi(deps: ApiDeps) {
         if (cs && deps.onChangeset) {
           await deps.onChangeset(cs[1]!);
           return send(res, 202, { queued: cs[1] });
+        }
+        // POST /vaults/:id/health?note=<id>&note=<id>
+        const health = /^\/vaults\/([^/]+)\/health$/.exec(url.pathname);
+        const notes = url.searchParams.getAll("note").slice(0, 100);
+        if (health && notes.length && deps.onFeedback) {
+          await deps.onFeedback(decodeURIComponent(health[1]!), notes);
+          return send(res, 200, { refreshed: notes.length });
         }
         return send(res, 404, { error: "Not found" });
       }

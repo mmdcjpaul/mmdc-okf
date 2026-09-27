@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import {
   backlinks,
+  feedbackFor,
   getNote,
   linksAmong,
   linksFrom,
@@ -18,6 +19,7 @@ import {
   noteHistory,
   openFlags,
   outgoing,
+  REPORT_REASONS,
   type NoteRow,
 } from "@lore/db";
 import { similarNotes } from "@lore/search";
@@ -28,6 +30,7 @@ import { LinkList, type LinkListItem } from "@/components/LinkList";
 import { LocalGraph, type GraphNodeInput } from "@/components/LocalGraph";
 import { NoteActions } from "@/components/NoteActions";
 import { NoteBody } from "@/components/NoteBody";
+import { NoteFeedback } from "@/components/NoteFeedback";
 import { TypeIcon } from "@/components/TypeIcon";
 import { publishes } from "@/lib/changesets";
 import { currentVault, hidden, requireContext } from "@/lib/context";
@@ -63,7 +66,7 @@ export default async function NotePage({ params }: Props) {
   if (slug !== note.slug) redirect(noteHref(note));
 
   const writes = publishes(principal, note.namespace);
-  const [inbound, outbound, history, related, namespaces, flags] = await Promise.all([
+  const [inbound, outbound, history, related, namespaces, flags, given] = await Promise.all([
     backlinks(db(), scope, note.id),
     outgoing(db(), scope, note.id),
     noteHistory(db(), vault.id, note.id),
@@ -71,7 +74,11 @@ export default async function NotePage({ params }: Props) {
     listNamespaces(db(), vault.id),
     // Flags are for the people who can act on them.
     writes ? openFlags(db(), vault.id, note.id) : Promise.resolve([]),
+    feedbackFor(db(), vault.id, note.id, principal.user.id),
   ]);
+  const label = (reason: string | null) =>
+    REPORT_REASONS.find((r) => r.value === reason)?.label ?? "Reported";
+  const serious = given.open.filter((r) => r.reason === "incorrect" || r.reason === "outdated");
   const causes = (
     await Promise.all(
       flags.map(async (f) => ({ flag: f, cause: await getNote(db(), scope, f.causeNoteId) })),
@@ -140,6 +147,16 @@ export default async function NotePage({ params }: Props) {
             isHub={false}
           />
           <NoteBanners note={note} />
+          {serious.length ? (
+            <div className="mb-8">
+              <Banner
+                kind="reported"
+                title={`Reported as ${label(serious[0]!.reason).toLowerCase()} on ${shortDate(serious[0]!.createdAt)}`}
+              >
+                The owner has been told. Check with them before relying on this note.
+              </Banner>
+            </div>
+          ) : null}
           {causes.length ? (
             <div className="mb-8 space-y-2">
               {causes.map(({ flag, cause }) => (
@@ -163,6 +180,24 @@ export default async function NotePage({ params }: Props) {
             noteId={note.id}
             body={note.body}
             readable={scope.namespaces}
+          />
+          <NoteFeedback
+            noteId={note.id}
+            helpful={given.helpful}
+            mine={given.mine}
+            reasons={REPORT_REASONS}
+            reports={
+              writes
+                ? given.open.map((r) => ({
+                    id: r.id,
+                    reason: r.reason ?? "other",
+                    reasonLabel: label(r.reason),
+                    comment: r.comment,
+                    reporter: r.reporterName ?? "Someone",
+                    when: timeAgo(r.createdAt),
+                  }))
+                : null
+            }
           />
         </article>
 

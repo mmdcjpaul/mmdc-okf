@@ -9,6 +9,7 @@ import { applyIndexEffects } from "./changesets/effects.ts";
 import { processChangeset, type ChangesetDeps } from "./changesets/process.ts";
 import { loadConfig } from "./config.ts";
 import { indexVault } from "./indexer/index-vault.ts";
+import { refreshHealth } from "./indexer/refresh-stale.ts";
 import {
   createRuntime,
   enqueueChangeset,
@@ -35,7 +36,9 @@ await boss.work<IndexJobData>(QUEUES.index, POLL, async ([job]) => {
   const result = await indexVault(rt.deps, job.data.vaultId);
   lastIndex = { at: new Date().toISOString(), vaultId: result.vaultId, head: result.head };
   const effects = await applyIndexEffects(rt.db, result);
-  if (effects.notified || effects.flagged) rt.log.info(effects, "process change effects");
+  if (effects.resolved.length) await refreshHealth(rt.deps, result.vaultId, effects.resolved);
+  if (effects.notified || effects.flagged || effects.resolved.length)
+    rt.log.info(effects, "index effects");
   if (!result.skipped) {
     await boss.publish(VAULT_INDEXED, {
       vaultId: result.vaultId,
@@ -83,6 +86,9 @@ const api = createApi({
   db: rt.db,
   mirrorFor,
   onChangeset: (id) => enqueueChangeset(boss, id),
+  onFeedback: async (vaultId, noteIds) => {
+    await refreshHealth(rt.deps, vaultId, noteIds);
+  },
   token: config.INTERNAL_API_TOKEN,
   health: () => ({ lastIndex }),
 });

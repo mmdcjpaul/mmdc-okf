@@ -168,7 +168,10 @@ export class Mirror {
       const trailers: Record<string, string> = {};
       for (const line of (trailerText ?? "").split("\n")) {
         const m = /^([A-Za-z-]+):\s*(.+)$/.exec(line.trim());
-        if (m) trailers[m[1]!.toLowerCase()] = m[2]!;
+        if (!m) continue;
+        const key = m[1]!.toLowerCase();
+        // A trailer may repeat (several people credited, several reports resolved).
+        trailers[key] = key in trailers ? `${trailers[key]}\n${m[2]!}` : m[2]!;
       }
       commits.push({
         sha: sha!,

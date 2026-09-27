@@ -14,6 +14,7 @@ import {
   notesLinkingTo,
   notify,
   readersOf,
+  resolveReports,
   teamPeople,
   type Db,
   type NewNotification,
@@ -23,6 +24,8 @@ import type { IndexResult } from "../indexer/index-vault.ts";
 export interface EffectsResult {
   notified: number;
   flagged: number;
+  /** Notes whose reports a commit resolved; their health needs recomputing. */
+  resolved: string[];
 }
 
 async function ownerTeamOf(db: Db, vaultId: string, ns: string | null): Promise<string | null> {
@@ -36,8 +39,13 @@ async function canRead(db: Db, vaultId: string, ns: string | null): Promise<Set<
 }
 
 export async function applyIndexEffects(db: Db, result: IndexResult): Promise<EffectsResult> {
-  const out: EffectsResult = { notified: 0, flagged: 0 };
+  const out: EffectsResult = { notified: 0, flagged: 0, resolved: [] };
   if (result.skipped || !result.head) return out;
+  // A report closes when the commit that resolves it has been indexed (PRD 7.7).
+  const bySha = new Map<string, string[]>();
+  for (const r of result.resolvedReports) bySha.set(r.sha, [...(bySha.get(r.sha) ?? []), r.id]);
+  for (const [sha, ids] of bySha)
+    out.resolved.push(...(await resolveReports(db, result.vaultId, ids, sha)));
   // A note that changed has been looked at: its own flags are settled.
   await clearFlags(db, result.vaultId, result.changed);
   // The first index of a vault replays its whole history. Nobody needs telling about that.

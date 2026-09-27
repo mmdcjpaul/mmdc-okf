@@ -1,15 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ChangesetRequest, RequestError, saveChangeset } from "@/lib/changesets";
 import { apiContext } from "@/lib/context";
+import { crossSite } from "@/lib/same-origin";
 
 /** Saves an edit, a new note, a move, a verification, a deprecation, or a deletion. */
 export async function POST(req: NextRequest) {
   const ctx = await apiContext();
   if (!ctx) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
-  // Same-origin only: a page on another site cannot write with this person's session.
-  const origin = req.headers.get("origin");
-  if (origin && new URL(origin).host !== req.headers.get("host"))
-    return NextResponse.json({ error: "Cross-site request refused" }, { status: 403 });
+  const refused = crossSite(req);
+  if (refused) return refused;
 
   let json: unknown;
   try {

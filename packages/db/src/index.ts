@@ -9,3 +9,4 @@ export * from "./repos/identity.ts";
 export * from "./repos/library.ts";
 export * from "./repos/indexing.ts";
 export * from "./repos/changesets.ts";
+export * from "./repos/feedback.ts";

@@ -42,7 +42,10 @@ export interface CommitInfo {
   committedAt: Date;
   subject: string;
   body: string;
-  /** Git trailers such as `Change-Class`, keyed by lowercase name. */
+  /**
+   * Git trailers such as `Change-Class`, keyed by lowercase name. A trailer that appears
+   * more than once has its values joined by newlines.
+   */
   trailers: Record<string, string>;
   files: DiffEntry[];
 }

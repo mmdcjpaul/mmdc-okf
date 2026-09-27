@@ -3,6 +3,7 @@ import { getChangeset, getNote, transitionChangeset, writeAudit } from "@lore/db
 import { z } from "zod";
 import { canApproveChangeset, canSeeChangeset } from "@/lib/changesets";
 import { apiContext } from "@/lib/context";
+import { crossSite } from "@/lib/same-origin";
 import { db } from "@/lib/db";
 import { noteHref } from "@/lib/urls";
 import { requestProcessing } from "@/lib/worker";
@@ -53,9 +54,8 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await apiContext();
   if (!ctx) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
-  const origin = req.headers.get("origin");
-  if (origin && new URL(origin).host !== req.headers.get("host"))
-    return NextResponse.json({ error: "Cross-site request refused" }, { status: 403 });
+  const refused = crossSite(req);
+  if (refused) return refused;
   const id = (await params).id;
   const cs = await getChangeset(db(), id);
   if (!cs || cs.vaultId !== ctx.vault.id || cs.submitterId !== ctx.principal.user.id)
@@ -89,9 +89,8 @@ const Edit = z.object({
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await apiContext();
   if (!ctx) return NextResponse.json({ error: "Sign in required" }, { status: 401 });
-  const origin = req.headers.get("origin");
-  if (origin && new URL(origin).host !== req.headers.get("host"))
-    return NextResponse.json({ error: "Cross-site request refused" }, { status: 403 });
+  const refused = crossSite(req);
+  if (refused) return refused;
   const id = (await params).id;
   const cs = await getChangeset(db(), id);
   if (!cs || cs.vaultId !== ctx.vault.id || !canSeeChangeset(ctx.principal, cs))

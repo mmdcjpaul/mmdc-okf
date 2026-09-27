@@ -3,7 +3,14 @@
  * No I/O here, so incremental and full runs derive exactly the same rows from the same tree.
  */
 import { createHash } from "node:crypto";
-import type { LinkInput, NewNoteRow, TermRow, NamespaceRow, AssetRow } from "@lore/db";
+import {
+  healthScore,
+  type AssetRow,
+  type LinkInput,
+  type NamespaceRow,
+  type NewNoteRow,
+  type TermRow,
+} from "@lore/db";
 import {
   countWords,
   extractLinks,
@@ -58,15 +65,6 @@ function toDate(v: unknown): Date | null {
 function noteSlug(path: string): string {
   const base = path.slice(path.lastIndexOf("/") + 1);
   return base.replace(/\.md$/i, "");
-}
-
-/** Health score from PRD 7.7 and plans/02-library.md L7; feedback terms join in L7. */
-export function healthScore(input: { stale: boolean; trust: string; brokenLinks: number }): number {
-  let score = 100;
-  if (input.stale) score -= 20;
-  if (input.trust === "unverified") score -= 10;
-  score -= 5 * input.brokenLinks;
-  return Math.max(0, Math.min(100, score));
 }
 
 export interface DeriveResult {
@@ -176,8 +174,9 @@ export function deriveNotes(
       blobSha: blobShaOf(path),
       wordCount: countWords(note),
     };
-    // `stale` and the health score depend on the clock, so they stay out of the hash: the
-    // same tree gives the same hash on any day, and the staleness refresh keeps them current.
+    // `stale` and the health score depend on the clock and on feedback, so they stay out of
+    // the hash: the same tree gives the same hash on any day, and the health refresh, which
+    // runs after every index, sets them from everything they depend on.
     const rowHash = sha256(JSON.stringify([row, dedup]));
     out.push({
       row: {
@@ -340,6 +339,8 @@ export function noteDoc(d: DerivedNote, vector: number[] | null): NoteDoc {
     trust_tier: r.trustTier,
     status: r.status ?? "stable",
     stale: r.stale ?? false,
+    // Set by the health refresh, which runs after every index and knows about feedback.
+    reported: false,
     desk: d.desk,
     health: r.healthScore ?? 100,
     updated_at: 0,

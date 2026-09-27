@@ -73,3 +73,14 @@ export async function requestProcessing(changesetId: string): Promise<boolean> {
   });
   return res?.ok ?? false;
 }
+
+/**
+ * Asks the worker to recompute health for notes whose feedback changed. Best effort: the
+ * worker recomputes after every index run as well.
+ */
+export async function requestHealth(vaultId: string, noteIds: string[]): Promise<boolean> {
+  if (noteIds.length === 0) return true;
+  const q = new URLSearchParams(noteIds.map((id) => ["note", id]));
+  const res = await call(`/vaults/${encodeURIComponent(vaultId)}/health?${q}`, { method: "POST" });
+  return res?.ok ?? false;
+}

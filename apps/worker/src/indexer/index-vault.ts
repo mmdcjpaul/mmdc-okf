@@ -30,7 +30,7 @@ import {
 } from "@lore/search";
 import type { Logger } from "pino";
 import { blobKey, type ObjectStore } from "@lore/ingest";
-import { refreshStale } from "./refresh-stale.ts";
+import { refreshHealth } from "./refresh-stale.ts";
 import {
   classFromVersions,
   deriveAssets,
@@ -63,6 +63,8 @@ export interface IndexResult {
   deleted: string[];
   embedded: number;
   processChanged: string[];
+  /** Feedback reports that commits in this run say they resolve, with the commit. */
+  resolvedReports: { id: string; sha: string }[];
   skipped: boolean;
 }
 
@@ -84,6 +86,7 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
     deleted: [],
     embedded: 0,
     processChanged: [],
+    resolvedReports: [],
     skipped: false,
   };
   if (!head) {
@@ -92,7 +95,7 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
   }
   if (head === vault.lastIndexedHead) {
     // Nothing was pushed, but a note may have passed its review date since the last run.
-    await refreshStale(deps, vaultId);
+    await refreshHealth(deps, vaultId);
     return { ...base, skipped: true };
   }
 
@@ -192,7 +195,11 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
   });
   await refreshNoteChangeInfo(db, vaultId);
   await syncUpdatedAt(deps, vault.slug, vaultId, changed, history.noteCommits);
-  await refreshStale(deps, vaultId);
+  await refreshHealth(
+    deps,
+    vaultId,
+    changed.map((d) => d.row.id),
+  );
 
   const result: IndexResult = {
     ...base,
@@ -205,6 +212,7 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
         history.noteCommits.filter((c) => c.changeClass === "process").map((c) => c.noteId),
       ),
     ],
+    resolvedReports: history.resolved,
   };
   log.info(
     {
@@ -290,6 +298,7 @@ async function buildDocs(
         status: doc.status,
         trust_tier: doc.trust_tier,
         stale: doc.stale,
+        reported: doc.reported,
         desk: doc.desk,
         themes: doc.themes,
         systems: doc.systems,
@@ -316,6 +325,7 @@ async function readHistory(
 ): Promise<{
   commits: Omit<CommitRow, "vaultId">[];
   noteCommits: Omit<NoteCommitRow, "vaultId">[];
+  resolved: { id: string; sha: string }[];
 }> {
   const log = await mirror.log(from, to);
   const isNote = (p: string) => p.startsWith(root + "/") && p.endsWith(".md");
@@ -331,7 +341,11 @@ async function readHistory(
 
   const commits: Omit<CommitRow, "vaultId">[] = [];
   const noteCommits: Omit<NoteCommitRow, "vaultId">[] = [];
+  const resolved: { id: string; sha: string }[] = [];
   for (const c of log) {
+    for (const id of (c.trailers["resolves-report"] ?? "").split("\n"))
+      if (/^fb_[0-9A-HJKMNP-TV-Z]{26}$/.test(id.trim()))
+        resolved.push({ id: id.trim(), sha: c.sha });
     const trailer = c.trailers["change-class"]?.toLowerCase();
     const declared =
       trailer === "fix" || trailer === "addition" || trailer === "process" ? trailer : null;
@@ -368,7 +382,7 @@ async function readHistory(
       changeClass: commitClass,
     });
   }
-  return { commits, noteCommits };
+  return { commits, noteCommits, resolved };
 }
 
 /** Puts the last-change time on search documents so results can sort by it. */

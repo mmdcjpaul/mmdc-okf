@@ -527,3 +527,115 @@ test.describe("note actions", () => {
     expect(fileAtHead(path)).not.toBeNull();
   });
 });
+
+test.describe("feedback", () => {
+  const path = "kb/finance/post-an-enrollment-deposit.md";
+
+  test("a report shows a banner, reaches the owner, and closes when a commit resolves it", async ({
+    page,
+    browser,
+  }) => {
+    const note = await noteAt(path);
+    await signIn(page, "carol");
+    await page.goto(noteUrl(note));
+    await page.getByRole("button", { name: "Helpful" }).click();
+    await expect(page.getByRole("button", { name: /Helpful/ })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+
+    await page.getByRole("button", { name: "Report an issue" }).click();
+    const dialog = page.getByRole("dialog", { name: "Report an issue" });
+    await expect(dialog.getByRole("button", { name: "Send the report" })).toBeDisabled();
+    await dialog.getByRole("radio", { name: "Outdated" }).check();
+    await dialog.getByLabel(/Anything that would help/).fill("Deposits are posted daily now.");
+    await dialog.getByRole("button", { name: "Send the report" }).click();
+    await expect(page.getByText("Thank you. The note's owner has been told.")).toBeVisible();
+    await expect(page.getByText(/^Reported as outdated on /)).toBeVisible();
+    // Readers see that it was reported, not who reported it.
+    await expect(page.getByRole("heading", { name: "Open reports" })).toHaveCount(0);
+
+    // Bob maintains finance: he is told, and sees the report with Carol's name.
+    const owner = await browser.newContext();
+    const bob = await owner.newPage();
+    await signIn(bob, "bob");
+    await bob.goto("/notifications");
+    await expect(bob.getByText(`Reported: ${note.title}`)).toBeVisible();
+    await expect(
+      bob.getByText(/Carol Diaz says it is outdated: Deposits are posted daily now/),
+    ).toBeVisible();
+    await bob.goto(noteUrl(note));
+    const reports = bob.getByRole("region", { name: "Feedback" });
+    await expect(reports).toContainText("Carol Diaz");
+    await reports.getByRole("link", { name: "Fix it" }).click();
+    await expect(bob).toHaveURL(/\/edit\/.*\?resolves=fb_/);
+    await appendToBody(bob, "\nDeposits are posted every working day.\n");
+    await bob.getByRole("button", { name: "Save" }).click();
+    await expect(bob).toHaveURL(noteUrl(note));
+    expect(gitLog("%B")).toMatch(/^Resolves-Report: fb_[0-9A-Z]{26}$/m);
+
+    await expect(async () => {
+      await bob.reload();
+      await expect(bob.getByText(/^Reported as outdated on /)).toHaveCount(0, { timeout: 1000 });
+    }).toPass({ timeout: 20_000 });
+    await expect(bob.getByRole("heading", { name: "Open reports" })).toHaveCount(0);
+    await owner.close();
+  });
+
+  test("an owner can dismiss a report, saying why, and the reporter is told", async ({
+    page,
+    browser,
+  }) => {
+    const note = await noteAt("kb/finance/netsuite-access-levels.md");
+    await signIn(page, "carol");
+    await page.goto(noteUrl(note));
+    await page.getByRole("button", { name: "Report an issue" }).click();
+    const dialog = page.getByRole("dialog", { name: "Report an issue" });
+    await dialog.getByRole("radio", { name: "Unclear" }).check();
+    await dialog.getByRole("button", { name: "Send the report" }).click();
+    await expect(page.getByText("Thank you.")).toBeVisible();
+    // Unclear is not a claim that the note is wrong, so there is no banner.
+    await expect(page.getByText(/^Reported as/)).toHaveCount(0);
+
+    const owner = await browser.newContext();
+    const bob = await owner.newPage();
+    await signIn(bob, "bob");
+    await bob.goto(noteUrl(note));
+    await bob.getByRole("button", { name: "Dismiss", exact: true }).click();
+    await expect(bob.getByRole("button", { name: "Dismiss the report" })).toBeDisabled();
+    await bob.getByLabel("Why is nothing changing?").fill("The levels are defined in the table.");
+    await bob.getByRole("button", { name: "Dismiss the report" }).click();
+    await expect(bob.getByRole("heading", { name: "Open reports" })).toHaveCount(0);
+    await owner.close();
+
+    await page.goto("/notifications");
+    await expect(page.getByText(`Your report on "${note.title}" was closed`)).toBeVisible();
+    await expect(page.getByText(/The levels are defined in the table/)).toBeVisible();
+  });
+
+  test("readers cannot dismiss reports, and nobody reports a note they cannot read", async ({
+    page,
+  }) => {
+    await signIn(page, "carol");
+    const hidden = await noteAt("kb/people-ops/payroll-calendar.md");
+    const refused = await page.request.post("/api/feedback", {
+      data: { kind: "report", noteId: hidden.id, reason: "outdated" },
+    });
+    expect(refused.status()).toBe(404);
+
+    const note = await noteAt("kb/finance/refund-policy.md");
+    const made = await page.request.post("/api/feedback", {
+      data: { kind: "report", noteId: note.id, reason: "duplicate" },
+    });
+    expect(made.status()).toBe(200);
+    const sql = (await import("postgres")).default;
+    const db = sql((await import("./env.ts")).DATABASE_URL, { max: 1 });
+    const [row] =
+      await db`select id from feedback where note_id = ${note.id} order by created_at desc limit 1`;
+    await db.end();
+    const dismiss = await page.request.delete(`/api/feedback/${row!.id}`, {
+      data: { reason: "Not a duplicate." },
+    });
+    expect(dismiss.status()).toBe(403);
+  });
+});
