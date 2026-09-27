@@ -4,8 +4,11 @@ import { readText, type FileSource } from "./source.ts";
 import { formatZodIssues } from "./schema.ts";
 import type { Issue } from "./types.ts";
 
+/** Where the vault profile lives. */
 export const PROFILE_PATH = ".kb/profile.yaml";
+/** Where the namespace registry lives. */
 export const NAMESPACES_PATH = ".kb/namespaces.yaml";
+/** Where the tag vocabulary lives. */
 export const TAGS_PATH = ".kb/tags.yaml";
 
 /** The profile schema version. The CLI's major version follows it. */
@@ -20,6 +23,7 @@ const TypeConfig = z.object({
   word_limits: z.boolean().optional(),
 });
 
+/** Per-type settings: review interval, how the Desk uses the type, word limits. */
 export type TypeConfig = z.infer<typeof TypeConfig>;
 
 const CustomField = z.object({
@@ -30,8 +34,10 @@ const CustomField = z.object({
   description: z.string().optional(),
 });
 
+/** A frontmatter field a vault adds on top of Lore's own. */
 export type CustomField = z.infer<typeof CustomField>;
 
+/** The note types from PRD 6.3, used when a profile does not list its own. */
 export const DEFAULT_TYPES: Record<string, z.input<typeof TypeConfig>> = {
   "How-To": { review_days: 180, desk: "answer" },
   Process: { review_days: 180, desk: "answer" },
@@ -48,6 +54,7 @@ export const DEFAULT_TYPES: Record<string, z.input<typeof TypeConfig>> = {
   "Graph Report": { desk: "none", word_limits: false },
 };
 
+/** Schema of `.kb/profile.yaml`. Missing keys take the PRD defaults. */
 export const ProfileSchema = z.object({
   schema_version: z.number().int().default(PROFILE_SCHEMA_VERSION),
   /** Shown as the heading of the root index. */
@@ -77,8 +84,10 @@ export const ProfileSchema = z.object({
   rules: z.record(z.string(), z.enum(["off", "warning", "error"])).default({}),
 });
 
+/** The parsed vault profile. */
 export type Profile = z.infer<typeof ProfileSchema>;
 
+/** Schema of one entry in `.kb/namespaces.yaml`. */
 export const NamespaceSchema = z.object({
   title: z.string().min(1),
   description: z.string().default(""),
@@ -88,16 +97,20 @@ export const NamespaceSchema = z.object({
   ai_processing: z.boolean().default(true),
 });
 
+/** A registered top-level folder, with its visibility and owner. */
 export type Namespace = z.infer<typeof NamespaceSchema>;
 
+/** Schema of one entry in `.kb/tags.yaml`. */
 export const TagSchema = z.object({
   description: z.string().default(""),
   aliases: z.array(z.string()).default([]),
   facet: z.string().optional(),
 });
 
+/** A tag in the vocabulary, with its aliases. */
 export type Tag = z.infer<typeof TagSchema>;
 
+/** Everything under `.kb/`, with the problems found while loading it. */
 export interface VaultConfig {
   profile: Profile;
   namespaces: Record<string, Namespace>;

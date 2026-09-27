@@ -7,6 +7,7 @@ import { str, strList, type ParsedNote } from "./note.ts";
 import { hubKindOf, hubPath, namespaceOf, toBundlePath } from "./paths.ts";
 import { contentNotes, type Vault } from "./vault.ts";
 
+/** A note or hub in the link graph, with the fields `graph.json` carries. */
 export interface GraphNode {
   id: string | null;
   path: string;
@@ -23,12 +24,15 @@ export interface GraphNode {
   hub: "theme" | "system" | null;
 }
 
+/** Why two notes are connected: a body link, hub membership, a source, or a replacement. */
 export type EdgeKind = "link" | "member" | "source" | "superseded_by";
 
+/** A directed connection between two notes. */
 export interface GraphEdge {
   kind: EdgeKind;
 }
 
+/** A note that others link to but that has not been written yet. */
 export interface WantedNote {
   /** Bundle path of the missing note. */
   path: string;
@@ -36,6 +40,7 @@ export interface WantedNote {
   from: string[];
 }
 
+/** The vault's link graph. Wanted notes are kept as a graph attribute, not as nodes. */
 export type Graph = MultiDirectedGraph<GraphNode, GraphEdge, { wanted: WantedNote[] }>;
 
 /**
@@ -158,6 +163,7 @@ export function linkDegree(
   return { inbound, outbound };
 }
 
+/** The shape of `_meta/graph.json`. */
 export interface GraphJson {
   okf_version: string;
   nodes: GraphNode[];
@@ -165,6 +171,7 @@ export interface GraphJson {
   wanted: WantedNote[];
 }
 
+/** Serializes the graph for `_meta/graph.json`, sorted so the file is stable. */
 export function graphToJson(vault: Vault, graph: Graph): GraphJson {
   const nodes: GraphNode[] = [];
   graph.forEachNode((_k, attrs) => nodes.push(attrs));

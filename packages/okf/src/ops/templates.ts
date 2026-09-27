@@ -28,6 +28,7 @@ const PLACEHOLDERS: Record<string, string> = {
   Rollback: "<!-- how to undo this, or why nothing is needed -->",
 };
 
+/** The starting body for a note of this type, with its Related links filled in. */
 export function templateBody(type: string, related: string[]): string {
   const sections = TYPE_TEMPLATES[type] ?? ["Overview", "Related"];
   return sections

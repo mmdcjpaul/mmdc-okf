@@ -3,6 +3,7 @@ import type { Actor, ChangeClass, Verification } from "./types.ts";
 
 const VERSION_RE = /^(\d+)\.(\d+)\.(\d+)$/;
 
+/** True for `MAJOR.MINOR.PATCH` with no prefix or suffix. */
 export function isValidVersion(version: unknown): version is string {
   return typeof version === "string" && VERSION_RE.test(version);
 }
@@ -53,6 +54,7 @@ export function isStale(note: { data: Record<string, unknown> }, now: Date): boo
   return Number.isFinite(t) && now.getTime() >= t;
 }
 
+/** An actor split into its kind and name. */
 export interface ParsedActor {
   kind: "human" | "agent" | "process";
   id: string;
@@ -60,6 +62,7 @@ export interface ParsedActor {
   model?: string;
 }
 
+/** Parses an OKF actor. Returns null when it follows none of the three forms. */
 export function parseActor(actor: Actor): ParsedActor | null {
   if (actor.startsWith("human:") && actor.length > 6) return { kind: "human", id: actor.slice(6) };
   if (actor.startsWith("process:") && actor.length > 8)
@@ -78,8 +81,10 @@ export function newId(prefix = "kb_", now: Date = new Date()): string {
   return prefix + ulid(now.getTime());
 }
 
+/** The ULID part of a note id: 26 Crockford base32 characters. */
 export const ID_BODY_RE = /^[0-9A-HJKMNP-TV-Z]{26}$/;
 
+/** True for `<prefix><ULID>`, for example `kb_01J9Z6Q4X8M2T7C3VQ5R1N0B8D`. */
 export function isValidId(id: unknown, prefix = "kb_"): boolean {
   return (
     typeof id === "string" && id.startsWith(prefix) && ID_BODY_RE.test(id.slice(prefix.length))
@@ -91,6 +96,7 @@ export function isoInstant(date: Date): string {
   return date.toISOString().replace(/\.\d{3}Z$/, "Z");
 }
 
+/** The instant `days` days after `date`, in UTC. */
 export function addDays(date: Date, days: number): Date {
   return new Date(date.getTime() + days * 86_400_000);
 }

@@ -25,6 +25,7 @@ import { appendLogEntry } from "./logmd.ts";
 import { templateBody, typeDefaults } from "./templates.ts";
 import { Workspace } from "./workspace.ts";
 
+/** What {@link newNote} needs to create a note. */
 export interface NewNoteInput {
   type: string;
   title: string;

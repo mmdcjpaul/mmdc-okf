@@ -7,8 +7,10 @@ import { noteAst, str, strList, type ParsedNote } from "./note.ts";
 import { namespaceOf } from "./paths.ts";
 import type { Vault } from "./vault.ts";
 
+/** Counts the tokens in a piece of text. The default approximates with cl100k. */
 export type TokenCounter = (text: string) => number;
 
+/** Size limits for {@link chunkNote}, in tokens. */
 export interface ChunkOptions {
   countTokens?: TokenCounter;
   /** A section or procedure above this many tokens is split. Default 700. */
@@ -19,6 +21,7 @@ export interface ChunkOptions {
   minTokens?: number;
 }
 
+/** One retrievable section of a note, with the header that gives it context. */
 export interface Chunk {
   /** `<noteId>#<position>`. */
   id: string;

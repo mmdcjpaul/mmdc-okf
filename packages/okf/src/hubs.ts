@@ -2,7 +2,9 @@ import { str, strList, type ParsedNote } from "./note.ts";
 import { compareText, makeHref } from "./paths.ts";
 import { contentNotes, type Vault } from "./vault.ts";
 
+/** Opens the generated member list in a hub file. */
 export const MEMBERS_START = "<!-- kb:members:start -->";
+/** Closes the generated member list in a hub file. */
 export const MEMBERS_END = "<!-- kb:members:end -->";
 
 /** Orders type names as the profile lists them, with unknown types last in name order. */
@@ -62,6 +64,7 @@ export function hubMembers(vault: Vault, kind: "theme" | "system", slug: string)
   );
 }
 
+/** Renders a hub's member list, grouped by type, between the two markers. */
 export function renderMembersBlock(vault: Vault, hubPath: string, members: ParsedNote[]): string {
   const inner = members.length ? groupedListing(vault, hubPath, members) : "_No notes yet._\n";
   return `${MEMBERS_START}\n\n${inner}\n${MEMBERS_END}`;

@@ -1,6 +1,7 @@
 import type { Issue } from "../types.ts";
 import type { LintReport } from "./engine.ts";
 
+/** Output formats for `kb lint --format`. */
 export type ReportFormat = "human" | "json" | "github";
 
 /** Issues grouped by file, one line each, with a summary. */
@@ -26,6 +27,7 @@ export function formatHuman(report: LintReport): string {
   return lines.join("\n") + "\n";
 }
 
+/** The report as JSON, for the ingestion pipeline and other tools. */
 export function formatJson(report: LintReport): string {
   return JSON.stringify(report, null, 2) + "\n";
 }
@@ -56,6 +58,7 @@ export function formatGithub(report: LintReport): string {
   );
 }
 
+/** Formats a report in the named format. */
 export function formatReport(report: LintReport, format: ReportFormat): string {
   if (format === "json") return formatJson(report);
   if (format === "github") return formatGithub(report);

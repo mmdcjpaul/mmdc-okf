@@ -30,6 +30,7 @@ const TEXT_EXTENSIONS = new Set([
   ".toml",
 ]);
 
+/** True for files read as text. Anything else is read as bytes. */
 export function isTextPath(path: string): boolean {
   const dot = path.lastIndexOf(".");
   if (dot < 0) return true;

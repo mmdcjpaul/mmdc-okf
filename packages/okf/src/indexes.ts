@@ -17,6 +17,7 @@ import { readText } from "./source.ts";
 import type { FileOp } from "./types.ts";
 import { contentNotes, type Vault } from "./vault.ts";
 
+/** Options for {@link generateIndexes}. */
 export interface IndexOptions {
   /** Used for the stale counts in the graph report. */
   now?: Date;

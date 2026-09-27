@@ -13,6 +13,7 @@ import {
 } from "./engine.ts";
 import { RULES } from "./rules.ts";
 
+/** Options for {@link lint}. */
 export interface LintOptions {
   /** Report only issues in these repository paths (files or folders). */
   paths?: string[];

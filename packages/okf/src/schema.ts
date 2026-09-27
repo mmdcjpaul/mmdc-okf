@@ -10,8 +10,10 @@ export const ActorSchema = z
 
 const Instant = z.iso.datetime({ offset: true });
 
+/** Schema of one `verified` entry. */
 export const VerificationSchema = z.object({ by: ActorSchema, at: Instant });
 
+/** Schema of one `sources` entry: where a note's content came from. */
 export const SourceSchema = z
   .object({
     id: z.string().optional(),
@@ -20,6 +22,7 @@ export const SourceSchema = z
   })
   .loose();
 
+/** The three lifecycle states of a note. */
 export const StatusSchema = z.enum(["draft", "stable", "deprecated"]);
 
 /** Lore's frontmatter fields. Unknown keys pass through untouched. */
@@ -45,8 +48,10 @@ export const NoteDataSchema = z
   })
   .loose();
 
+/** Typed view of a note's frontmatter. Unknown keys are kept. */
 export type NoteData = z.infer<typeof NoteDataSchema>;
 
+/** Field types a Request Type may ask for. */
 export const REQUEST_FIELD_TYPES = [
   "email",
   "text",
@@ -56,6 +61,7 @@ export const REQUEST_FIELD_TYPES = [
   "boolean",
 ] as const;
 
+/** Schema of one intake field on a Request Type. */
 export const RequestFieldSchema = z
   .object({
     name: z.string().regex(/^[a-z][a-z0-9_]*$/, "Field names are snake_case"),
@@ -71,6 +77,7 @@ export const RequestFieldSchema = z
     }
   });
 
+/** Schema of the extra frontmatter on a Request Type note. */
 export const RequestTypeSchema = z
   .object({
     kind: z.enum(["request", "incident"]),
@@ -91,6 +98,7 @@ export const RequestTypeSchema = z
     }
   });
 
+/** Parameter types an Action may declare. */
 export const PARAMETER_TYPES = [
   "string",
   "number",
@@ -101,6 +109,7 @@ export const PARAMETER_TYPES = [
   "enum",
 ] as const;
 
+/** Schema of one parameter on an Action. */
 export const ActionParameterSchema = z
   .object({
     name: z.string().regex(/^[a-z][a-z0-9_]*$/, "Parameter names are snake_case"),
@@ -116,6 +125,7 @@ export const ActionParameterSchema = z
     }
   });
 
+/** Schema of the extra frontmatter on an Action note (PRD 11.3). */
 export const ActionSchema = z
   .object({
     execution: z.enum(["auto", "approval", "manual"]),
