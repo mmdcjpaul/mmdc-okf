@@ -69,9 +69,16 @@ test.describe("accessibility (WCAG 2.2 AA)", () => {
         await expectNoViolations(page);
       });
 
-      test("My changes, Review, and Notifications", async ({ page }) => {
+      test("My changes, Review, Notifications, Upload, Capture, and Uploads", async ({ page }) => {
         await signIn(page, "alice");
-        for (const path of ["/changes", "/review", "/notifications"]) {
+        for (const path of [
+          "/changes",
+          "/review",
+          "/notifications",
+          "/upload",
+          "/capture",
+          "/uploads",
+        ]) {
           await page.goto(path);
           await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
           await expectNoViolations(page);

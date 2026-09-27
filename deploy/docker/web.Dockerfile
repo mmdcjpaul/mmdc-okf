@@ -15,8 +15,8 @@ COPY packages/ai/package.json packages/ai/
 COPY packages/auth/package.json packages/auth/
 COPY packages/changesets/package.json packages/changesets/
 COPY packages/db/package.json packages/db/
-COPY packages/okf/package.json packages/okf/
 COPY packages/ingest/package.json packages/ingest/
+COPY packages/okf/package.json packages/okf/
 COPY packages/search/package.json packages/search/
 COPY packages/ui/package.json packages/ui/
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
@@ -26,8 +26,8 @@ COPY packages/ai packages/ai
 COPY packages/auth packages/auth
 COPY packages/changesets packages/changesets
 COPY packages/db packages/db
-COPY packages/okf packages/okf
 COPY packages/ingest packages/ingest
+COPY packages/okf packages/okf
 COPY packages/search packages/search
 COPY packages/ui packages/ui
 RUN NEXT_OUTPUT=standalone pnpm --filter web build

@@ -4,11 +4,13 @@ import {
   Bell,
   ClipboardCheck,
   FilePen,
+  FileUp,
   FolderClosed,
   Hash,
   Home,
   Layers,
   Lock,
+  NotebookPen,
   Plus,
   Search,
   Server,
@@ -84,6 +86,16 @@ export function SidebarNav({ namespaces, counts, onNavigate }: SidebarNavProps) 
           onNavigate={onNavigate}
         >
           Notifications
+        </NavLink>
+        <NavLink href="/upload" icon={<FileUp size={ICON} aria-hidden />} onNavigate={onNavigate}>
+          Upload
+        </NavLink>
+        <NavLink
+          href="/capture"
+          icon={<NotebookPen size={ICON} aria-hidden />}
+          onNavigate={onNavigate}
+        >
+          Capture
         </NavLink>
         <NavLink
           href="/changes"

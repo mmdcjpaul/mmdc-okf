@@ -101,6 +101,7 @@ async function writeWebEnv(cfg: Config, slug: string, file: string): Promise<voi
       `LORE_VAULT=${slug}`,
       `APP_SECRET=${secret}`,
       "AUTH_DEV_LOGIN=true",
+      `AI_MODE=${cfg.AI_MODE}`,
       `EMBEDDINGS=${cfg.EMBEDDINGS}`,
       ...(cfg.EMBEDDINGS_LOCAL_MODEL
         ? [`EMBEDDINGS_LOCAL_MODEL=${cfg.EMBEDDINGS_LOCAL_MODEL}`]

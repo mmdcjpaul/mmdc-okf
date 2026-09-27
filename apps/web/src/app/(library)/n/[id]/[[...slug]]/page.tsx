@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import {
   ChevronRight,
   ExternalLink,
+  FileText,
   GitCommitHorizontal,
   Hash,
   Layers,
@@ -15,6 +16,7 @@ import {
   getNote,
   linksAmong,
   linksFrom,
+  linkTargets,
   listNamespaces,
   noteHistory,
   openFlags,
@@ -37,6 +39,7 @@ import { currentVault, hidden, requireContext } from "@/lib/context";
 import { db, meili } from "@/lib/db";
 import { shortDate, timeAgo, titleCase } from "@/lib/format";
 import { outline } from "@/lib/markdown";
+import { resolveHref } from "@/lib/preview";
 import { folderHref, noteHref, termHref, typeHref } from "@/lib/urls";
 
 interface Props {
@@ -235,7 +238,7 @@ export default async function NotePage({ params }: Props) {
               <LinkList items={related.map(toItem)} empty="" />
             </PanelSection>
           ) : null}
-          <Sources note={note} />
+          <Sources note={note} bundleRoot={vault.bundleRoot} readable={scope.namespaces} />
           <PanelSection title="History" count={history.length}>
             {history.length ? (
               <ol className="space-y-2.5">
@@ -427,12 +430,40 @@ async function SupersededBy({ note }: { note: NoteRow }) {
   ) : null;
 }
 
-function Sources({ note }: { note: NoteRow }) {
+/**
+ * Where a note's content came from. A source inside the vault (a Source Document) links to
+ * its page when the reader can see it; a source elsewhere links out.
+ */
+async function Sources({
+  note,
+  bundleRoot,
+  readable,
+}: {
+  note: NoteRow;
+  bundleRoot: string;
+  readable: string[];
+}) {
   const raw = note.frontmatter.sources;
   const sources = Array.isArray(raw)
     ? raw.filter((s): s is Record<string, unknown> => !!s && typeof s === "object")
     : [];
   if (sources.length === 0) return null;
+  const root = bundleRoot.replace(/\/+$/, "");
+  const inVault = (s: Record<string, unknown>) =>
+    typeof s.resource === "string" && s.resource.endsWith(".md")
+      ? (resolveHref(root, note.path, s.resource)?.path ?? null)
+      : null;
+  const targets = new Map(
+    (
+      await linkTargets(
+        db(),
+        note.vaultId,
+        sources.map(inVault).filter((p): p is string => p !== null),
+      )
+    )
+      .filter((t) => t.namespace === null || readable.includes(t.namespace))
+      .map((t) => [t.path, t]),
+  );
   return (
     <PanelSection title="Sources" count={sources.length}>
       <ul className="space-y-2 text-[13px]">
@@ -445,6 +476,20 @@ function Sources({ note }: { note: NoteRow }) {
                 : `Source ${i + 1}`;
           const url =
             typeof s.resource === "string" && /^https?:\/\//.test(s.resource) ? s.resource : null;
+          const target = targets.get(inVault(s) ?? "");
+          if (target) {
+            return (
+              <li key={i} className="flex gap-2">
+                <FileText size={14} className="mt-0.5 shrink-0 text-faint" aria-hidden />
+                <Link
+                  href={noteHref(target)}
+                  className="min-w-0 break-words text-ink-2 hover:text-accent"
+                >
+                  {title}
+                </Link>
+              </li>
+            );
+          }
           return (
             <li key={i} className="flex gap-2">
               <ExternalLink size={14} className="mt-0.5 shrink-0 text-faint" aria-hidden />

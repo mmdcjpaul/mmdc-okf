@@ -106,4 +106,23 @@ export async function mergeFor(
   };
 }
 
+/**
+ * A new note that came back to its author: a draft from an upload that still needs a theme,
+ * say. Returns what the new-note form starts from, or null when the changeset is not the
+ * person's own and waiting for them.
+ */
+export async function createFrom(
+  ctx: RequestContext,
+  changesetId: string,
+): Promise<{ namespace: string; data: Record<string, unknown>; body: string } | null> {
+  const cs = await getChangeset(db(), changesetId);
+  if (!cs || cs.vaultId !== ctx.vault.id || cs.submitterId !== ctx.principal.user.id) return null;
+  if (!["draft", "changes_requested"].includes(cs.state)) return null;
+  // The note a person finishes, not the Source Document that goes with it.
+  const intent = cs.intents.find((i) => i.type === "create" && i.folder !== "references");
+  if (!intent || intent.type !== "create") return null;
+  if (!ctx.scope.namespaces.includes(intent.namespace)) return null;
+  return { namespace: intent.namespace, data: intent.data, body: intent.body };
+}
+
 export { vocabulary };

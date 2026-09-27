@@ -84,3 +84,9 @@ export async function requestHealth(vaultId: string, noteIds: string[]): Promise
   const res = await call(`/vaults/${encodeURIComponent(vaultId)}/health?${q}`, { method: "POST" });
   return res?.ok ?? false;
 }
+
+/** Asks the worker to process an upload or capture now. */
+export async function requestIngest(itemId: string): Promise<boolean> {
+  const res = await call(`/ingest/${encodeURIComponent(itemId)}/process`, { method: "POST" });
+  return res?.ok ?? false;
+}

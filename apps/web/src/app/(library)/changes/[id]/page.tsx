@@ -61,7 +61,12 @@ export default async function ChangesetPage({ params }: Props) {
   const errors = cs.issues.filter((i) => i.severity === "error");
   const main = files.filter((f) => f.primary);
   const effects = files.filter((f) => !f.primary);
-  const editHref = note ? `/edit/${encodeURIComponent(note.id)}?from=${cs.id}` : null;
+  const creates = cs.intents.some((i) => i.type === "create" && i.folder !== "references");
+  const editHref = note
+    ? `/edit/${encodeURIComponent(note.id)}?from=${cs.id}`
+    : creates
+      ? `/new?from=${cs.id}`
+      : null;
 
   return (
     <div className="mx-auto max-w-[1080px] px-5 pb-20 pt-8 md:px-10">

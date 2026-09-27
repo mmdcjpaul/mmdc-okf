@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { TYPE_TEMPLATES, templateBody } from "@lore/okf";
 import { EmptyState } from "@lore/ui";
 import { NoteEditor } from "@/components/editor/NoteEditor";
-import { requireContext } from "@/lib/context";
-import { limitsOf, namespacesFor, vocabulary } from "@/lib/editor";
+import { hidden, requireContext } from "@/lib/context";
+import { createFrom, limitsOf, namespacesFor, vocabulary } from "@/lib/editor";
 
 interface Props {
-  searchParams: Promise<{ ns?: string; type?: string; title?: string }>;
+  searchParams: Promise<{ ns?: string; type?: string; title?: string; from?: string }>;
 }
 
 export const metadata: Metadata = { title: "New note" };
@@ -25,9 +25,16 @@ export default async function NewNotePage({ searchParams }: Props) {
     );
   }
   const root = ctx.vault.bundleRoot.replace(/\/+$/, "");
-  const namespace = namespaces.find((n) => n.slug === query.ns)?.slug ?? namespaces[0]!.slug;
-  const type = vocab.types.includes(query.type ?? "") ? query.type! : "How-To";
-  const body = templateBody(type in TYPE_TEMPLATES ? type : "How-To", []);
+  const from = query.from ? await createFrom(ctx, query.from) : null;
+  if (query.from && !from) hidden();
+  const namespace =
+    from?.namespace ?? namespaces.find((n) => n.slug === query.ns)?.slug ?? namespaces[0]!.slug;
+  const type = from
+    ? String(from.data.type ?? "Reference")
+    : vocab.types.includes(query.type ?? "")
+      ? query.type!
+      : "How-To";
+  const body = from?.body ?? templateBody(type in TYPE_TEMPLATES ? type : "How-To", []);
 
   return (
     <NoteEditor
@@ -38,7 +45,7 @@ export default async function NewNotePage({ searchParams }: Props) {
         namespace,
         path: `${root}/${namespace}/new-note.md`,
         blobSha: null,
-        data: { type, title: (query.title ?? "").slice(0, 160) },
+        data: from ? { ...from.data, type } : { type, title: (query.title ?? "").slice(0, 160) },
         body,
         isHub: false,
       }}
@@ -46,7 +53,8 @@ export default async function NewNotePage({ searchParams }: Props) {
       bundleRoot={root}
       writes={namespaces[0]!.writes}
       namespaces={namespaces}
-      cancelHref="/"
+      {...(from && query.from ? { replaces: query.from } : {})}
+      cancelHref={query.from ? `/changes/${query.from}` : "/"}
       limits={limitsOf(ctx)}
     />
   );

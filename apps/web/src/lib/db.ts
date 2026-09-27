@@ -22,7 +22,10 @@ export function meili(): Meilisearch {
   return g.__loreMeili;
 }
 
-/** Signs URLs only. The web app never reads or writes object bytes. */
+/**
+ * The object store. The web app signs URLs for assets and stores what people upload; it
+ * never reads a file back. Reading is the worker's job.
+ */
 export function objects(): ObjectStore {
   g.__loreObjects ??= new S3ObjectStore({
     endpoint: env().S3_ENDPOINT,

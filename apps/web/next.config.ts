@@ -22,7 +22,15 @@ const config: NextConfig = {
     "@lore/search",
     "@lore/ui",
   ],
-  serverExternalPackages: ["postgres", "@huggingface/transformers", "onnxruntime-node"],
+  serverExternalPackages: [
+    "postgres",
+    "@huggingface/transformers",
+    "onnxruntime-node",
+    "pdfjs-dist",
+    "mammoth",
+    "xlsx",
+    "jszip",
+  ],
   poweredByHeader: false,
   // The repository has its own agent instructions; Next should not write more into apps/web.
   agentRules: false,

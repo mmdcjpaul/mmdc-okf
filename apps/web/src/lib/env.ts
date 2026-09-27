@@ -25,6 +25,8 @@ const Env = z.object({
   EMBEDDINGS: z.enum(["hash", "local", "off", "fail"]).default("hash"),
   EMBEDDINGS_LOCAL_MODEL: z.string().optional(),
   EMBEDDINGS_CACHE_DIR: z.string().optional(),
+  /** Whether models are called at all. The worker makes the calls; this is for what forms say. */
+  AI_MODE: z.enum(["fake", "off", "live"]).default("off"),
   FEATURE_DESK: z.enum(["true", "false"]).default("false"),
 });
 

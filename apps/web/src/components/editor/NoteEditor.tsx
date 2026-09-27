@@ -63,6 +63,8 @@ export interface NoteEditorProps {
     reason: string | null;
     summary: string | null;
   };
+  /** A changeset this new note replaces: the draft it was started from. */
+  replaces?: string;
   /** Feedback reports this edit resolves. */
   resolves?: string[];
   cancelHref: string;
@@ -327,6 +329,44 @@ export function NoteEditor(props: NoteEditorProps) {
             changeClass,
             ...common,
           };
+    if (mode === "create" && props.replaces) {
+      // Finishing a note that came back: the changeset keeps what else it carries, such as
+      // the Source Document and the images of the upload it came from.
+      try {
+        const { title: _t, ...rest } = note.data;
+        const res = await fetch(`/api/changesets/${props.replaces}`, {
+          method: "PATCH",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            kind: "create",
+            data: { ...rest, ...(request as { data: Record<string, unknown> }).data },
+            body,
+          }),
+        });
+        if (!res.ok) {
+          const json = (await res.json().catch(() => ({}))) as { error?: string };
+          return setPhase({
+            kind: "failed",
+            message: json.error ?? "The note could not be saved.",
+          });
+        }
+        const outcome = await watchChangeset(props.replaces, (message) =>
+          setPhase({ kind: "saving", message }),
+        );
+        if (outcome.kind === "published") {
+          router.push(outcome.status.href ?? `/changes/${props.replaces}`);
+          router.refresh();
+          return;
+        }
+        setPhase(outcome);
+      } catch {
+        setPhase({
+          kind: "failed",
+          message: "The Library could not be reached. Nothing was saved.",
+        });
+      }
+      return;
+    }
     if (reviewing) {
       // The suggestion stays its author's: the reviewer's edits go into the same changeset.
       try {
@@ -368,7 +408,7 @@ export function NoteEditor(props: NoteEditorProps) {
       setPhase({ kind: "saving", message }),
     );
     if (outcome.kind === "failed" || outcome.kind === "invalid") return setPhase(outcome);
-    // The conflicted edit this one replaces is no longer needed.
+    // The changeset this one replaces is no longer needed.
     if (merge) void fetch(`/api/changesets/${merge.changesetId}`, { method: "DELETE" });
     if (outcome.kind === "published") {
       router.push(outcome.status.href ?? props.cancelHref);
@@ -546,6 +586,7 @@ export function NoteEditor(props: NoteEditorProps) {
                 <select
                   id={`${ids}-ns`}
                   value={namespace}
+                  disabled={!!props.replaces}
                   onChange={(e) => setNamespace(e.target.value)}
                   className={inputClass}
                 >
