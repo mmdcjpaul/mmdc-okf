@@ -115,7 +115,7 @@ const server: ChildProcess = spawn("pnpm", ["exec", "next", "start", "--port", S
   env: webEnv,
   stdio: "ignore",
 });
-let k6Status = 1;
+let k6Status: number;
 try {
   for (let i = 0; i < 120; i++) {
     try {
