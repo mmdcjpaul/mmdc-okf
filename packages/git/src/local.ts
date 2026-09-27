@@ -13,6 +13,9 @@ import type {
 
 const ZERO = "0000000000000000000000000000000000000000";
 
+/** Committer of every commit Lore makes. Set explicitly so a host with no git identity works. */
+const LORE_IDENTITY = { name: "Lore", email: "lore@users.noreply.lore.local" };
+
 /** Path of the bare repository for a `local:` vault. */
 export function localRepoPath(vault: VaultRef): string {
   if (!vault.repository.startsWith("local:")) {
@@ -67,13 +70,14 @@ export class LocalGitProvider implements GitProvider {
     if ((current ?? null) !== (input.expectedHead ?? null)) return { headMoved: current ?? ZERO };
 
     const tmp = await mkdtemp(join(tmpdir(), "lore-index-"));
-    const env: Record<string, string> = { GIT_INDEX_FILE: join(tmp, "index") };
-    if (input.author) {
-      env.GIT_AUTHOR_NAME = input.author.name;
-      env.GIT_AUTHOR_EMAIL = input.author.email;
-      env.GIT_COMMITTER_NAME = input.author.name;
-      env.GIT_COMMITTER_EMAIL = input.author.email;
-    }
+    const author = input.author ?? LORE_IDENTITY;
+    const env: Record<string, string> = {
+      GIT_INDEX_FILE: join(tmp, "index"),
+      GIT_AUTHOR_NAME: author.name,
+      GIT_AUTHOR_EMAIL: author.email,
+      GIT_COMMITTER_NAME: author.name,
+      GIT_COMMITTER_EMAIL: author.email,
+    };
     try {
       if (current) await git(gitDir, ["read-tree", current], { env });
       else await git(gitDir, ["read-tree", "--empty"], { env });

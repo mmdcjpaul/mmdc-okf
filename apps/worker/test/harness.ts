@@ -54,6 +54,8 @@ export interface Harness {
   vaultId: string;
   slug: string;
   bare: string;
+  /** The time the index job sees. Tests move it to let review dates pass. */
+  clock: { now: Date };
   /** A working copy of the fixture; edit it and call `push`. */
   work: string;
   push(message: string, author?: { name: string; email: string }): Promise<string | null>;
@@ -91,6 +93,7 @@ export async function createHarness(name: string): Promise<Harness> {
   });
   await seedPrincipals(db, slug, loadPrincipals(join(REPO, "fixtures/principals.yaml")));
 
+  const clock = { now: NOW };
   const deps: IndexDeps = {
     db,
     meili,
@@ -98,9 +101,10 @@ export async function createHarness(name: string): Promise<Harness> {
     embedder: new HashEmbedder(),
     objects: new FsObjectStore(join(tmp, "objects")),
     log: pino({ level: "silent" }),
-    now: () => NOW,
+    now: () => clock.now,
   };
   return {
+    clock,
     db,
     meili,
     deps,

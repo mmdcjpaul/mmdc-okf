@@ -108,14 +108,12 @@ export function deriveNotes(
 
     const members = hubKind ? memberRange(note) : null;
     const links: LinkInput[] = [];
-    let broken = 0;
     for (const link of extractLinks(note)) {
       if (link.kind === "wikilink") continue;
       if (members && link.start >= members[0] && link.end <= members[1]) continue;
       const r = resolveLink(vault, path, link.href);
       if (r.external || !r.path) continue;
       const isImage = link.kind === "image" || r.path.includes("/_assets/");
-      if (r.wanted) broken++;
       links.push({
         href: link.href,
         targetPath: r.path,
@@ -148,9 +146,10 @@ export function deriveNotes(
       (l, i) => i === 0 || l.href !== links[i - 1]!.href || l.kind !== links[i - 1]!.kind,
     );
 
+    const broken = dedup.filter((l) => l.wanted).length;
     const aliases = strList(data, "aliases");
     const staleAfter = toDate(data.stale_after);
-    const row: Omit<NewNoteRow, "rowHash"> = {
+    const row: Omit<NewNoteRow, "rowHash" | "stale" | "healthScore"> = {
       vaultId: "",
       id,
       path,
@@ -176,11 +175,17 @@ export function deriveNotes(
       contentHash: sha256(note.text),
       blobSha: blobShaOf(path),
       wordCount: countWords(note),
-      healthScore: healthScore({ stale, trust, brokenLinks: broken }),
     };
+    // `stale` and the health score depend on the clock, so they stay out of the hash: the
+    // same tree gives the same hash on any day, and the staleness refresh keeps them current.
     const rowHash = sha256(JSON.stringify([row, dedup]));
     out.push({
-      row: { ...row, rowHash },
+      row: {
+        ...row,
+        stale,
+        healthScore: healthScore({ stale, trust, brokenLinks: broken }),
+        rowHash,
+      },
       links: dedup,
       cardText: [title, str(data, "description") ?? "", aliases.join(", ")]
         .filter(Boolean)
@@ -316,7 +321,7 @@ export function deriveAssets(
   return out;
 }
 
-export function noteDoc(d: DerivedNote, vector: number[] | null, now: Date): NoteDoc {
+export function noteDoc(d: DerivedNote, vector: number[] | null): NoteDoc {
   const r = d.row;
   return {
     id: r.id,
@@ -334,7 +339,7 @@ export function noteDoc(d: DerivedNote, vector: number[] | null, now: Date): Not
     tags: r.tags ?? [],
     trust_tier: r.trustTier,
     status: r.status ?? "stable",
-    stale: r.staleAfter ? r.staleAfter.getTime() <= now.getTime() : false,
+    stale: r.stale ?? false,
     desk: d.desk,
     health: r.healthScore ?? 100,
     updated_at: 0,

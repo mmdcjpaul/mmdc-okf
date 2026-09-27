@@ -155,6 +155,8 @@ export const notes = pgTable(
     status: text("status").notNull().default("stable"),
     trustTier: text("trust_tier").$type<TrustTier>().notNull(),
     staleAfter: ts("stale_after"),
+    /** Whether `stale_after` has passed. Kept current by the worker's staleness refresh. */
+    stale: boolean("stale").notNull().default(false),
     owner: text("owner"),
     supersededBy: text("superseded_by"),
     contentHash: text("content_hash").notNull(),

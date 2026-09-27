@@ -217,6 +217,58 @@ export async function refreshNoteChangeInfo(db: Db, vaultId: string): Promise<vo
   `);
 }
 
+// Staleness. It depends on the clock, not on the vault, so it is refreshed outside the index run.
+
+export interface StaleDrift {
+  id: string;
+  /** The value `stale` should have at `now`. */
+  stale: boolean;
+  trustTier: string;
+  brokenLinks: number;
+}
+
+/** Notes whose stored `stale` flag no longer matches their `stale_after` date at `now`. */
+export async function staleDrift(db: Db, vaultId: string, now: Date): Promise<StaleDrift[]> {
+  const at = now.toISOString();
+  const rows = await db.execute<{
+    id: string;
+    stale: boolean;
+    trust_tier: string;
+    broken_links: number;
+  }>(sql`
+    select n.id,
+      (n.stale_after is not null and n.stale_after <= ${at}::timestamptz) as stale,
+      n.trust_tier,
+      (select count(*)::int from note_links l
+        where l.vault_id = n.vault_id and l.source_id = n.id and l.wanted) as broken_links
+    from notes n
+    where n.vault_id = ${vaultId}
+      and n.stale <> (n.stale_after is not null and n.stale_after <= ${at}::timestamptz)
+    order by n.id
+  `);
+  return [...rows].map((r) => ({
+    id: r.id,
+    stale: r.stale,
+    trustTier: r.trust_tier,
+    brokenLinks: r.broken_links,
+  }));
+}
+
+export async function setStaleness(
+  db: Db,
+  vaultId: string,
+  updates: { id: string; stale: boolean; healthScore: number }[],
+): Promise<void> {
+  await db.transaction(async (tx) => {
+    for (const u of updates) {
+      await tx
+        .update(notes)
+        .set({ stale: u.stale, healthScore: u.healthScore })
+        .where(and(eq(notes.vaultId, vaultId), eq(notes.id, u.id)));
+    }
+  });
+}
+
 // Embedding cache.
 
 export async function cachedEmbeddings(

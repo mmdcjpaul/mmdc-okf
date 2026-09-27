@@ -30,6 +30,7 @@ import {
 } from "@lore/search";
 import type { Logger } from "pino";
 import type { ObjectStore } from "../objects.ts";
+import { refreshStale } from "./refresh-stale.ts";
 import {
   classFromVersions,
   deriveAssets,
@@ -89,7 +90,11 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
     log.warn({ vaultId }, "vault branch has no commits; nothing to index");
     return { ...base, skipped: true };
   }
-  if (head === vault.lastIndexedHead) return { ...base, skipped: true };
+  if (head === vault.lastIndexedHead) {
+    // Nothing was pushed, but a note may have passed its review date since the last run.
+    await refreshStale(deps, vaultId);
+    return { ...base, skipped: true };
+  }
 
   // 1. Load the tree at head.
   const root = vault.bundleRoot.replace(/\/+$/, "");
@@ -119,7 +124,7 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
   const history = await readHistory(mirror, vault.lastIndexedHead, head, root, liveIds);
 
   // 6. Chunk and embed only what is missing from the cache.
-  const { noteDocs, chunkDocs, embedded } = await buildDocs(deps, changed, loaded, now);
+  const { noteDocs, chunkDocs, embedded } = await buildDocs(deps, changed, loaded);
 
   // 7. Assets into the object store under their blob SHA.
   const assets = deriveAssets(root, tree.values());
@@ -185,6 +190,7 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
   });
   await refreshNoteChangeInfo(db, vaultId);
   await syncUpdatedAt(deps, vault.slug, vaultId, changed, history.noteCommits);
+  await refreshStale(deps, vaultId);
 
   const result: IndexResult = {
     ...base,
@@ -217,7 +223,6 @@ async function buildDocs(
   deps: IndexDeps,
   changed: DerivedNote[],
   loaded: Awaited<ReturnType<typeof loadVault>>,
-  now: Date,
 ) {
   const noteDocs: NoteDoc[] = [];
   const chunkDocs: ChunkDoc[] = [];
@@ -265,7 +270,7 @@ async function buildDocs(
   }
 
   for (const { d, chunks, card } of chunked) {
-    const doc = noteDoc(d, vectors.get(card.hash) ?? null, now);
+    const doc = noteDoc(d, vectors.get(card.hash) ?? null);
     noteDocs.push(doc);
     for (const c of chunks) {
       chunkDocs.push({

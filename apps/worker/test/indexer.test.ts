@@ -2,7 +2,8 @@ import { mkdir, readFile, rm, writeFile, rename } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { backlinks, getNote, listNotes, noteHistory, wantedNotes } from "@lore/db";
-import { createHarness, dump, normalize, servicesAvailable, type Harness } from "./harness.ts";
+import { indexNames } from "@lore/search";
+import { createHarness, dump, normalize, NOW, servicesAvailable, type Harness } from "./harness.ts";
 
 const available = await servicesAvailable();
 const ALL = { namespaces: ["admissions", "finance", "it-support", "people-ops"] };
@@ -144,6 +145,56 @@ describe.skipIf(!available)("index job against vault-acme", () => {
     expect((await wantedNotes(h.db, scope)).map((w) => w.targetPath)).not.toContain(path);
     const inbound = await backlinks(h.db, scope, "kb_01K0000000000000000000UNLK");
     expect(inbound.map((n) => n.path)).toContain("kb/it-support/reset-a-staff-password.md");
+  });
+});
+
+describe.skipIf(!available)("staleness follows the clock, not commits", () => {
+  let h: Harness;
+
+  beforeAll(async () => {
+    h = await createHarness("staleness");
+    await h.index();
+  });
+  afterAll(async () => {
+    await h?.close();
+  });
+
+  it("marks a note stale once its review date passes, with no new commit", async () => {
+    const sql = h.db.$client;
+    const [due] = await sql`
+      select id, stale_after, health_score from notes
+      where vault_id = ${h.vaultId} and stale_after > ${NOW.toISOString()}::timestamptz and not stale and hub_kind is null
+      order by stale_after limit 1`;
+    expect(due, "the fixture has a note with a future review date").toBeDefined();
+    const names = indexNames(h.slug);
+    const before = await h.meili.index(names.notes).getDocument(due!.id);
+    expect(before.stale).toBe(false);
+
+    h.clock.now = new Date(new Date(due!.stale_after).getTime() + 1000);
+    const run = await h.index();
+    expect(run.skipped).toBe(true); // nothing was pushed
+
+    const [after] = await sql`
+      select stale, health_score from notes where vault_id = ${h.vaultId} and id = ${due!.id}`;
+    expect(after!.stale).toBe(true);
+    expect(after!.health_score).toBe(Math.max(0, due!.health_score - 20));
+    const doc = await h.meili.index(names.notes).getDocument(due!.id);
+    expect(doc.stale).toBe(true);
+    expect(doc.health).toBe(after!.health_score);
+    const chunks = await h.meili
+      .index(names.chunks)
+      .getDocuments({ filter: `note_id = "${due!.id}"`, fields: ["stale"], limit: 100 });
+    expect(chunks.results.length).toBeGreaterThan(0);
+    expect(chunks.results.every((c) => c.stale === true)).toBe(true);
+  });
+
+  it("clears the flag when the clock is before the review date again", async () => {
+    h.clock.now = NOW;
+    await h.index();
+    const [row] = await h.db.$client`
+      select count(*)::int as n from notes
+      where vault_id = ${h.vaultId} and stale and stale_after > ${NOW.toISOString()}::timestamptz`;
+    expect(row!.n).toBe(0);
   });
 });
 
@@ -306,6 +357,9 @@ describe.skipIf(!available)("incremental indexing equals a full rebuild", () => 
       expect(await h.push(message), message).not.toBeNull();
       await h.index();
     }
+    // The rebuild runs a year later than the incremental runs, so review dates pass in between.
+    h.clock.now = new Date(NOW.getTime() + 365 * 24 * 3600 * 1000);
+    await h.index();
     const incremental = normalize(await dump(h));
     const r = await h.rebuild();
     expect(r.embedded).toBe(0); // every vector comes from the cache
