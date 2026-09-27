@@ -10,3 +10,4 @@ templates/vault/.kb/
 test-results/
 playwright-report/
 apps/web/.next-e2e
+apps/web/.next-scale

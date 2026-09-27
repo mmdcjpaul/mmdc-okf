@@ -11,6 +11,8 @@ export default tseslint.config(
       "**/.turbo/**",
       "**/.next/**",
       "**/.next-e2e/**",
+      "**/.next-scale/**",
+      "scripts/scale/*.k6.js",
       "**/test-results/**",
       "**/playwright-report/**",
       "**/next-env.d.ts",
