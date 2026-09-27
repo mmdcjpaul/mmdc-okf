@@ -17,6 +17,7 @@ import { aiSettings } from "./ai.ts";
 import { applyIndexEffects } from "./changesets/effects.ts";
 import { processChangeset, type ChangesetDeps } from "./changesets/process.ts";
 import { loadConfig } from "./config.ts";
+import { github } from "./git.ts";
 import { indexVault } from "./indexer/index-vault.ts";
 import { processIngestItem, type IngestDeps } from "./ingest/process.ts";
 import { refreshHealth } from "./indexer/refresh-stale.ts";
@@ -32,6 +33,7 @@ import {
   enqueueIngest,
   mirrorFor,
   providerFor,
+  syncMirror,
   QUEUES,
   startBoss,
   VAULT_INDEXED,
@@ -87,6 +89,7 @@ const changesetDeps: ChangesetDeps = {
   db: rt.db,
   log: rt.log,
   mirrorFor,
+  syncMirror,
   providerFor: (repository) =>
     providerFor(repository, (vaultId) => enqueueIndex(boss, { vaultId, reason: "push" })),
 };
@@ -102,6 +105,7 @@ const ingestDeps: IngestDeps = {
   embedder: rt.deps.embedder,
   log: rt.log,
   mirrorFor,
+  syncMirror,
   batch: {
     settings: () => aiSettings(rt.db),
     providers: async () => new Set((await rt.ai.batchClients()).keys()),
@@ -121,6 +125,7 @@ const gardenerDeps = {
   meili: rt.deps.meili,
   log: rt.log,
   mirrorFor,
+  syncMirror,
   onChangeset: (id: string) => enqueueChangeset(boss, id),
 };
 await failStuckGardenerRuns(rt.db, new Date(Date.now() - 30 * 60_000));
@@ -228,6 +233,12 @@ const api = createApi({
   testKey: (provider) => rt.ai.testKey(provider),
   onGardener: (data) => enqueueGardener(boss, data),
   onBatchTick: () => runTick(true),
+  onWebhook: async (request) => {
+    const push = await github()?.verifyWebhook(request);
+    if (!push) return false;
+    await enqueueIndex(boss, { vaultId: push.vaultId, reason: "push", after: push.after });
+    return true;
+  },
   sendMail: async (message) => {
     if (!mailer.enabled) return false;
     await mailer.send(message);

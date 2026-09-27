@@ -11,7 +11,13 @@ const SRC = fileURLToPath(new URL("../src", import.meta.url));
 const APP = join(SRC, "app");
 
 /** Routes that serve signed-out people. Keep this list short and reviewed. */
-const PUBLIC = new Set(["login/page.tsx", "api/auth/[...all]/route.ts", "api/health/route.ts"]);
+const PUBLIC = new Set([
+  "login/page.tsx",
+  "api/auth/[...all]/route.ts",
+  "api/health/route.ts",
+  // Checked by GitHub's signature, in the worker. It reads nothing from the vault.
+  "api/webhooks/github/route.ts",
+]);
 /** Routes under these folders must also pass the admin guard. */
 const ADMIN_PREFIXES = ["(library)/admin/", "api/admin/"];
 

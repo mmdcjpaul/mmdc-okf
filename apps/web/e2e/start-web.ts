@@ -33,6 +33,8 @@ const child = spawn(
       WORKER_URL: `http://127.0.0.1:${WORKER_PORT}`,
       INTERNAL_API_TOKEN: WORKER_ENV.INTERNAL_API_TOKEN!,
       AUTH_DEV_LOGIN: "true",
+      // The fixture's people are all at acme.test, so the allow-list can be on.
+      AUTH_ALLOWED_DOMAINS: "acme.test",
       NEXT_TELEMETRY_DISABLED: "1",
       NEXT_DIST_DIR: ".next-e2e",
     },

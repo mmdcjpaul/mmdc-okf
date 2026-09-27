@@ -79,6 +79,8 @@ export interface GitProvider {
   /** Tags a commit, for audit snapshots such as `vault-2026-09`. */
   tag?(vault: VaultRef, name: string, sha: string, message: string): Promise<void>;
   listTags?(vault: VaultRef): Promise<{ name: string; sha: string; taggedAt: Date | null }[]>;
+  /** A branch for a change that is to be reviewed as a pull request. */
+  createBranch?(vault: VaultRef, name: string, from: string): Promise<void>;
   openPullRequest?(
     vault: VaultRef,
     input: { branch: string; title: string; body: string },

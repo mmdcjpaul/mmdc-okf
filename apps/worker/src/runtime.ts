@@ -1,13 +1,14 @@
 import { join } from "node:path";
 import { embedderFor } from "@lore/ai";
-import { createDb, type Db } from "@lore/db";
+import { createDb, listVaults, type Db } from "@lore/db";
 import { migrateDb } from "@lore/db/migrate";
-import { LocalGitProvider, Mirror, type GitProvider } from "@lore/git";
+import type { GitHubAuth } from "@lore/git/github";
 import { Meilisearch } from "@lore/search";
 import { PgBoss } from "pg-boss";
 import pino, { type Logger } from "pino";
 import { createAi, type Ai } from "./ai.ts";
 import type { Config } from "./config.ts";
+import { mirrorFor, setupGit, syncMirror } from "./git.ts";
 import type { IndexDeps } from "./indexer/index-vault.ts";
 import { FsObjectStore, S3ObjectStore, type ObjectStore } from "@lore/ingest";
 
@@ -53,22 +54,17 @@ export interface Runtime {
   close(): Promise<void>;
 }
 
-export function mirrorFor(repository: string): Mirror {
-  if (repository.startsWith("local:")) return new Mirror(repository.slice("local:".length));
-  throw new Error(`Mirrors for ${repository} arrive with GitHubProvider (Plan 4)`);
-}
+export { mirrorFor, providerFor, syncMirror } from "./git.ts";
 
-/**
- * The provider that commits to a vault. `onPush` stands in for the push webhook: a local
- * repository has nobody to call us, so the provider does it after each commit.
- */
-export function providerFor(
-  repository: string,
-  onPush?: (vaultId: string) => Promise<void> | void,
-): GitProvider {
-  if (repository.startsWith("local:"))
-    return new LocalGitProvider(onPush ? { onPush: (e) => onPush(e.vaultId) } : {});
-  throw new Error(`Commits to ${repository} arrive with GitHubProvider`);
+function githubAuth(config: Config): GitHubAuth | null {
+  if (config.GITHUB_APP_ID && config.GITHUB_APP_PRIVATE_KEY && config.GITHUB_INSTALLATION_ID)
+    return {
+      appId: config.GITHUB_APP_ID,
+      // Environment files hold the key on one line, with `\n` for the line breaks.
+      privateKey: config.GITHUB_APP_PRIVATE_KEY.replace(/\\n/g, "\n"),
+      installationId: config.GITHUB_INSTALLATION_ID,
+    };
+  return config.GITHUB_TOKEN ? { token: config.GITHUB_TOKEN } : null;
 }
 
 export async function objectStoreFor(config: Config): Promise<ObjectStore> {
@@ -98,11 +94,28 @@ export async function createRuntime(
   });
   const db = createDb(config.DATABASE_URL, { max: 5 });
   await migrateDb(db);
+  setupGit({
+    dataDir: config.DATA_DIR,
+    ...(githubAuth(config)
+      ? {
+          github: {
+            auth: githubAuth(config)!,
+            apiUrl: config.GITHUB_API_URL,
+            gitUrl: config.GITHUB_GIT_URL,
+            webhookSecret: config.GITHUB_WEBHOOK_SECRET,
+          },
+        }
+      : {}),
+    vaultFor: async (repository, branch) =>
+      (await listVaults(db)).find((v) => v.repository === repository && v.branch === branch)?.id ??
+      null,
+  });
   const meili = new Meilisearch({ host: config.MEILI_URL, apiKey: config.MEILI_MASTER_KEY });
   const deps: IndexDeps = {
     db,
     meili,
     mirrorFor,
+    syncMirror,
     embedder: embedderFor(config.EMBEDDINGS, {
       localModel: config.EMBEDDINGS_LOCAL_MODEL,
       cacheDir: config.EMBEDDINGS_CACHE_DIR,

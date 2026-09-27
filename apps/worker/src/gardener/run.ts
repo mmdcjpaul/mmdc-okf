@@ -32,6 +32,7 @@ export interface GardenerDeps {
   meili: Meilisearch;
   log: Logger;
   mirrorFor: (repository: string) => Mirror;
+  syncMirror?: (repository: string) => Promise<void>;
   gaps?: GapSource;
   /** Hands a new changeset to the pipeline. */
   onChangeset?: (id: string) => Promise<void>;
@@ -81,6 +82,7 @@ export async function runGardener(
     at: now(),
   });
   try {
+    await deps.syncMirror?.(vault.repository);
     const mirror = deps.mirrorFor(vault.repository);
     const head = await mirror.resolve(`refs/heads/${vault.branch}`);
     if (!head) throw new Error("The vault has no commits");

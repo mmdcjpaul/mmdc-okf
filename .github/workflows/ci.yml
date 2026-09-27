@@ -146,8 +146,9 @@ jobs:
       - run: pnpm --filter web exec playwright install --with-deps chromium
       - run: pnpm scale:library
 
-  # Nightly: one tiny batch per provider that has a key in the repository's secrets. A
-  # provider without a key is skipped, and the job says which were.
+  # Nightly, against the real services: one tiny batch per model provider that has a key,
+  # and the Git provider's contract suite on a scratch GitHub repository. What has no
+  # credentials in the repository's secrets is skipped, and the job says which were.
   live:
     if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
@@ -157,6 +158,9 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.LIVE_GEMINI_API_KEY }}
       LIVE_OPENAI_MODEL: ${{ vars.LIVE_OPENAI_MODEL }}
       LIVE_GOOGLE_MODEL: ${{ vars.LIVE_GOOGLE_MODEL }}
+      # A scratch repository for the Git provider's contract suite.
+      LIVE_GITHUB_REPO: ${{ vars.LIVE_GITHUB_REPO }}
+      LIVE_GITHUB_TOKEN: ${{ secrets.LIVE_GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -164,6 +168,7 @@ jobs:
         with: { node-version: 24, cache: pnpm }
       - run: pnpm install --frozen-lockfile
       - run: pnpm --filter @lore/ai test:live
+      - run: pnpm --filter @lore/git test:live
 
   bench:
     if: github.event_name == 'schedule'

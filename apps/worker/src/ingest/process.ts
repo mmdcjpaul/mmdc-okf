@@ -48,6 +48,7 @@ export interface IngestDeps {
   embedder: Embedder | null;
   log: Logger;
   mirrorFor: (repository: string) => Mirror;
+  syncMirror?: (repository: string) => Promise<void>;
   /** What batching needs. Without it every model call is made at once. */
   batch?: {
     settings: () => Promise<AiSettings> | AiSettings;
@@ -126,6 +127,7 @@ export async function processIngestItem(
     if (!ns || !access.has(item.namespace))
       return await fail("failed", "You can no longer read the namespace this was sent to");
 
+    await deps.syncMirror?.(vault.repository);
     const mirror = deps.mirrorFor(vault.repository);
     const head = await mirror.resolve(`refs/heads/${vault.branch}`);
     if (!head) return await fail("failed", "The vault has no commits");

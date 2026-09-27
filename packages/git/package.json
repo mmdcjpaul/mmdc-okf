@@ -5,13 +5,17 @@
   "type": "module",
   "description": "GitProvider interface, local bare-repository provider, and mirror reads.",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./github": "./src/github.ts"
   },
   "scripts": {
     "test": "vitest run",
+    "test:live": "vitest run --config vitest.live.config.ts",
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@lore/okf": "workspace:*"
+    "@lore/okf": "workspace:*",
+    "@octokit/auth-app": "^8.3.1",
+    "@octokit/core": "^7.0.8"
   }
 }

@@ -49,6 +49,8 @@ export interface IndexDeps {
   db: Db;
   meili: Meilisearch;
   mirrorFor: (repository: string) => Mirror;
+  /** Fetches the mirror of a repository that lives elsewhere. Nothing to do for a local one. */
+  syncMirror?: (repository: string) => Promise<void>;
   embedder: Embedder | null;
   objects: ObjectStore;
   log: Logger;
@@ -76,6 +78,7 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
   const now = deps.now?.() ?? new Date();
   const vault = await getVault(db, vaultId);
   if (!vault) throw new Error(`Unknown vault ${vaultId}`);
+  await deps.syncMirror?.(vault.repository);
   const mirror = deps.mirrorFor(vault.repository);
   const head = await mirror.resolve(`refs/heads/${vault.branch}`);
   const base: IndexResult = {

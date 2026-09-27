@@ -25,6 +25,8 @@ export interface ApiDeps {
   providerFor?: (repository: string) => GitProvider;
   /** Recomputes health for notes whose feedback changed. */
   onFeedback?: (vaultId: string, noteIds: string[]) => Promise<void>;
+  /** A delivery from GitHub, passed on by the web app. True when it was a push to a vault. */
+  onWebhook?: (request: Request) => Promise<boolean>;
   /** Sends an email the web app has written, such as a sign-in link. */
   sendMail?: (mail: {
     to: { name: string; email: string };
@@ -101,6 +103,30 @@ export function createApi(deps: ApiDeps) {
             return send(res, 400, { error: (err as Error).message });
           }
           return send(res, 201, { name: url.searchParams.get("name"), sha: head });
+        }
+        // POST /webhooks/github: the body and GitHub's headers as the web app received them.
+        if (url.pathname === "/webhooks/github" && deps.onWebhook) {
+          const chunks: Buffer[] = [];
+          let size = 0;
+          for await (const chunk of req) {
+            size += (chunk as Buffer).length;
+            // GitHub caps deliveries at 25 MB.
+            if (size > 26 * 1024 * 1024) return send(res, 413, { error: "Too large" });
+            chunks.push(chunk as Buffer);
+          }
+          const accepted = await deps.onWebhook(
+            new Request("http://worker/webhooks/github", {
+              method: "POST",
+              headers: {
+                "x-github-event": String(req.headers["x-github-event"] ?? ""),
+                "x-hub-signature-256": String(req.headers["x-hub-signature-256"] ?? ""),
+              },
+              body: Buffer.concat(chunks),
+            }),
+          );
+          // The same answer for a bad signature as for a push nobody is waiting for: a
+          // stranger learns nothing from it.
+          return send(res, 202, { accepted });
         }
         // POST /mail with { to, subject, text, html }
         if (url.pathname === "/mail" && deps.sendMail) {

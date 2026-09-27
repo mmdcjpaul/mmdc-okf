@@ -36,6 +36,7 @@ export interface ChangesetDeps {
   db: Db;
   log: Logger;
   mirrorFor: (repository: string) => Mirror;
+  syncMirror?: (repository: string) => Promise<void>;
   providerFor: (repository: string) => GitProvider;
   now?: () => Date;
 }
@@ -176,6 +177,8 @@ export async function processChangeset(deps: ChangesetDeps, id: string): Promise
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       const head = await provider.head(ref);
       if (!head) throw new Error(`${vault.repository} has no commits on ${vault.branch}`);
+      // The vault is read from the mirror, which has to have the head the provider reports.
+      await deps.syncMirror?.(vault.repository);
       const p = await prepare(deps, vault, cs, head, approver?.actor ?? null);
 
       if (p.status === "conflicted") {

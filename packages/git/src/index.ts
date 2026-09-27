@@ -1,6 +1,7 @@
 /**
  * `@lore/git`: the `GitProvider` interface, the local bare-repository provider, and mirror
- * reads for the indexer. The GitHub provider arrives with the GitHub App work (L2, Plan 4).
+ * reads for the indexer. The GitHub provider is `@lore/git/github`, so only what commits to
+ * GitHub loads Octokit.
  *
  * @packageDocumentation
  */

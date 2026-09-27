@@ -92,6 +92,33 @@ test.describe("sign-in", () => {
     await expect(page.getByText("That link has been used or has expired")).toBeVisible();
   });
 
+  test("an address outside the company's domains is sent nothing, and told the same", async ({
+    page,
+    request,
+  }) => {
+    await page.goto("/login");
+    await page.getByLabel("Work email").fill("mallory@elsewhere.test");
+    await page.getByRole("button", { name: "Email me a sign-in link" }).click();
+    await expect(page.getByRole("status")).toContainText(
+      "If mallory@elsewhere.test can sign in, a link is on its way",
+    );
+    // A link for someone who may sign in, sent afterwards, arrives. Hers never does.
+    await page.getByLabel("Work email").fill("erin@acme.test");
+    await page.getByRole("button", { name: "Email me a sign-in link" }).click();
+    const mailpit = process.env.TEST_MAILPIT_URL ?? "http://127.0.0.1:8025";
+    const to = async (address: string) =>
+      (
+        (await (
+          await request.get(`${mailpit}/api/v1/search?query=${encodeURIComponent(`to:${address}`)}`)
+        ).json()) as { messages: { ID: string }[] }
+      ).messages;
+    await expect.poll(async () => (await to("erin@acme.test")).length).toBeGreaterThan(0);
+    expect(await to("mallory@elsewhere.test")).toEqual([]);
+    await request.delete(`${mailpit}/api/v1/messages`, {
+      data: { IDs: (await to("erin@acme.test")).map((m) => m.ID) },
+    });
+  });
+
   test("something that is not an address is refused", async ({ page }) => {
     // Who may sign in (the allow-list) is tested in packages/auth, against the database.
     await page.goto("/login");
@@ -99,5 +126,19 @@ test.describe("sign-in", () => {
     await page.getByLabel("Work email").evaluate((el: HTMLInputElement) => (el.type = "text"));
     await page.getByRole("button", { name: "Email me a sign-in link" }).click();
     await expect(page.getByRole("status")).toContainText("Enter your work email address");
+  });
+
+  test("the GitHub webhook takes deliveries from anyone, and tells them nothing", async ({
+    request,
+  }) => {
+    expect((await request.post("/api/webhooks/github", { data: {} })).status()).toBe(400);
+    const forged = await request.post("/api/webhooks/github", {
+      headers: { "x-github-event": "push", "x-hub-signature-256": `sha256=${"0".repeat(64)}` },
+      data: { ref: "refs/heads/main", after: "a".repeat(40), repository: { full_name: "a/b" } },
+    });
+    // Taken, checked by the worker, and dropped: the same answer a real push would get.
+    expect(forged.status()).toBe(202);
+    expect(await forged.json()).toEqual({ received: true });
+    expect((await request.get("/api/webhooks/github")).status()).toBe(405);
   });
 });

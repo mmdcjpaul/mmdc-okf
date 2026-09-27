@@ -17,7 +17,10 @@ export interface RequestContext {
 
 /** The signed-in person, or null. Cached for the request. */
 export const currentUserId = cache(async (): Promise<string | null> => {
-  return sessionUserId(auth(), await headers());
+  // The headers are asked for first: that is what tells a build that the page is rendered
+  // per request, before anything needs the deployment's configuration.
+  const sent = await headers();
+  return sessionUserId(auth(), sent);
 });
 
 export const currentVault = cache(async (): Promise<Vault | null> => {

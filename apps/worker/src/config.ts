@@ -8,7 +8,18 @@ const Env = z.object({
   DATABASE_URL: z.string().url().default("postgres://lore:lore@127.0.0.1:5433/lore"),
   MEILI_URL: z.string().url().default("http://127.0.0.1:7701"),
   MEILI_MASTER_KEY: z.string().min(1).default("lore-dev-master-key"),
-  GIT_PROVIDER: z.enum(["local"]).default("local"),
+  /** Where new vaults are made by `lore seed`. A vault's own `repository` says where it is. */
+  GIT_PROVIDER: z.enum(["local", "github"]).default("local"),
+  /** The Lore GitHub App, for vaults on GitHub. */
+  GITHUB_APP_ID: z.string().optional(),
+  GITHUB_APP_PRIVATE_KEY: z.string().optional(),
+  GITHUB_INSTALLATION_ID: z.string().optional(),
+  /** A token instead of the app, for trying things out. */
+  GITHUB_TOKEN: z.string().optional(),
+  GITHUB_WEBHOOK_SECRET: z.string().optional(),
+  /** Set both for GitHub Enterprise Server. */
+  GITHUB_API_URL: z.string().url().optional(),
+  GITHUB_GIT_URL: z.string().default("https://github.com"),
   /** `local` runs a model on this machine with transformers.js. */
   EMBEDDINGS: z.enum(["hash", "local", "off", "fail"]).default("hash"),
   EMBEDDINGS_LOCAL_MODEL: z.string().optional(),

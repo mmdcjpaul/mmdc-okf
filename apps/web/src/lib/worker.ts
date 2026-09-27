@@ -161,3 +161,20 @@ export async function sendMail(mail: {
   });
   return res?.ok ?? false;
 }
+
+/** Passes a GitHub delivery to the worker, which knows the webhook secret. */
+export async function forwardWebhook(
+  body: ArrayBuffer,
+  headers: { event: string; signature: string },
+): Promise<boolean> {
+  const res = await call("/webhooks/github", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-github-event": headers.event,
+      "x-hub-signature-256": headers.signature,
+    },
+    body,
+  });
+  return res?.ok ?? false;
+}
