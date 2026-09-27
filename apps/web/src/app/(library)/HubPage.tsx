@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Pencil } from "lucide-react";
 import { getNote, getTerm, linksAmong, listNamespaces, listNotes, type NoteCard } from "@lore/db";
 import { Chip } from "@/components/Chip";
 import { EmptyState } from "@lore/ui";
@@ -10,6 +10,7 @@ import { NoteList } from "@/components/NoteList";
 import { PageHeader } from "@/components/PageHeader";
 import { Section } from "@lore/ui";
 import { TypeIcon } from "@/components/TypeIcon";
+import { publishes } from "@/lib/changesets";
 import { currentVault, hidden, requireContext } from "@/lib/context";
 import { db } from "@/lib/db";
 import { plural } from "@/lib/format";
@@ -31,7 +32,7 @@ export async function hubMetadata(kind: "theme" | "system", slug: string): Promi
 
 /** Theme or System hub: introduction, members grouped by type, a small graph, and owners. */
 export async function HubPage({ kind, slug }: HubPageProps) {
-  const { vault, scope } = await requireContext();
+  const { vault, scope, principal } = await requireContext();
   const term = await getTerm(db(), vault.id, kind, slug);
   if (!term) hidden();
   const [hub, members, namespaces] = await Promise.all([
@@ -91,6 +92,17 @@ export async function HubPage({ kind, slug }: HubPageProps) {
       >
         {term.aliases.length ? (
           <p className="mt-3 text-[13px] text-faint">Also called {term.aliases.join(", ")}</p>
+        ) : null}
+        {hub && publishes(principal, null) ? (
+          <p className="mt-4">
+            <Link
+              href={`/edit/${encodeURIComponent(hub.id)}`}
+              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-line bg-paper px-2.5 text-[13px] font-medium text-ink-2 hover:bg-hover hover:text-ink"
+            >
+              <Pencil size={14} aria-hidden />
+              Edit the introduction
+            </Link>
+          </p>
         ) : null}
       </PageHeader>
 

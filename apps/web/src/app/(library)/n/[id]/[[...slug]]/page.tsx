@@ -16,19 +16,20 @@ import {
   linksFrom,
   listNamespaces,
   noteHistory,
+  openFlags,
   outgoing,
   type NoteRow,
 } from "@lore/db";
 import { similarNotes } from "@lore/search";
-import { Banner } from "@lore/ui";
+import { Banner, PanelSection, TrustBadge } from "@lore/ui";
 import { Chip } from "@/components/Chip";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { LinkList, type LinkListItem } from "@/components/LinkList";
 import { LocalGraph, type GraphNodeInput } from "@/components/LocalGraph";
+import { NoteActions } from "@/components/NoteActions";
 import { NoteBody } from "@/components/NoteBody";
-import { PanelSection } from "@lore/ui";
-import { TrustBadge } from "@lore/ui";
 import { TypeIcon } from "@/components/TypeIcon";
+import { publishes } from "@/lib/changesets";
 import { currentVault, hidden, requireContext } from "@/lib/context";
 import { db, meili } from "@/lib/db";
 import { shortDate, timeAgo, titleCase } from "@/lib/format";
@@ -54,20 +55,28 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function NotePage({ params }: Props) {
   const p = await params;
   const id = decodeURIComponent(p.id);
-  const { vault, scope } = await requireContext();
+  const { vault, scope, principal } = await requireContext();
   const note = await getNote(db(), scope, id);
   if (!note) hidden();
   if (note.hubKind) redirect(termHref(note.hubKind, note.slug));
   const slug = p.slug?.map(decodeURIComponent).join("/");
   if (slug !== note.slug) redirect(noteHref(note));
 
-  const [inbound, outbound, history, related, namespaces] = await Promise.all([
+  const writes = publishes(principal, note.namespace);
+  const [inbound, outbound, history, related, namespaces, flags] = await Promise.all([
     backlinks(db(), scope, note.id),
     outgoing(db(), scope, note.id),
     noteHistory(db(), vault.id, note.id),
     similarNotes(meili(), { vaultSlug: vault.slug, scope, noteId: note.id, limit: 6 }),
     listNamespaces(db(), vault.id),
+    // Flags are for the people who can act on them.
+    writes ? openFlags(db(), vault.id, note.id) : Promise.resolve([]),
   ]);
+  const causes = (
+    await Promise.all(
+      flags.map(async (f) => ({ flag: f, cause: await getNote(db(), scope, f.causeNoteId) })),
+    )
+  ).filter((c) => c.cause !== null);
   const ns = namespaces.find((n) => n.slug === note.namespace);
   const owner = note.owner ?? ns?.ownerTeam ?? null;
   const headings = outline(note.body);
@@ -115,7 +124,39 @@ export default async function NotePage({ params }: Props) {
       <div className="grid gap-x-12 lg:grid-cols-[minmax(0,1fr)_288px]">
         <article className="min-w-0 max-w-[740px]">
           <NoteHeader note={note} nsTitle={ns?.title ?? null} owner={owner} />
+          <NoteActions
+            note={{
+              id: note.id,
+              title: note.title,
+              slug: note.slug,
+              namespace: note.namespace,
+              folder: note.folder,
+            }}
+            writes={writes}
+            namespaces={namespaces
+              .filter((n) => scope.namespaces.includes(n.slug))
+              .map((n) => ({ slug: n.slug, title: n.title }))}
+            deprecated={note.status === "deprecated"}
+            isHub={false}
+          />
           <NoteBanners note={note} />
+          {causes.length ? (
+            <div className="mb-8 space-y-2">
+              {causes.map(({ flag, cause }) => (
+                <Banner
+                  key={flag.causeNoteId}
+                  kind="info"
+                  title="A process this note links to changed"
+                >
+                  <Link href={noteHref(cause!)} className="font-medium underline">
+                    {cause!.title}
+                  </Link>{" "}
+                  changed on {shortDate(flag.changedAt)}. Check whether this note needs updating
+                  too; editing it clears this notice.
+                </Banner>
+              ))}
+            </div>
+          ) : null}
           <NoteBody
             vaultId={vault.id}
             bundleRoot={vault.bundleRoot}

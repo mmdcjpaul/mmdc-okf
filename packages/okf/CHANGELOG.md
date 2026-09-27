@@ -6,6 +6,11 @@ a test fails when they change without a version bump and an entry here.
 Versions follow semantic versioning: a major version removes or changes an export, a minor
 version adds one, a patch changes behaviour without changing a signature.
 
+## 1.1.0 (2026-09-27)
+
+- Added `templateBody`, so the Library's new-note form starts from the same sections as
+  `kb new`.
+
 ## 1.0.0 (2026-09-27)
 
 The API is stable. It is the surface in section 3 of `plans/01-okf-vault-toolkit.md`, plus the

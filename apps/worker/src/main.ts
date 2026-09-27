@@ -27,7 +27,10 @@ const rt = await createRuntime(config);
 const boss = await startBoss(config, rt.log);
 let lastIndex: { at: string; vaultId: string; head: string | null } | null = null;
 
-await boss.work<IndexJobData>(QUEUES.index, async ([job]) => {
+// Jobs are picked up within half a second, so a saved note is on its page in a moment.
+const POLL = { pollingIntervalSeconds: 0.5 };
+
+await boss.work<IndexJobData>(QUEUES.index, POLL, async ([job]) => {
   if (!job) return;
   const result = await indexVault(rt.deps, job.data.vaultId);
   lastIndex = { at: new Date().toISOString(), vaultId: result.vaultId, head: result.head };
@@ -50,7 +53,7 @@ const changesetDeps: ChangesetDeps = {
   providerFor: (repository) =>
     providerFor(repository, (vaultId) => enqueueIndex(boss, { vaultId, reason: "push" })),
 };
-await boss.work<ChangesetJobData>(QUEUES.changeset, async ([job]) => {
+await boss.work<ChangesetJobData>(QUEUES.changeset, POLL, async ([job]) => {
   if (job) await processChangeset(changesetDeps, job.data.changesetId);
 });
 

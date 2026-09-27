@@ -28,6 +28,8 @@ export async function GET(req: NextRequest) {
         description: h.description,
         type: h.type,
         namespace: h.namespace,
+        // Repository path, so the editor can write a standard link to the note.
+        path: h.path,
         href: noteHref(h),
       })),
     });

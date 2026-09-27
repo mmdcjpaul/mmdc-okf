@@ -199,3 +199,11 @@ mark {
   text-transform: uppercase;
   color: var(--faint);
 }
+
+/* Native dialogs: centred, and the page behind does not scroll. */
+dialog::backdrop {
+  background: rgb(0 0 0 / 0.3);
+}
+html:has(dialog[open]) {
+  overflow: hidden;
+}

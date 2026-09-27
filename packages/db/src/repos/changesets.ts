@@ -235,6 +235,41 @@ export async function readersOf(db: Db, vaultId: string, namespace: string): Pro
   return new Set([...rows].map((r) => r.id));
 }
 
+/**
+ * People who may approve a changeset: those holding `level` on every namespace it writes
+ * to, or on any namespace when it only changes hubs and vocabulary. Admins always may.
+ * Mirrors `canApprove` in `@lore/changesets`; the submitter is left out by the caller.
+ */
+export async function approversOf(
+  db: Db,
+  vaultId: string,
+  namespaces: string[],
+  level: "write" | "maintain",
+): Promise<string[]> {
+  const levels = level === "maintain" ? ["maintain"] : ["write", "maintain"];
+  const held = sql`
+    select g.namespace from namespace_grants g
+    where g.vault_id = ${vaultId} and g.level in ${levels}
+      and (g.user_id = u.id or g.team_id in
+        (select team_id from team_members m where m.user_id = u.id))`;
+  const rows = await db.execute<{ id: string }>(
+    namespaces.length
+      ? sql`
+        select u.id from users u
+        where u.service_account = false and (
+          u.role in ('admin', 'owner')
+          or (select count(distinct h.namespace) from (${held}) h
+              where h.namespace in ${namespaces}) = ${namespaces.length}
+        )`
+      : sql`
+        select u.id from users u
+        where u.service_account = false and (
+          u.role in ('admin', 'owner') or exists (${held})
+        )`,
+  );
+  return [...rows].map((r) => r.id);
+}
+
 /** People in a team, leaving out service accounts. */
 export async function teamPeople(db: Db, teamId: string): Promise<User[]> {
   const rows = await db

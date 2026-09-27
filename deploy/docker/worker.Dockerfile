@@ -17,6 +17,7 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/worker/package.json apps/worker/
 COPY packages/ai/package.json packages/ai/
 COPY packages/auth/package.json packages/auth/
+COPY packages/changesets/package.json packages/changesets/
 COPY packages/db/package.json packages/db/
 COPY packages/git/package.json packages/git/
 COPY packages/ingest/package.json packages/ingest/
@@ -39,6 +40,7 @@ COPY tsconfig.base.json ./
 COPY apps/worker apps/worker
 COPY packages/ai packages/ai
 COPY packages/auth packages/auth
+COPY packages/changesets packages/changesets
 COPY packages/db packages/db
 COPY packages/git packages/git
 COPY packages/ingest packages/ingest

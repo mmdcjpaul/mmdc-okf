@@ -276,6 +276,46 @@ export async function linksFrom(db: Db, vaultId: string, noteId: string) {
     .where(and(eq(noteLinks.vaultId, vaultId), eq(noteLinks.sourceId, noteId)));
 }
 
+export interface LinkTarget {
+  id: string;
+  path: string;
+  slug: string;
+  title: string;
+  namespace: string | null;
+}
+
+/**
+ * Notes at the given paths, in any namespace. For resolving links in text that is not
+ * indexed yet (the editor's preview). The caller decides what the reader may see: a link
+ * into an unreadable namespace renders as plain text, exactly as on a note page.
+ */
+export async function linkTargets(db: Db, vaultId: string, paths: string[]): Promise<LinkTarget[]> {
+  if (paths.length === 0) return [];
+  return db
+    .select({
+      id: notes.id,
+      path: notes.path,
+      slug: notes.slug,
+      title: notes.title,
+      namespace: notes.namespace,
+    })
+    .from(notes)
+    .where(and(eq(notes.vaultId, vaultId), inArray(notes.path, paths)));
+}
+
+/** Which of these asset paths exist and are readable. */
+export async function readableAssets(db: Db, scope: ReadScope, paths: string[]): Promise<string[]> {
+  if (paths.length === 0) return [];
+  const ns = scope.namespaces.length
+    ? or(inArray(assets.namespace, scope.namespaces), isNull(assets.namespace))
+    : isNull(assets.namespace);
+  const rows = await db
+    .select({ path: assets.path })
+    .from(assets)
+    .where(and(eq(assets.vaultId, scope.vaultId), inArray(assets.path, paths), ns));
+  return rows.map((r) => r.path);
+}
+
 /** Readable notes that link to `noteId` in their body. */
 export async function backlinks(db: Db, scope: ReadScope, noteId: string): Promise<NoteCard[]> {
   return db

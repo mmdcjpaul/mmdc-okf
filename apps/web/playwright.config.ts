@@ -14,7 +14,9 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
-  timeout: 45_000,
+  timeout: 60_000,
+  // Saving a note commits, indexes, and then navigates; allow for a busy machine.
+  expect: { timeout: 15_000 },
   use: {
     baseURL: BASE_URL,
     trace: "retain-on-failure",

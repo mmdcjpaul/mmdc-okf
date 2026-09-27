@@ -1,13 +1,17 @@
 import {
   addTerm,
+  buildNoteText,
   bump,
   compactOps,
   fix,
+  hubKindOf,
   initialVersion,
   isoInstant,
   isValidVersion,
   lint,
   loadVault,
+  MEMBERS_END,
+  MEMBERS_START,
   mergeTerms,
   moveNote,
   newId,
@@ -17,6 +21,7 @@ import {
   parseNote,
   renameTerm,
   serializeNote,
+  slugify,
   str,
   verifications,
   verify,
@@ -106,8 +111,79 @@ async function reload(src: FileSource, ops: FileOp[]): Promise<Vault> {
   return loadVault(new OverlaySource(src, ops));
 }
 
+/** Keys only the pipeline writes. A form cannot set them. */
+const PIPELINE_KEYS = new Set(["id", "version", "generated", "verified", "stale_after"]);
+
+/**
+ * Puts a hub's generated member list back into an edited body. The Library never shows the
+ * list in the editor, because it names notes the reader may not be allowed to see.
+ */
+export function restoreMembers(baseBody: string, editedBody: string): string {
+  const start = baseBody.indexOf(MEMBERS_START);
+  const end = baseBody.indexOf(MEMBERS_END);
+  if (start < 0 || end < start) return editedBody;
+  const clean = stripMembersBlock(editedBody);
+  const heading = /(^|\n)#+[ \t]*Members[ \t]*\n+$/i.exec(baseBody.slice(0, start));
+  const from = heading ? heading.index + heading[1]!.length : start;
+  const block = baseBody.slice(from, end + MEMBERS_END.length);
+  return `${clean.replace(/\s+$/, "")}\n\n${block}\n`;
+}
+
+/** A hub's text without its generated member list. */
+export function stripMembersBlock(body: string): string {
+  const start = body.indexOf(MEMBERS_START);
+  const end = body.indexOf(MEMBERS_END);
+  if (start < 0 || end < start) return body;
+  const before = body.slice(0, start).replace(/\n#+[ \t]*Members[ \t]*\n+$/i, "\n");
+  return before + body.slice(end + MEMBERS_END.length);
+}
+
+function createPath(vault: Vault, intent: Extract<ChangesetIntent, { type: "create" }>): string {
+  const title = str(intent.data, "title");
+  if (!title) throw new Error("A new note needs a title");
+  if (!Object.hasOwn(vault.namespaces, intent.namespace))
+    throw new Error(`Unknown namespace "${intent.namespace}"`);
+  const folder = (intent.folder ?? "").replace(/^\/+|\/+$/g, "");
+  if (folder && !folder.split("/").every((s) => /^[a-z0-9][a-z0-9-]*$/.test(s)))
+    throw new Error(`"${folder}" is not a valid folder`);
+  return [vault.root, intent.namespace, folder, `${slugify(title)}.md`].filter(Boolean).join("/");
+}
+
 function applyIntent(vault: Vault, intent: ChangesetIntent, actor: string, now: Date): FileOp[] {
   switch (intent.type) {
+    case "edit": {
+      const path = normalizeNotePath(vault.root, intent.path);
+      const note = vault.notes.get(path);
+      if (!note) throw new Error(`No note at ${path}`);
+      const copy = { ...note, data: structuredClone(note.data) };
+      for (const [k, v] of Object.entries(intent.set ?? {})) {
+        if (PIPELINE_KEYS.has(k)) continue;
+        if (v === null || v === undefined || (Array.isArray(v) && v.length === 0 && k !== "themes"))
+          delete copy.data[k];
+        else copy.data[k] = v;
+      }
+      for (const k of intent.unset ?? []) if (!PIPELINE_KEYS.has(k)) delete copy.data[k];
+      if (intent.body !== undefined) {
+        const body = intent.body.replace(/\r\n/g, "\n");
+        const lead = /^\n*/.exec(note.body)![0];
+        const next = hubKindOf(vault.root, path) ? restoreMembers(note.body, body) : body;
+        copy.body = lead + next.replace(/^\n+/, "").replace(/\s*$/, "\n");
+      }
+      return [{ op: "put", path, content: serializeNote(copy) }];
+    }
+    case "create": {
+      const path = createPath(vault, intent);
+      if (vault.notes.has(path)) throw new Error(`A note already exists at ${path}`);
+      const data: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(intent.data)) {
+        if (PIPELINE_KEYS.has(k) || v === null || v === undefined) continue;
+        if (Array.isArray(v) && v.length === 0) continue;
+        data[k] = v;
+      }
+      return [
+        { op: "put", path, content: buildNoteText(data, intent.body.replace(/\r\n/g, "\n")) },
+      ];
+    }
     case "move":
       return moveNote(vault, intent.from, intent.to);
     case "delete": {
@@ -145,6 +221,10 @@ function applyIntent(vault: Vault, intent: ChangesetIntent, actor: string, now: 
 /** Paths an intent changes on purpose, as opposed to the links it rewrites along the way. */
 function intentPaths(vault: Vault, intent: ChangesetIntent): string[] {
   switch (intent.type) {
+    case "edit":
+      return [normalizeNotePath(vault.root, intent.path)];
+    case "create":
+      return [createPath(vault, intent)];
     case "move":
       return [normalizeNotePath(vault.root, intent.from), normalizeNotePath(vault.root, intent.to)];
     case "delete":

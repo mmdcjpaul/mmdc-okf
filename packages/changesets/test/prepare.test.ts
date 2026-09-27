@@ -545,3 +545,160 @@ describe("prepareChangeset: paths", () => {
     expect(p.finalOps).toEqual([]);
   });
 });
+
+describe("prepareChangeset: edits from the form", () => {
+  it("changes the body and chosen keys, leaving every other byte alone", async () => {
+    const before = text(RETURNING);
+    const body = parseNote(before, RETURNING).body;
+    const p = await prepareChangeset(
+      input({
+        changeClass: "addition",
+        intents: [
+          {
+            type: "edit",
+            path: RETURNING,
+            body: body + "\nAsk the registrar if the student ID is missing.\n",
+            set: {
+              description: "Reactivate a former student and open a new enrollment.",
+              tags: ["returning-students"],
+            },
+            unset: ["resource"],
+          },
+        ],
+        baseShas: base(RETURNING),
+      }),
+      context("alice", src),
+    );
+    expect(p.status).toBe("ready");
+    expect(p.decision.review).toBe(false);
+    const { data, text: out } = put(p, RETURNING);
+    expect(data).toMatchObject({
+      description: "Reactivate a former student and open a new enrollment.",
+      tags: ["returning-students"],
+      version: "1.3.0",
+      audience: "all-staff",
+    });
+    expect(data.resource).toBeUndefined();
+    expect(out).toContain("owner: admissions-ops\naliases: [re-enroll a student");
+    expect(out).toContain(
+      "  - { id: sis-sop, resource: /admissions/references/sis-enrollment-sop-2025.md",
+    );
+    expect(out.endsWith("Ask the registrar if the student ID is missing.\n")).toBe(true);
+  });
+
+  it("a form cannot set the keys the pipeline owns", async () => {
+    const p = await prepareChangeset(
+      input({
+        intents: [
+          {
+            type: "edit",
+            path: RETURNING,
+            set: {
+              title: "Re-enroll a returning student",
+              id: "kb_01J9ZMXMAFWYF33VJ7RFE28J4D",
+              version: "9.9.9",
+              verified: [{ by: "human:ceo", at: "2026-09-23T00:00:00Z" }],
+            },
+            unset: ["generated", "stale_after"],
+          },
+        ],
+        baseShas: base(RETURNING),
+      }),
+      context("alice", src),
+    );
+    const { data } = put(p, RETURNING);
+    expect(data).toMatchObject({
+      title: "Re-enroll a returning student",
+      id: "kb_01J9Z6Q4X8M2T7C3VQ5R1N0B8D",
+      version: "1.2.1",
+      stale_after: "2027-03-01T08:15:00Z",
+    });
+    expect(data.verified).toEqual([{ by: "human:mreyes", at: "2026-09-02T08:15:00Z" }]);
+  });
+
+  it("editing a hub keeps its generated member list", async () => {
+    const hub = "kb/_themes/onboarding.md";
+    const before = text(hub);
+    expect(before).toContain("/people-ops/");
+    const p = await prepareChangeset(
+      input({
+        actor: "human:bob",
+        changeClass: "addition",
+        intents: [
+          {
+            type: "edit",
+            path: hub,
+            body: "# Overview\n\nNew hires and new students start here.\n",
+          },
+        ],
+        baseShas: base(hub),
+      }),
+      context("bob", src),
+    );
+    expect(p.status).toBe("ready");
+    const { text: out } = put(p, hub);
+    expect(out).toContain("New hires and new students start here.");
+    const block = (s: string) =>
+      s.slice(s.indexOf("<!-- kb:members:start -->"), s.indexOf("<!-- kb:members:end -->"));
+    expect(block(out)).toBe(block(before));
+    expect(out.match(/kb:members:start/g)).toHaveLength(1);
+  });
+
+  it("creates a note from a form", async () => {
+    const p = await prepareChangeset(
+      input({
+        changeClass: "addition",
+        intents: [
+          {
+            type: "create",
+            namespace: "admissions",
+            data: {
+              type: "How-To",
+              title: "Defer an enrollment",
+              description: "Move an accepted student's start to a later term.",
+              themes: ["enrollment"],
+              systems: [],
+              id: "kb_forged",
+            },
+            body: "# Steps\n\n1. Open the enrollment.\n\n# Related\n\n- [Enrollment](/_themes/enrollment.md)\n",
+          },
+        ],
+      }),
+      context("alice", src),
+    );
+    expect(p.status).toBe("ready");
+    expect(p.title).toBe('add "Defer an enrollment"');
+    const { data, text: out } = put(p, "kb/admissions/defer-an-enrollment.md");
+    expect(data.id).toBe("kb_01K00000000000000000000001");
+    expect(data.version).toBe("1.0.0");
+    expect(data.systems).toBeUndefined();
+    expect(out.startsWith("---\ntype: How-To\ntitle: Defer an enrollment\n")).toBe(true);
+  });
+
+  it.each([
+    [{ namespace: "nowhere" }, /Unknown namespace/],
+    [{ folder: "../finance" }, /not a valid folder/],
+    [
+      { data: { type: "How-To", title: "Enroll a new student", themes: ["enrollment"] } },
+      /already exists/,
+    ],
+    [{ data: { type: "How-To", themes: ["enrollment"] } }, /needs a title/],
+  ])("refuses to create %j", async (over, why) => {
+    const p = await prepareChangeset(
+      input({
+        intents: [
+          {
+            type: "create",
+            namespace: "admissions",
+            data: { type: "How-To", title: "A new one", description: "x.", themes: ["enrollment"] },
+            body: "# Steps\n",
+            ...over,
+          },
+        ],
+      }),
+      context("alice", src),
+    );
+    expect(p.status).toBe("invalid");
+    expect(p.refusal).toMatch(why);
+  });
+});

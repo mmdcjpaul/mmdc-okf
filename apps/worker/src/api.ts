@@ -69,6 +69,36 @@ export function createApi(deps: ApiDeps) {
           after: change.after === null ? null : stripMembers(change.after),
         });
       }
+
+      // GET /vaults/:id/file?path=<repository path>[&ref=<commit>]
+      const file = /^\/vaults\/([^/]+)\/file$/.exec(url.pathname);
+      if (file && path) {
+        const vault = await getVault(deps.db, decodeURIComponent(file[1]!));
+        if (!vault) return send(res, 404, { error: "Unknown vault" });
+        const mirror = deps.mirrorFor(vault.repository);
+        const given = url.searchParams.get("ref");
+        if (given && !/^[0-9a-f]{40,64}$/.test(given))
+          return send(res, 404, { error: "Not found" });
+        const ref = given ?? (await mirror.resolve(`refs/heads/${vault.branch}`));
+        if (!ref) return send(res, 404, { error: "The vault has no commits" });
+        const entry = (await mirror.listTree(ref)).find((e) => e.path === path);
+        if (!entry) return send(res, 200, { path, ref, blobSha: null, text: null });
+        if (entry.size > MAX_TEXT) return send(res, 413, { error: "File too large" });
+        const bytes = (await mirror.readBlobs([entry.blobSha])).get(entry.blobSha);
+        const text = bytes ? stripMembers(new TextDecoder().decode(bytes)) : null;
+        return send(res, 200, { path, ref, blobSha: entry.blobSha, text });
+      }
+
+      // GET /vaults/:id/blobs/:sha
+      const blob = /^\/vaults\/([^/]+)\/blobs\/([0-9a-f]{40,64})$/.exec(url.pathname);
+      if (blob) {
+        const vault = await getVault(deps.db, decodeURIComponent(blob[1]!));
+        if (!vault) return send(res, 404, { error: "Unknown vault" });
+        const bytes = (await deps.mirrorFor(vault.repository).readBlobs([blob[2]!])).get(blob[2]!);
+        if (!bytes) return send(res, 404, { error: "No such blob" });
+        if (bytes.length > MAX_TEXT) return send(res, 413, { error: "File too large" });
+        return send(res, 200, { text: stripMembers(new TextDecoder().decode(bytes)) });
+      }
       return send(res, 404, { error: "Not found" });
     } catch (err) {
       return send(res, 500, { error: (err as Error).message });

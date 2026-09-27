@@ -5,8 +5,9 @@ import { getNote, noteCommit } from "@lore/db";
 import { Banner } from "@lore/ui";
 import { hidden, requireContext } from "@/lib/context";
 import { db } from "@/lib/db";
-import { diffNote, type DiffLine } from "@/lib/diff";
-import { plural, shortDate } from "@/lib/format";
+import { DiffSummary, DiffTable } from "@/components/DiffTable";
+import { diffNote } from "@/lib/diff";
+import { shortDate } from "@/lib/format";
 import { noteHref } from "@/lib/urls";
 import { fetchFileChange } from "@/lib/worker";
 
@@ -75,72 +76,12 @@ export default async function NoteChangePage({ params }: Props) {
         </p>
       ) : (
         <>
-          <p className="mb-3 text-[13px] text-muted">
-            <span className="font-medium text-ok">{plural(diff.added, "line")} added</span>
-            {" · "}
-            <span className="font-medium text-bad">{plural(diff.removed, "line")} removed</span>
-          </p>
-          <div
-            role="table"
-            aria-label="Changes in this commit"
-            className="overflow-x-auto rounded-lg border border-line font-mono text-[12.5px] leading-[1.55]"
-          >
-            {diff.hunks.map((hunk, i) => (
-              <div key={i} role="rowgroup">
-                {hunk.skipped ? <Skipped count={hunk.skipped} /> : null}
-                {hunk.lines.map((l, j) => (
-                  <Line key={j} line={l} />
-                ))}
-              </div>
-            ))}
-            {diff.trailing ? <Skipped count={diff.trailing} /> : null}
+          <div className="mb-3">
+            <DiffSummary diff={diff} />
           </div>
+          <DiffTable diff={diff} label="Changes in this commit" />
         </>
       )}
-    </div>
-  );
-}
-
-function Skipped({ count }: { count: number }) {
-  return (
-    <div role="row" className="border-y border-line bg-bg px-3 py-1 text-[11.5px] text-faint">
-      <span role="cell">{plural(count, "unchanged line")}</span>
-    </div>
-  );
-}
-
-const LINE_STYLE: Record<DiffLine["kind"], string> = {
-  same: "text-ink-2",
-  add: "bg-ok-soft text-ink",
-  remove: "bg-bad-soft text-ink",
-};
-const MARK: Record<DiffLine["kind"], string> = { same: " ", add: "+", remove: "-" };
-const SPOKEN: Record<DiffLine["kind"], string> = { same: "", add: "Added: ", remove: "Removed: " };
-
-function Line({ line }: { line: DiffLine }) {
-  return (
-    <div role="row" className={`flex min-w-max ${LINE_STYLE[line.kind]}`}>
-      <span
-        role="cell"
-        aria-hidden
-        className="w-10 shrink-0 select-none px-2 text-right text-faint"
-      >
-        {line.before ?? ""}
-      </span>
-      <span
-        role="cell"
-        aria-hidden
-        className="w-10 shrink-0 select-none px-2 text-right text-faint"
-      >
-        {line.after ?? ""}
-      </span>
-      <span role="cell" aria-hidden className="w-5 shrink-0 select-none text-center text-muted">
-        {MARK[line.kind]}
-      </span>
-      <span role="cell" className="whitespace-pre pr-4">
-        <span className="sr-only">{SPOKEN[line.kind]}</span>
-        {line.text || " "}
-      </span>
     </div>
   );
 }

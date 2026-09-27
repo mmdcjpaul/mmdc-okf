@@ -12,11 +12,13 @@ import {
   type Prepared,
 } from "@lore/changesets";
 import {
+  approversOf,
   getChangeset,
   getUser,
   getVault,
   grantsFor,
   listNamespaces,
+  notify,
   reviewsOf,
   teamIdsOf,
   transitionChangeset,
@@ -203,6 +205,23 @@ export async function processChangeset(deps: ChangesetDeps, id: string): Promise
           state: "in_review",
           attempts: attempt,
         });
+        const reviewers = (
+          await approversOf(db, vault.id, p.facts.namespaces, p.decision.approverLevel)
+        ).filter((u) => u !== cs.submitterId);
+        const author = cs.submitterId ? await getUser(db, cs.submitterId) : null;
+        await notify(
+          db,
+          reviewers.map((userId) => ({
+            userId,
+            vaultId: vault.id,
+            kind: "review_request",
+            title: `Review: ${p.title}`,
+            body: `${author?.name ?? "Lore"} ${cs.source === "suggest" ? "suggests" : "submitted"} a change${p.facts.namespaces.length ? ` in ${p.facts.namespaces.join(", ")}` : ""}.`,
+            href: `/changes/${id}`,
+            // Once per version of the changeset: an edit in review asks again.
+            dedupeKey: `review:${id}:${cs.updatedAt.getTime()}`,
+          })),
+        );
         log.info({ id, reasons: p.decision.reasons.map((r) => r.code) }, "changeset in review");
         return { state: "in_review" };
       }
@@ -246,6 +265,19 @@ export async function processChangeset(deps: ChangesetDeps, id: string): Promise
             ...(approver ? { approvedBy: approver.actor } : {}),
           },
         });
+        if (approver && cs.submitterId) {
+          await notify(db, [
+            {
+              userId: cs.submitterId,
+              vaultId: vault.id,
+              kind: "change_published",
+              title: `Published: ${p.title}`,
+              body: `${approver.name} approved your change.`,
+              href: `/changes/${id}`,
+              dedupeKey: `published:${id}`,
+            },
+          ]);
+        }
         log.info({ id, sha: result.sha, attempt }, "changeset committed");
         return { state: "committed", sha: result.sha };
       }

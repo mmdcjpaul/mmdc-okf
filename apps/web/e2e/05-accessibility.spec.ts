@@ -50,6 +50,34 @@ test.describe("accessibility (WCAG 2.2 AA)", () => {
         await expectNoViolations(page);
       });
 
+      test("the editor", async ({ page }) => {
+        await signIn(page, "alice");
+        const note = await noteAt("kb/admissions/enroll-a-returning-student-in-salesforce.md");
+        await page.goto(`/edit/${note.id}`);
+        await expect(page.getByRole("textbox", { name: "Note body" })).toBeVisible();
+        await page.locator("summary", { hasText: "Details" }).click();
+        await expect(
+          page.getByRole("tabpanel", { name: "Preview" }).locator(".note-body"),
+        ).toBeVisible();
+        await expectNoViolations(page);
+      });
+
+      test("a new note", async ({ page }) => {
+        await signIn(page, "carol");
+        await page.goto("/new");
+        await expect(page.getByRole("textbox", { name: "Note body" })).toBeVisible();
+        await expectNoViolations(page);
+      });
+
+      test("My changes, Review, and Notifications", async ({ page }) => {
+        await signIn(page, "alice");
+        for (const path of ["/changes", "/review", "/notifications"]) {
+          await page.goto(path);
+          await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+          await expectNoViolations(page);
+        }
+      });
+
       test("a change in note history", async ({ page }) => {
         await signIn(page, "alice");
         const note = await noteAt("kb/finance/refund-policy.md");

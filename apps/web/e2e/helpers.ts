@@ -81,3 +81,60 @@ export function pushFromOutside(message: string, edit: (dir: string) => void): v
     { env: { ...process.env, ...WORKER_ENV }, stdio: "pipe" },
   );
 }
+
+const BARE = join(DATA_DIR, "vaults", `${VAULT}.git`);
+
+/** `git log` on the vault's branch, for checking what Lore committed. */
+export function gitLog(format: string, n = 1): string {
+  return execFileSync("git", ["--git-dir", BARE, "log", `-${n}`, `--format=${format}`, "main"], {
+    encoding: "utf8",
+  }).trim();
+}
+
+/** A file's text at the branch head, or null when it does not exist. */
+export function fileAtHead(path: string): string | null {
+  try {
+    return execFileSync("git", ["--git-dir", BARE, "show", `main:${path}`], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** Files the last commit changed. */
+export function filesInLastCommit(): string[] {
+  return execFileSync("git", ["--git-dir", BARE, "show", "--name-only", "--format=", "main"], {
+    encoding: "utf8",
+  })
+    .trim()
+    .split("\n")
+    .filter(Boolean);
+}
+
+/** Puts the caret at the end of the editor's text and types. */
+export async function appendToBody(page: Page, text: string): Promise<void> {
+  const editor = page.getByRole("textbox", { name: "Note body" });
+  await editor.click();
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.insertText(text);
+}
+
+/** Replaces the editor's whole text. */
+export async function replaceBody(page: Page, text: string): Promise<void> {
+  const editor = page.getByRole("textbox", { name: "Note body" });
+  await editor.click();
+  await page.keyboard.press("ControlOrMeta+a");
+  await page.keyboard.insertText(text);
+}
+
+/** The editor's text, line by line as CodeMirror holds it. */
+export async function bodyText(page: Page): Promise<string> {
+  return page
+    .getByRole("textbox", { name: "Note body" })
+    .locator(".cm-line")
+    .allInnerTexts()
+    .then((lines) => lines.join("\n"));
+}

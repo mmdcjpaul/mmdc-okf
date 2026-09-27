@@ -1,6 +1,20 @@
 "use client";
 
-import { FolderClosed, Hash, Home, Layers, Lock, Search, Server, Shapes } from "lucide-react";
+import {
+  Bell,
+  ClipboardCheck,
+  FilePen,
+  FolderClosed,
+  Hash,
+  Home,
+  Layers,
+  Lock,
+  Plus,
+  Search,
+  Server,
+  Shapes,
+} from "lucide-react";
+import Link from "next/link";
 import { NavLink } from "./NavLink";
 import { useCommandPalette } from "./CommandPaletteProvider";
 
@@ -11,14 +25,23 @@ export interface SidebarNamespace {
   restricted: boolean;
 }
 
+export interface SidebarCounts {
+  /** Changesets waiting for this person's decision. Null hides Review: they approve nothing. */
+  review: number | null;
+  unread: number;
+  /** Their own changes that came back to them. */
+  mine: number;
+}
+
 interface SidebarNavProps {
   namespaces: SidebarNamespace[];
+  counts: SidebarCounts;
   onNavigate?: () => void;
 }
 
 const ICON = 16;
 
-export function SidebarNav({ namespaces, onNavigate }: SidebarNavProps) {
+export function SidebarNav({ namespaces, counts, onNavigate }: SidebarNavProps) {
   const palette = useCommandPalette();
 
   function openSearch() {
@@ -38,6 +61,15 @@ export function SidebarNav({ namespaces, onNavigate }: SidebarNavProps) {
         <kbd className="rounded border border-line px-1 font-sans text-[10.5px] text-faint">⌘K</kbd>
       </button>
 
+      <Link
+        href="/new"
+        onClick={onNavigate}
+        className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md bg-accent text-[13px] font-medium text-accent-ink hover:brightness-110"
+      >
+        <Plus size={15} aria-hidden />
+        New note
+      </Link>
+
       <div className="flex flex-col gap-0.5">
         <NavLink href="/" exact icon={<Home size={ICON} aria-hidden />} onNavigate={onNavigate}>
           Home
@@ -45,6 +77,32 @@ export function SidebarNav({ namespaces, onNavigate }: SidebarNavProps) {
         <NavLink href="/search" icon={<Search size={ICON} aria-hidden />} onNavigate={onNavigate}>
           Search
         </NavLink>
+        <NavLink
+          href="/notifications"
+          icon={<Bell size={ICON} aria-hidden />}
+          count={counts.unread || undefined}
+          onNavigate={onNavigate}
+        >
+          Notifications
+        </NavLink>
+        <NavLink
+          href="/changes"
+          icon={<FilePen size={ICON} aria-hidden />}
+          count={counts.mine || undefined}
+          onNavigate={onNavigate}
+        >
+          My changes
+        </NavLink>
+        {counts.review === null ? null : (
+          <NavLink
+            href="/review"
+            icon={<ClipboardCheck size={ICON} aria-hidden />}
+            count={counts.review || undefined}
+            onNavigate={onNavigate}
+          >
+            Review
+          </NavLink>
+        )}
       </div>
 
       <div className="flex flex-col gap-0.5">

@@ -15,8 +15,10 @@ const config: NextConfig = {
   transpilePackages: [
     "@lore/ai",
     "@lore/auth",
+    "@lore/changesets",
     "@lore/db",
     "@lore/ingest",
+    "@lore/okf",
     "@lore/search",
     "@lore/ui",
   ],

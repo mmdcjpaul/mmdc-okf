@@ -323,6 +323,23 @@ export type StoredOp =
  * move that rewrites inbound links. The worker expands it into file operations.
  */
 export type ChangesetIntent =
+  | {
+      /** Changes a note's body and chosen frontmatter keys, leaving every other byte alone. */
+      type: "edit";
+      path: string;
+      /** The new body, or undefined to keep it. */
+      body?: string;
+      set?: Record<string, unknown>;
+      unset?: string[];
+    }
+  | {
+      type: "create";
+      namespace: string;
+      /** Subfolder inside the namespace. */
+      folder?: string;
+      data: Record<string, unknown>;
+      body: string;
+    }
   | { type: "move"; from: string; to: string }
   | { type: "delete"; path: string }
   | { type: "deprecate"; path: string; supersededBy: string }

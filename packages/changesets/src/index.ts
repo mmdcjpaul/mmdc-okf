@@ -29,5 +29,12 @@ export type {
 export { analyzeChangeset } from "./analyze.ts";
 export { commitMessage, SOURCE_TRAILER, type CommitMessageInput } from "./message.ts";
 export { fromStoredOps, isSafePath, newRecordId, toStoredOps } from "./ops.ts";
-export { describeChangeset, noteIdOf, prepareChangeset, type PrepareContext } from "./prepare.ts";
+export {
+  describeChangeset,
+  noteIdOf,
+  prepareChangeset,
+  restoreMembers,
+  stripMembersBlock,
+  type PrepareContext,
+} from "./prepare.ts";
 export { canApprove, decideReview } from "./review.ts";
