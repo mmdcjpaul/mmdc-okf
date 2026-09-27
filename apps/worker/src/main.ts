@@ -52,8 +52,8 @@ const server = createServer((req, res) => {
   }
   res.writeHead(404).end();
 });
-server.listen(config.WORKER_PORT, "127.0.0.1", () =>
-  rt.log.info({ port: config.WORKER_PORT }, "worker started"),
+server.listen(config.WORKER_PORT, config.WORKER_HOST, () =>
+  rt.log.info({ host: config.WORKER_HOST, port: config.WORKER_PORT }, "worker started"),
 );
 
 async function shutdown(signal: string) {

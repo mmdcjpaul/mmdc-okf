@@ -15,6 +15,7 @@
     "@lore/ai": "workspace:*",
     "@lore/auth": "workspace:*",
     "@lore/db": "workspace:*",
+    "@lore/ingest": "workspace:*",
     "@lore/search": "workspace:*",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",

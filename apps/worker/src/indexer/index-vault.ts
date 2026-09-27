@@ -29,7 +29,7 @@ import {
   type NoteDoc,
 } from "@lore/search";
 import type { Logger } from "pino";
-import type { ObjectStore } from "../objects.ts";
+import { blobKey, type ObjectStore } from "@lore/ingest";
 import { refreshStale } from "./refresh-stale.ts";
 import {
   classFromVersions,
@@ -134,7 +134,9 @@ export async function indexVault(deps: IndexDeps, vaultId: string): Promise<Inde
     const blobs = await mirror.readBlobs(newAssets.map((a) => a.blobSha));
     for (const a of newAssets) {
       const bytes = blobs.get(a.blobSha);
-      if (bytes && !(await deps.objects.has(a.blobSha))) await deps.objects.put(a.blobSha, bytes);
+      const key = blobKey(a.blobSha);
+      if (bytes && !(await deps.objects.has(key)))
+        await deps.objects.put(key, bytes, { contentType: a.mime });
     }
   }
   const livePaths = new Set(assets.map((a) => a.path));

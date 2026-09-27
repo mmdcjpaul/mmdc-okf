@@ -14,7 +14,7 @@ import { dropIndexes, indexNames, Meilisearch } from "@lore/search";
 import pino from "pino";
 import postgres from "postgres";
 import { indexVault, type IndexDeps } from "../src/indexer/index-vault.ts";
-import { FsObjectStore } from "../src/objects.ts";
+import { FsObjectStore } from "@lore/ingest";
 import { loadPrincipals } from "../src/principals.ts";
 import { mirrorFor } from "../src/runtime.ts";
 

@@ -11,9 +11,20 @@ const Env = z.object({
   GIT_PROVIDER: z.enum(["local"]).default("local"),
   EMBEDDINGS: z.enum(["hash", "off", "fail"]).default("hash"),
   AI_MODE: z.enum(["fake", "off", "live"]).default("off"),
-  /** Bare repositories, mirrors, and the local object store. */
+  /** Bare repositories and mirrors (and the object store when OBJECT_STORE=fs). */
   DATA_DIR: z.string().default(resolve(REPO_ROOT, ".data")),
+  /** `s3` is any S3-compatible store. `fs` keeps objects under DATA_DIR and cannot serve browsers. */
+  OBJECT_STORE: z.enum(["s3", "fs"]).default("s3"),
+  S3_ENDPOINT: z.string().url().default("http://127.0.0.1:9002"),
+  /** Endpoint browsers use for signed URLs, when it differs from S3_ENDPOINT. */
+  S3_PUBLIC_ENDPOINT: z.string().url().optional(),
+  S3_REGION: z.string().default("us-east-1"),
+  S3_BUCKET: z.string().default("lore"),
+  S3_ACCESS_KEY_ID: z.string().default("lore"),
+  S3_SECRET_ACCESS_KEY: z.string().default("lore-dev-secret"),
   WORKER_PORT: z.coerce.number().int().default(8081),
+  /** Interface for /health and the mirror API. Containers set 0.0.0.0. */
+  WORKER_HOST: z.string().default("127.0.0.1"),
   /** How often the worker checks every vault for new commits, in seconds. */
   POLL_SECONDS: z.coerce.number().int().positive().default(300),
   LOG_LEVEL: z.string().default("info"),

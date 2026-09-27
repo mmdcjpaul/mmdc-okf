@@ -15,6 +15,7 @@
     "@lore/ai": "workspace:*",
     "@lore/db": "workspace:*",
     "@lore/git": "workspace:*",
+    "@lore/ingest": "workspace:*",
     "@lore/okf": "workspace:*",
     "@lore/search": "workspace:*",
     "pg-boss": "^12.34.0",
@@ -23,8 +24,8 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@lore/auth": "workspace:*",
     "pino-pretty": "^13.1.2",
-    "postgres": "^3.4.9",
-    "@lore/auth": "workspace:*"
+    "postgres": "^3.4.9"
   }
 }

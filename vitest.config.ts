@@ -9,6 +9,7 @@ export default defineConfig({
       "packages/ai",
       "packages/auth",
       "packages/search",
+      "packages/ingest",
       "apps/worker",
       "apps/web",
     ],

@@ -8,7 +8,7 @@ import { PgBoss } from "pg-boss";
 import pino, { type Logger } from "pino";
 import type { Config } from "./config.ts";
 import type { IndexDeps } from "./indexer/index-vault.ts";
-import { FsObjectStore } from "./objects.ts";
+import { FsObjectStore, S3ObjectStore, type ObjectStore } from "@lore/ingest";
 
 export const QUEUES = {
   /** One pending and one running index job per vault; extra pushes coalesce. */
@@ -38,6 +38,21 @@ export function mirrorFor(repository: string): Mirror {
   throw new Error(`Mirrors for ${repository} arrive with GitHubProvider (Plan 4)`);
 }
 
+export async function objectStoreFor(config: Config): Promise<ObjectStore> {
+  if (config.OBJECT_STORE === "fs") return new FsObjectStore(join(config.DATA_DIR, "objects"));
+  const store = new S3ObjectStore({
+    endpoint: config.S3_ENDPOINT,
+    publicEndpoint: config.S3_PUBLIC_ENDPOINT,
+    region: config.S3_REGION,
+    bucket: config.S3_BUCKET,
+    accessKeyId: config.S3_ACCESS_KEY_ID,
+    secretAccessKey: config.S3_SECRET_ACCESS_KEY,
+  });
+  // Production buckets are created with the deployment; creating one here is for development.
+  if (config.NODE_ENV !== "production") await store.ensureBucket();
+  return store;
+}
+
 export async function createRuntime(
   config: Config,
   opts: { quiet?: boolean } = {},
@@ -56,7 +71,7 @@ export async function createRuntime(
     meili,
     mirrorFor,
     embedder: embedderFor(config.EMBEDDINGS),
-    objects: new FsObjectStore(join(config.DATA_DIR, "objects")),
+    objects: await objectStoreFor(config),
     log,
   };
   return {

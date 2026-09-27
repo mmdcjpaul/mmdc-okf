@@ -8,8 +8,12 @@ const Env = z.object({
   MEILI_URL: z.string().url(),
   /** Search-only key. The web app never holds the admin key. */
   MEILI_SEARCH_KEY: z.string().min(1),
-  /** Local object store for assets (the Lightsail bucket in production). */
-  DATA_DIR: z.string().min(1),
+  /** Object store for assets. The endpoint must be reachable by browsers: signed URLs point at it. */
+  S3_ENDPOINT: z.string().url(),
+  S3_REGION: z.string().default("us-east-1"),
+  S3_BUCKET: z.string().min(1),
+  S3_ACCESS_KEY_ID: z.string().min(1),
+  S3_SECRET_ACCESS_KEY: z.string().min(1),
   /** Slug of the vault to show. The data model supports several; the picker is phase 3. */
   LORE_VAULT: z.string().optional(),
   APP_SECRET: z.string().min(16),

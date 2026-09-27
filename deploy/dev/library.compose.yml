@@ -25,6 +25,17 @@ services:
     ports: ["127.0.0.1:7701:7700"]
     volumes: [meili:/meili_data]
 
+  # S3-compatible object store for vault assets and uploads (the Lightsail bucket in production).
+  # The plan names MinIO, whose images are no longer published; this gateway speaks the same API.
+  objects:
+    image: versity/versitygw:v1.0.18
+    command: ["posix", "/data"]
+    environment:
+      ROOT_ACCESS_KEY: lore
+      ROOT_SECRET_KEY: lore-dev-secret
+    ports: ["127.0.0.1:9002:7070"]
+    volumes: [objects:/data]
+
   mailpit:
     image: axllent/mailpit:v1.27
     ports: ["127.0.0.1:8025:8025", "127.0.0.1:1025:1025"]
@@ -32,3 +43,4 @@ services:
 volumes:
   pg:
   meili:
+  objects:
