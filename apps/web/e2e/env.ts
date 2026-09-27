@@ -45,3 +45,6 @@ export const WORKER_ENV: Record<string, string> = {
   // Pushes are indexed inline by the tests; the poller only needs to exist.
   POLL_SECONDS: "3600",
 };
+
+/** How long to wait for something the worker does: a commit, an index, an upload. */
+export const SLOW = process.env.CI ? 60_000 : 20_000;

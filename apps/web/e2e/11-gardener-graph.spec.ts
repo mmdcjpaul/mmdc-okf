@@ -1,3 +1,4 @@
+import { SLOW } from "./env.ts";
 import { expect, test } from "@playwright/test";
 import { CANARY, gitLog, signIn } from "./helpers.ts";
 
@@ -22,7 +23,7 @@ test.describe("the Gardener", () => {
     const proposals = gardener.getByRole("list", { name: "Proposals" });
     const made = await proposals.getByRole("listitem").count();
     expect(made).toBeGreaterThanOrEqual(2);
-    await expect(proposals.getByText("waiting for review")).toHaveCount(made, { timeout: 20_000 });
+    await expect(proposals.getByText("waiting for review")).toHaveCount(made, { timeout: SLOW });
     expect(gitLog("%H")).toBe(before);
 
     await proposals.getByRole("link", { name: 'add "Unlock a locked account"' }).click();

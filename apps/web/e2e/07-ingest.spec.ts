@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
-import { REPO, WORKER_ENV, WORKER_PORT } from "./env.ts";
+import { REPO, SLOW, WORKER_ENV, WORKER_PORT } from "./env.ts";
 import { fileAtHead, gitLog, noteAt, noteUrl, signIn } from "./helpers.ts";
 
 const fixture = (name: string) => join(REPO, "fixtures/uploads", name);
@@ -85,7 +85,7 @@ test.describe("upload", () => {
       await expect(
         page.getByRole("region", { name: "Results" }).getByRole("listitem").first(),
       ).toContainText("Refund a tuition deposit to a withdrawn applicant", { timeout: 1000 });
-    }).toPass({ timeout: 20_000 });
+    }).toPass({ timeout: SLOW });
     const note = await noteAt("kb/finance/refund-a-tuition-deposit-to-a-withdrawn-applicant.md");
     await page.goto(noteUrl(note));
     const sources = page.getByRole("region", { name: /Sources/ });
@@ -108,7 +108,7 @@ test.describe("upload", () => {
     expect(await modelCalls(page)).toBe(before + 2);
     await expect
       .poll(() => fileAtHead("kb/it-support/request-leave-in-the-hr-portal.md"), {
-        timeout: 20_000,
+        timeout: SLOW,
       })
       .toContain("type: How-To");
     // Nobody has verified it: it is published as unverified.
@@ -118,7 +118,7 @@ test.describe("upload", () => {
     await expect(async () => {
       await page.goto(noteUrl(await noteAt("kb/it-support/request-leave-in-the-hr-portal.md")));
       await expect(page.locator("article").getByText("Unverified")).toBeVisible({ timeout: 1000 });
-    }).toPass({ timeout: 20_000 });
+    }).toPass({ timeout: SLOW });
   });
 
   test("with AI processing off, the upload becomes a draft for a person to finish, and no model is called", async ({
@@ -142,12 +142,12 @@ test.describe("upload", () => {
     expect(await modelCalls(page)).toBe(before);
 
     await expect
-      .poll(() => fileAtHead("kb/people-ops/leave-request-procedure-draft.md"), { timeout: 20_000 })
+      .poll(() => fileAtHead("kb/people-ops/leave-request-procedure-draft.md"), { timeout: SLOW })
       .toContain("status: draft");
     await expect(async () => {
       await page.goto(noteUrl(await noteAt("kb/people-ops/leave-request-procedure-draft.md")));
       await expect(page.getByText("Draft", { exact: true })).toBeVisible({ timeout: 1000 });
-    }).toPass({ timeout: 20_000 });
+    }).toPass({ timeout: SLOW });
     await expect(page.locator("article")).toContainText(
       "Open the HR portal and choose Request leave",
     );

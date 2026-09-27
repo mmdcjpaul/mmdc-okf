@@ -1,3 +1,4 @@
+import { SLOW } from "./env.ts";
 import { expect, test } from "@playwright/test";
 import {
   appendToBody,
@@ -470,7 +471,7 @@ test.describe("a process change", () => {
       await expect(page.getByText("A process this note links to changed")).toBeVisible({
         timeout: 1000,
       });
-    }).toPass({ timeout: 20_000 });
+    }).toPass({ timeout: SLOW });
     await expect(page.getByRole("link", { name: note.title }).first()).toBeVisible();
 
     // And the owning team is told.
@@ -578,7 +579,7 @@ test.describe("feedback", () => {
     await expect(async () => {
       await bob.reload();
       await expect(bob.getByText(/^Reported as outdated on /)).toHaveCount(0, { timeout: 1000 });
-    }).toPass({ timeout: 20_000 });
+    }).toPass({ timeout: SLOW });
     await expect(bob.getByRole("heading", { name: "Open reports" })).toHaveCount(0);
     await owner.close();
   });

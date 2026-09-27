@@ -2,7 +2,7 @@ import { readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { expect, test } from "@playwright/test";
 import postgres from "postgres";
-import { DATABASE_URL, REPO } from "./env.ts";
+import { DATABASE_URL, REPO, SLOW } from "./env.ts";
 import { CANARY, fileAtHead, gitLog, signIn, type Person } from "./helpers.ts";
 
 const APP = join(REPO, "apps/web/src/app");
@@ -107,7 +107,7 @@ test.describe("Admin", () => {
 
     // The vault is the record: the change arrives there as a commit.
     await expect
-      .poll(() => fileAtHead(".kb/namespaces.yaml"), { timeout: 20_000 })
+      .poll(() => fileAtHead(".kb/namespaces.yaml"), { timeout: SLOW })
       .toMatch(/finance:[\s\S]*?visibility: restricted[\s\S]*?it-support:/);
     expect(gitLog("%s")).toBe('kb(vault): change the settings of namespace "finance"');
 
@@ -116,7 +116,7 @@ test.describe("Admin", () => {
     await finance.getByRole("button", { name: "Save Finance" }).click();
     await expect.poll(async () => (await carol.request.get("/ns/finance")).status()).toBe(200);
     await expect
-      .poll(() => fileAtHead(".kb/namespaces.yaml"), { timeout: 20_000 })
+      .poll(() => fileAtHead(".kb/namespaces.yaml"), { timeout: SLOW })
       .not.toMatch(/finance:[\s\S]*?visibility: restricted[\s\S]*?it-support:/);
     await other.close();
   });
@@ -265,7 +265,7 @@ test.describe("Admin", () => {
     await other.close();
     // So `kb lint` accepts the team as an owner, offline.
     await expect
-      .poll(() => fileAtHead(".kb/profile.yaml"), { timeout: 20_000 })
+      .poll(() => fileAtHead(".kb/profile.yaml"), { timeout: SLOW })
       .toContain("registrar");
 
     page.once("dialog", (d) => void d.accept());

@@ -14,9 +14,10 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["list"]] : "list",
-  timeout: 60_000,
-  // Saving a note commits, indexes, and then navigates; allow for a busy machine.
-  expect: { timeout: 15_000 },
+  // Saving a note commits, indexes, and then navigates; allow for a busy machine. CI's
+  // runners take about two and a half times as long as a laptop, so they get longer.
+  timeout: process.env.CI ? 180_000 : 60_000,
+  expect: { timeout: process.env.CI ? 45_000 : 15_000 },
   use: {
     baseURL: BASE_URL,
     trace: "retain-on-failure",
