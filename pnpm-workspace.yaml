@@ -3,6 +3,9 @@ packages:
   - packages/*
 allowBuilds:
   esbuild: true
+  # Fetches the native runtime that EMBEDDINGS=local needs.
+  onnxruntime-node: true
+  protobufjs: false
 minimumReleaseAgeExclude:
   - pg-boss@12.34.0
   - lucide-react@1.48.0

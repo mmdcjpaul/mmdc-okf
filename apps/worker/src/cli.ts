@@ -102,6 +102,10 @@ async function writeWebEnv(cfg: Config, slug: string, file: string): Promise<voi
       `APP_SECRET=${secret}`,
       "AUTH_DEV_LOGIN=true",
       `EMBEDDINGS=${cfg.EMBEDDINGS}`,
+      ...(cfg.EMBEDDINGS_LOCAL_MODEL
+        ? [`EMBEDDINGS_LOCAL_MODEL=${cfg.EMBEDDINGS_LOCAL_MODEL}`]
+        : []),
+      ...(cfg.EMBEDDINGS_CACHE_DIR ? [`EMBEDDINGS_CACHE_DIR=${cfg.EMBEDDINGS_CACHE_DIR}`] : []),
       "FEATURE_DESK=false",
       "",
     ].join("\n"),

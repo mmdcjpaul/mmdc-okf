@@ -9,7 +9,10 @@ const Env = z.object({
   MEILI_URL: z.string().url().default("http://127.0.0.1:7701"),
   MEILI_MASTER_KEY: z.string().min(1).default("lore-dev-master-key"),
   GIT_PROVIDER: z.enum(["local"]).default("local"),
-  EMBEDDINGS: z.enum(["hash", "off", "fail"]).default("hash"),
+  /** `local` runs a model on this machine with transformers.js. */
+  EMBEDDINGS: z.enum(["hash", "local", "off", "fail"]).default("hash"),
+  EMBEDDINGS_LOCAL_MODEL: z.string().optional(),
+  EMBEDDINGS_CACHE_DIR: z.string().optional(),
   AI_MODE: z.enum(["fake", "off", "live"]).default("off"),
   /** Bare repositories and mirrors (and the object store when OBJECT_STORE=fs). */
   DATA_DIR: z.string().default(resolve(REPO_ROOT, ".data")),

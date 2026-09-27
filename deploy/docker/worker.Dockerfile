@@ -22,8 +22,15 @@ COPY packages/git/package.json packages/git/
 COPY packages/ingest/package.json packages/ingest/
 COPY packages/okf/package.json packages/okf/
 COPY packages/search/package.json packages/search/
+# EMBEDDINGS=local needs the optional transformers.js runtime, which adds about 300 MB.
+# Deployments that embed through a provider leave it out.
+ARG LOCAL_EMBEDDINGS=false
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
-  pnpm install --frozen-lockfile --prod --filter worker...
+  if [ "$LOCAL_EMBEDDINGS" = "true" ]; then \
+    pnpm install --frozen-lockfile --prod --filter worker...; \
+  else \
+    pnpm install --frozen-lockfile --prod --no-optional --filter worker...; \
+  fi
 
 FROM base
 ENV NODE_ENV=production WORKER_HOST=0.0.0.0 WORKER_PORT=8081 DATA_DIR=/data

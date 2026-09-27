@@ -20,7 +20,7 @@ const config: NextConfig = {
     "@lore/search",
     "@lore/ui",
   ],
-  serverExternalPackages: ["postgres"],
+  serverExternalPackages: ["postgres", "@huggingface/transformers", "onnxruntime-node"],
   poweredByHeader: false,
   // The repository has its own agent instructions; Next should not write more into apps/web.
   agentRules: false,

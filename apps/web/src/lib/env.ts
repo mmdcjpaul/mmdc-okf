@@ -21,7 +21,10 @@ const Env = z.object({
   LORE_VAULT: z.string().optional(),
   APP_SECRET: z.string().min(16),
   AUTH_DEV_LOGIN: z.enum(["true", "false"]).default("false"),
-  EMBEDDINGS: z.enum(["hash", "off", "fail"]).default("hash"),
+  /** `local` runs a model on this machine with transformers.js. */
+  EMBEDDINGS: z.enum(["hash", "local", "off", "fail"]).default("hash"),
+  EMBEDDINGS_LOCAL_MODEL: z.string().optional(),
+  EMBEDDINGS_CACHE_DIR: z.string().optional(),
   FEATURE_DESK: z.enum(["true", "false"]).default("false"),
 });
 

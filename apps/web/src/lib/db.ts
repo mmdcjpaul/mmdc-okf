@@ -37,7 +37,12 @@ export function objects(): ObjectStore {
 let embedder: Embedder | null | undefined;
 
 export function queryEmbedder(): Embedder | null {
-  if (embedder === undefined) embedder = embedderFor(env().EMBEDDINGS);
+  if (embedder === undefined) {
+    embedder = embedderFor(env().EMBEDDINGS, {
+      localModel: env().EMBEDDINGS_LOCAL_MODEL,
+      cacheDir: env().EMBEDDINGS_CACHE_DIR,
+    });
+  }
   return embedder;
 }
 
@@ -46,6 +51,7 @@ export async function embedQuery(q: string): Promise<number[] | null> {
   const e = queryEmbedder();
   if (!e || !q.trim()) return null;
   try {
+    if (e.embedQuery) return await e.embedQuery(q);
     const [v] = await e.embed([q]);
     return v ?? null;
   } catch {

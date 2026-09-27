@@ -70,7 +70,10 @@ export async function createRuntime(
     db,
     meili,
     mirrorFor,
-    embedder: embedderFor(config.EMBEDDINGS),
+    embedder: embedderFor(config.EMBEDDINGS, {
+      localModel: config.EMBEDDINGS_LOCAL_MODEL,
+      cacheDir: config.EMBEDDINGS_CACHE_DIR,
+    }),
     objects: await objectStoreFor(config),
     log,
   };

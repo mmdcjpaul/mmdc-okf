@@ -8,7 +8,11 @@ export {
   EmbeddingUnavailableError,
   FailingEmbedder,
   HashEmbedder,
+  LOCAL_EMBEDDING_MODEL,
+  LocalEmbedder,
   embedderFor,
   type Embedder,
+  type EmbedderConfig,
   type EmbeddingsMode,
+  type LocalEmbedderOptions,
 } from "./embeddings.ts";
