@@ -25,6 +25,13 @@ export interface ApiDeps {
   providerFor?: (repository: string) => GitProvider;
   /** Recomputes health for notes whose feedback changed. */
   onFeedback?: (vaultId: string, noteIds: string[]) => Promise<void>;
+  /** Sends an email the web app has written, such as a sign-in link. */
+  sendMail?: (mail: {
+    to: { name: string; email: string };
+    subject: string;
+    text: string;
+    html: string;
+  }) => Promise<boolean>;
   /** Runs one turn of the batch schedule now, whatever the clock says. */
   onBatchTick?: () => Promise<unknown>;
   /** Queues a Gardener run. */
@@ -94,6 +101,41 @@ export function createApi(deps: ApiDeps) {
             return send(res, 400, { error: (err as Error).message });
           }
           return send(res, 201, { name: url.searchParams.get("name"), sha: head });
+        }
+        // POST /mail with { to, subject, text, html }
+        if (url.pathname === "/mail" && deps.sendMail) {
+          const chunks: Buffer[] = [];
+          let size = 0;
+          for await (const chunk of req) {
+            size += (chunk as Buffer).length;
+            if (size > 200_000) return send(res, 413, { error: "Too large" });
+            chunks.push(chunk as Buffer);
+          }
+          let mail: {
+            to?: { name?: string; email?: string };
+            subject?: string;
+            text?: string;
+            html?: string;
+          };
+          try {
+            mail = JSON.parse(Buffer.concat(chunks).toString("utf8")) as typeof mail;
+          } catch {
+            return send(res, 400, { error: "Not JSON" });
+          }
+          if (
+            !mail.to?.email ||
+            !/^[^@\s]+@[^@\s]+$/.test(mail.to.email) ||
+            !mail.subject ||
+            !mail.text
+          )
+            return send(res, 400, { error: "An email needs an address, a subject, and a text" });
+          const sent = await deps.sendMail({
+            to: { name: mail.to.name ?? "", email: mail.to.email },
+            subject: mail.subject.slice(0, 200),
+            text: mail.text,
+            html: mail.html ?? "",
+          });
+          return send(res, sent ? 202 : 503, sent ? { sent: true } : { error: "Email is off" });
         }
         // POST /batches/tick: for operators and tests, which cannot wait for the window.
         if (url.pathname === "/batches/tick" && deps.onBatchTick)

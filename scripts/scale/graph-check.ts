@@ -1,9 +1,8 @@
 // The global graph on the 20,000-note vault, in a real browser (plans/02-library.md, L10).
 // Run by `pnpm scale:library`, or by itself against a Library that is already up:
-//   BASE_URL=http://127.0.0.1:3200 SESSION=<token> node scripts/scale/graph-check.ts
+//   BASE_URL=http://127.0.0.1:3200 SESSION="<cookie header>" node scripts/scale/graph-check.ts
 import { createRequire } from "node:module";
 import { join, resolve } from "node:path";
-import { SESSION_COOKIE } from "../../packages/auth/src/index.ts";
 
 const web = join(resolve(import.meta.dirname, "../.."), "apps/web");
 const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
@@ -27,7 +26,14 @@ export async function checkGraph(base: string, session: string): Promise<Result[
   const browser = await chromium.launch();
   try {
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
-    await context.addCookies([{ name: SESSION_COOKIE, value: session, url: base }]);
+    // `session` is a cookie header: `name=value; name=value`.
+    await context.addCookies(
+      session.split("; ").map((c) => ({
+        name: c.slice(0, c.indexOf("=")),
+        value: c.slice(c.indexOf("=") + 1),
+        url: base,
+      })),
+    );
     const page = await context.newPage();
     await page.addInitScript(() => {
       const w = window as unknown as { __longest: number };

@@ -10,7 +10,8 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { setTimeout as sleep } from "node:timers/promises";
 import postgres from "postgres";
-import { createSessionToken } from "../../packages/auth/src/index.ts";
+import { createSignIn, sessionCookieFor } from "../../packages/auth/src/sign-in.ts";
+import { createDb } from "../../packages/db/src/index.ts";
 import { checkGraph } from "./graph-check.ts";
 
 const REPO = resolve(import.meta.dirname, "../..");
@@ -106,6 +107,8 @@ const webEnv = {
   ...process.env,
   ...fileEnv,
   AUTH_DEV_LOGIN: "false",
+  AUTH_ALLOWED_DOMAINS: "acme.test",
+  PUBLIC_URL: `http://127.0.0.1:${PORT}`,
   INTERNAL_API_TOKEN: "lore-scale-internal-token",
   NEXT_DIST_DIR: ".next-scale",
   NEXT_TELEMETRY_DISABLED: "1",
@@ -128,7 +131,21 @@ try {
     }
     await sleep(500);
   }
-  const session = createSessionToken("alice", fileEnv.APP_SECRET!);
+  // The app under test is a production build, which has no dev login. A session is made
+  // for it here, with the same database and secret.
+  const scaleDb = createDb(env.DATABASE_URL, { max: 1 });
+  const session = await sessionCookieFor(
+    createSignIn({
+      db: scaleDb,
+      secret: fileEnv.APP_SECRET!,
+      baseURL: webEnv.PUBLIC_URL,
+      allowedDomains: ["acme.test"],
+      devLogin: true,
+      production: false,
+    }),
+    "alice",
+  );
+  await scaleDb.$client.end({ timeout: 5 });
   const summary = join(DATA_DIR, "k6-summary.json");
   const k6 = spawnSync(
     "docker",

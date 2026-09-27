@@ -1,15 +1,11 @@
 import "server-only";
 import { cache } from "react";
-import { cookies } from "next/headers";
+import { headers } from "next/headers";
 import { forbidden, notFound, redirect } from "next/navigation";
-import {
-  loadPrincipal,
-  readScope,
-  SESSION_COOKIE,
-  verifySessionToken,
-  type Principal,
-} from "@lore/auth";
+import { loadPrincipal, readScope, type Principal } from "@lore/auth";
+import { sessionUserId } from "@lore/auth/sign-in";
 import { firstVault, getVaultBySlug, type ReadScope, type Vault } from "@lore/db";
+import { auth } from "./auth";
 import { db } from "./db";
 import { env } from "./env";
 
@@ -21,8 +17,7 @@ export interface RequestContext {
 
 /** The signed-in person, or null. Cached for the request. */
 export const currentUserId = cache(async (): Promise<string | null> => {
-  const jar = await cookies();
-  return verifySessionToken(jar.get(SESSION_COOKIE)?.value, env().APP_SECRET);
+  return sessionUserId(auth(), await headers());
 });
 
 export const currentVault = cache(async (): Promise<Vault | null> => {

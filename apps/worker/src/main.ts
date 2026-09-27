@@ -228,6 +228,11 @@ const api = createApi({
   testKey: (provider) => rt.ai.testKey(provider),
   onGardener: (data) => enqueueGardener(boss, data),
   onBatchTick: () => runTick(true),
+  sendMail: async (message) => {
+    if (!mailer.enabled) return false;
+    await mailer.send(message);
+    return true;
+  },
   providerFor: (repository) => providerFor(repository),
   fakeCalls: () =>
     rt.ai.fake && config.AI_MODE === "fake"

@@ -105,6 +105,9 @@ async function writeWebEnv(cfg: Config, slug: string, file: string): Promise<voi
       `LORE_VAULT=${slug}`,
       `APP_SECRET=${secret}`,
       "AUTH_DEV_LOGIN=true",
+      `PUBLIC_URL=${cfg.PUBLIC_URL}`,
+      // Sign in by email link works when the worker has SMTP_URL (Mailpit, in development).
+      `AUTH_EMAIL_LINK=${cfg.SMTP_URL ? "true" : "false"}`,
       `AI_MODE=${cfg.AI_MODE}`,
       ...(cfg.APP_ENCRYPTION_KEY ? [`APP_ENCRYPTION_KEY=${cfg.APP_ENCRYPTION_KEY}`] : []),
       `EMBEDDINGS=${cfg.EMBEDDINGS}`,

@@ -146,3 +146,18 @@ export async function requestGardener(
   });
   return res?.ok ?? false;
 }
+
+/** Hands an email to the worker, which has the mail server. False when it was not sent. */
+export async function sendMail(mail: {
+  to: { name: string; email: string };
+  subject: string;
+  text: string;
+  html: string;
+}): Promise<boolean> {
+  const res = await call("/mail", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(mail),
+  });
+  return res?.ok ?? false;
+}

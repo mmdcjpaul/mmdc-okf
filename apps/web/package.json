@@ -28,6 +28,7 @@
     "@lore/okf": "workspace:*",
     "@lore/search": "workspace:*",
     "@lore/ui": "workspace:*",
+    "better-auth": "^1.7.6",
     "clsx": "^2.1.1",
     "cmdk": "^1.1.1",
     "codemirror": "^6.0.2",

@@ -38,7 +38,7 @@ function query() {
 }
 
 export default function () {
-  const params = { headers: { cookie: `lore_session=${__ENV.SESSION}` } };
+  const params = { headers: { cookie: __ENV.SESSION } };
   const palette = http.get(`${__ENV.BASE_URL}/api/search?q=${query()}&limit=12`, {
     ...params,
     tags: { kind: "palette" },

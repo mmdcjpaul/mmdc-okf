@@ -23,6 +23,18 @@ const Env = z.object({
   /** Encrypts provider keys saved in Admin. 32 bytes, as 64 hex characters or base64. */
   APP_ENCRYPTION_KEY: z.string().optional(),
   AUTH_DEV_LOGIN: z.enum(["true", "false"]).default("false"),
+  /** Where people open the Library. Sign-in links and provider callbacks are built from it. */
+  PUBLIC_URL: z.string().url().default("http://localhost:3000"),
+  /** Email domains that may sign in, separated by commas. Required in production. */
+  AUTH_ALLOWED_DOMAINS: z.string().default(""),
+  AUTH_GOOGLE_CLIENT_ID: z.string().optional(),
+  AUTH_GOOGLE_CLIENT_SECRET: z.string().optional(),
+  AUTH_MICROSOFT_CLIENT_ID: z.string().optional(),
+  AUTH_MICROSOFT_CLIENT_SECRET: z.string().optional(),
+  /** The Entra tenant whose people may sign in. */
+  AUTH_MICROSOFT_TENANT_ID: z.string().optional(),
+  /** Sign in with a link sent by email. Needs the worker to have SMTP_URL. */
+  AUTH_EMAIL_LINK: z.enum(["true", "false"]).default("false"),
   /** `local` runs a model on this machine with transformers.js. */
   EMBEDDINGS: z.enum(["hash", "local", "off", "fail"]).default("hash"),
   EMBEDDINGS_LOCAL_MODEL: z.string().optional(),
@@ -47,6 +59,17 @@ export function env(): WebEnv {
     );
   }
   assertDevLoginAllowed(parsed.data);
+  if (parsed.data.NODE_ENV === "production" && parsed.data.AUTH_DEV_LOGIN !== "true") {
+    const problems = [
+      ...(parsed.data.AUTH_ALLOWED_DOMAINS.trim()
+        ? []
+        : ["AUTH_ALLOWED_DOMAINS: name the email domains that may sign in"]),
+      ...(parsed.data.APP_SECRET.length < 32 ? ["APP_SECRET: use at least 32 characters"] : []),
+    ];
+    // A build has no people signing in, so it is not held to this.
+    if (problems.length && process.env.NEXT_PHASE !== "phase-production-build")
+      throw new Error(`Invalid web configuration:\n  ${problems.join("\n  ")}`);
+  }
   if (
     parsed.data.NODE_ENV === "production" &&
     parsed.data.INTERNAL_API_TOKEN === "lore-dev-internal-token"

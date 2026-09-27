@@ -38,6 +38,9 @@ export const WORKER_ENV: Record<string, string> = {
   // The suite must behave the same at any hour, so nothing is sent by the clock. Tests ask
   // for a turn of the batch schedule when they want one.
   BATCH_SCHEDULE: "off",
+  PUBLIC_URL: BASE_URL,
+  SMTP_URL: process.env.TEST_SMTP_URL ?? "smtp://127.0.0.1:1025",
+  MAIL_FROM: "Lore e2e <lore-e2e@lore.test>",
   LOG_LEVEL: "warn",
   // Pushes are indexed inline by the tests; the poller only needs to exist.
   POLL_SECONDS: "3600",

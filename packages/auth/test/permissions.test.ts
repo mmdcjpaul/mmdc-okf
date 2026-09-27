@@ -4,10 +4,8 @@ import { parse } from "yaml";
 import {
   atLeast,
   computeAccess,
-  createSessionToken,
   isAllowedDomain,
   assertDevLoginAllowed,
-  verifySessionToken,
   type GrantInfo,
   type Level,
   type Role,
@@ -96,24 +94,7 @@ describe("allowed domains", () => {
   });
 });
 
-describe("dev sessions", () => {
-  const secret = "test-secret";
-
-  it("round-trips and rejects tampering and expiry", () => {
-    const token = createSessionToken("alice", secret, 0);
-    expect(verifySessionToken(token, secret, 1000)).toBe("alice");
-    expect(verifySessionToken(token, "other", 1000)).toBeNull();
-    expect(
-      verifySessionToken(
-        token.replace(/^[^.]+/, Buffer.from("dana").toString("base64url")),
-        secret,
-        1000,
-      ),
-    ).toBeNull();
-    expect(verifySessionToken(token, secret, 8 * 24 * 3600 * 1000)).toBeNull();
-    expect(verifySessionToken(undefined, secret)).toBeNull();
-  });
-
+describe("dev login", () => {
   it("refuses dev login in production", () => {
     expect(() =>
       assertDevLoginAllowed({ NODE_ENV: "production", AUTH_DEV_LOGIN: "true" }),

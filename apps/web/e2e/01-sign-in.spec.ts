@@ -23,10 +23,81 @@ test.describe("sign-in", () => {
     await expect(page.getByRole("button", { name: /Multica/ })).toHaveCount(0);
   });
 
-  test("signing out ends the session", async ({ page }) => {
+  test("signing out ends the session, here and on the server", async ({ page }) => {
     await signIn(page, "alice");
-    await page.context().clearCookies({ name: "lore_session" });
+    const cookies = await page.context().cookies();
+    const session = cookies.find((c) => c.name.endsWith("session_token"))!;
+    expect(session).toMatchObject({ httpOnly: true, sameSite: "Lax" });
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await expect(page).toHaveURL(/\/login/);
     await page.goto("/themes");
     await expect(page).toHaveURL(/\/login/);
+    // The old cookie is no good to anyone who kept a copy.
+    const kept = await page.request.get("/api/search?q=enroll", {
+      headers: { cookie: `${session.name}=${session.value}` },
+    });
+    expect(kept.status()).toBe(401);
+  });
+
+  test("a made-up session cookie is nobody", async ({ request }) => {
+    const res = await request.get("/api/search?q=enroll", {
+      headers: { cookie: "better-auth.session_token=alice.forged" },
+    });
+    expect(res.status()).toBe(401);
+  });
+
+  test("sign-ins are in the audit log, with how", async ({ page }) => {
+    await signIn(page, "dana");
+    await page.goto("/admin/audit?action=auth.sign_in");
+    const first = page.getByRole("table").getByRole("row").nth(1);
+    await expect(first).toContainText("Dana Ito");
+    await expect(first).toContainText('"method":"dev"');
+  });
+
+  test("a sign-in link arrives by email, works once, and signs the person in", async ({
+    page,
+    request,
+  }) => {
+    await page.goto("/login");
+    await page.getByLabel("Work email").fill("carol@acme.test");
+    await page.getByRole("button", { name: "Email me a sign-in link" }).click();
+    await expect(page.getByRole("status")).toContainText("If carol@acme.test can sign in");
+
+    const mailpit = process.env.TEST_MAILPIT_URL ?? "http://127.0.0.1:8025";
+    let id = "";
+    await expect
+      .poll(async () => {
+        const found = (await (
+          await request.get(
+            `${mailpit}/api/v1/search?query=${encodeURIComponent('to:carol@acme.test subject:"Sign in to"')}`,
+          )
+        ).json()) as { messages: { ID: string }[] };
+        id = found.messages[0]?.ID ?? "";
+        return id;
+      })
+      .not.toBe("");
+    const mail = (await (await request.get(`${mailpit}/api/v1/message/${id}`)).json()) as {
+      Text: string;
+    };
+    await request.delete(`${mailpit}/api/v1/messages`, { data: { IDs: [id] } });
+    const link = /http:\/\/localhost:\d+\/api\/auth\/magic-link\/verify\S+/.exec(mail.Text)![0];
+
+    await page.goto(link);
+    await expect(page).toHaveURL(/localhost:\d+\/$/);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Carol");
+    // The link is spent.
+    await page.context().clearCookies();
+    await page.goto(link);
+    await expect(page).toHaveURL(/\/login\?error=INVALID_TOKEN/);
+    await expect(page.getByText("That link has been used or has expired")).toBeVisible();
+  });
+
+  test("something that is not an address is refused", async ({ page }) => {
+    // Who may sign in (the allow-list) is tested in packages/auth, against the database.
+    await page.goto("/login");
+    await page.getByLabel("Work email").fill("not-an-address");
+    await page.getByLabel("Work email").evaluate((el: HTMLInputElement) => (el.type = "text"));
+    await page.getByRole("button", { name: "Email me a sign-in link" }).click();
+    await expect(page.getByRole("status")).toContainText("Enter your work email address");
   });
 });

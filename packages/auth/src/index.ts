@@ -1,5 +1,5 @@
 /**
- * `@lore/auth`: namespace permissions, the per-request principal, and dev login sessions.
+ * `@lore/auth`: namespace permissions and the per-request principal. Sign-in is `@lore/auth/sign-in`.
  *
  * @packageDocumentation
  */
@@ -22,10 +22,4 @@ export {
   requireNamespace,
   type Principal,
 } from "./principal.ts";
-export {
-  assertDevLoginAllowed,
-  createSessionToken,
-  SESSION_COOKIE,
-  SESSION_MAX_AGE_S,
-  verifySessionToken,
-} from "./session.ts";
+export { assertDevLoginAllowed } from "./session.ts";
