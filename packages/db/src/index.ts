@@ -12,3 +12,5 @@ export * from "./repos/changesets.ts";
 export * from "./repos/feedback.ts";
 export * from "./repos/ai.ts";
 export * from "./repos/admin.ts";
+export * from "./repos/follows.ts";
+export * from "./repos/hygiene.ts";

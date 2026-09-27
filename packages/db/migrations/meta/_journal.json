@@ -29,6 +29,13 @@
       "when": 1790503144502,
       "tag": "0003_changeset_duplicates",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790511366926,
+      "tag": "0004_follows_prefs",
+      "breakpoints": true
     }
   ]
 }

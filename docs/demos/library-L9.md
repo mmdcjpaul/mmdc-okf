@@ -17,7 +17,7 @@ AI_MODE=fake APP_ENCRYPTION_KEY=$(openssl rand -hex 32) pnpm dev:library
    stays the record:
 
 ```bash
-git -C .data/vaults/mmdc.git log -1 --format=%s
+git -C .data/vaults/acme.git log -1 --format=%s
 # kb(vault): change the settings of namespace "finance"
 ```
 

@@ -36,6 +36,13 @@ const Env = z.object({
   INTERNAL_API_TOKEN: z.string().min(16).default("lore-dev-internal-token"),
   /** How often the worker checks every vault for new commits, in seconds. */
   POLL_SECONDS: z.coerce.number().int().positive().default(300),
+  /** For example `smtp://127.0.0.1:1025` for Mailpit. Without it no email is sent. */
+  SMTP_URL: z.string().url().optional(),
+  MAIL_FROM: z.string().default("Lore <lore@localhost>"),
+  /** Where people open the Library, for links in emails. */
+  PUBLIC_URL: z.string().url().default("http://localhost:3000"),
+  /** IANA time zone for working hours and the weekly digest. */
+  TIME_ZONE: z.string().default("UTC"),
   LOG_LEVEL: z.string().default("info"),
 });
 

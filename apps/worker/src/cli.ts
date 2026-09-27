@@ -9,6 +9,8 @@
  *   simulate-push --vault <slug> (--file <patch> | --from <dir>) [--message <text>] [--now]
  *       Commit to the bare repository from outside Lore, the way Obsidian or an agent would,
  *       then queue an index job (or run it inline with --now).
+ *   digest [--user <id>] [--force]
+ *       Send the weekly owner digest now. --force sends it to people who had one this week.
  *   migrate
  *       Apply database migrations.
  */
@@ -38,6 +40,8 @@ import { parse as parseYaml } from "yaml";
 import { loadConfig, type Config } from "./config.ts";
 import { loadPrincipals } from "./principals.ts";
 import { indexVault, type IndexResult } from "./indexer/index-vault.ts";
+import { sendDigests } from "./notify/digest.ts";
+import { createMailer } from "./notify/mailer.ts";
 import { createRuntime, enqueueIndex, startBoss, type Runtime } from "./runtime.ts";
 
 const [command, ...rest] = process.argv.slice(2);
@@ -304,7 +308,29 @@ async function simulatePush(args: string[]) {
   });
 }
 
+async function digest(args: string[]): Promise<void> {
+  const { values } = parseArgs({
+    args,
+    options: { user: { type: "string" }, force: { type: "boolean", default: false } },
+  });
+  const mailer = createMailer(config);
+  if (!mailer.enabled) fail("set SMTP_URL to send email, for example smtp://127.0.0.1:1025");
+  await withRuntime(async (rt) => {
+    const run = await sendDigests(
+      { db: rt.db, mailer, log: rt.log, publicUrl: config.PUBLIC_URL.replace(/\/$/, "") },
+      { force: values.force, ...(values.user ? { userId: values.user } : {}) },
+    );
+    await mailer.close?.();
+    console.log(
+      `Sent ${run.sent}, nothing to say to ${run.empty}, skipped ${run.skipped}, failed ${run.failed}`,
+    );
+  });
+}
+
 switch (command) {
+  case "digest":
+    await digest(rest);
+    break;
   case "seed":
     await seed(rest);
     break;
@@ -319,7 +345,7 @@ switch (command) {
     break;
   default:
     console.error(
-      "Usage: lore <seed|reindex|simulate-push|migrate> [options]. See apps/worker/src/cli.ts.",
+      "Usage: lore <seed|reindex|simulate-push|digest|migrate> [options]. See apps/worker/src/cli.ts.",
     );
     process.exit(command ? 1 : 0);
 }

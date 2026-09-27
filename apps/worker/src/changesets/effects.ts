@@ -8,7 +8,7 @@
 import {
   clearFlags,
   flagNotes,
-  followersOf,
+  followersOfAny,
   getNote,
   listNamespaces,
   notesLinkingTo,
@@ -64,7 +64,13 @@ export async function applyIndexEffects(db: Db, result: IndexResult): Promise<Ef
     const ownerTeam = note.owner ?? (await ownerTeamOf(db, result.vaultId, note.namespace));
     const people = new Map<string, string>();
     for (const u of ownerTeam ? await teamPeople(db, ownerTeam) : []) people.set(u.id, "own");
-    for (const id of await followersOf(db, result.vaultId, note.id))
+    // Following a hub follows the notes filed under it.
+    const followed = [
+      note.id,
+      ...note.themes.map((t) => `theme:${t}`),
+      ...note.systems.map((s) => `system:${s}`),
+    ];
+    for (const id of await followersOfAny(db, result.vaultId, followed))
       if (!people.has(id)) people.set(id, "follow");
 
     const items: NewNotification[] = [];
@@ -78,7 +84,7 @@ export async function applyIndexEffects(db: Db, result: IndexResult): Promise<Ef
         body:
           why === "own"
             ? `A note your team owns changed${note.lastChangedBy ? `, by ${note.lastChangedBy}` : ""}.`
-            : "A note you follow changed.",
+            : "A note you follow, or a note under a hub you follow, changed.",
         href,
         dedupeKey: `process:${note.id}:${note.lastCommitSha}`,
       });

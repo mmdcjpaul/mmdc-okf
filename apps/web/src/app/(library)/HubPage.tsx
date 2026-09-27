@@ -1,9 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ChevronRight, Pencil } from "lucide-react";
-import { getNote, getTerm, linksAmong, listNamespaces, listNotes, type NoteCard } from "@lore/db";
+import {
+  getNote,
+  getTerm,
+  isFollowing,
+  linksAmong,
+  listNamespaces,
+  listNotes,
+  type NoteCard,
+} from "@lore/db";
 import { Chip } from "@/components/Chip";
 import { EmptyState } from "@lore/ui";
+import { FollowButton } from "@/components/FollowButton";
 import { LocalGraph, type GraphNodeInput } from "@/components/LocalGraph";
 import { NoteBody } from "@/components/NoteBody";
 import { NoteList } from "@/components/NoteList";
@@ -89,6 +98,13 @@ export async function HubPage({ kind, slug }: HubPageProps) {
         }
         title={term.title}
         description={term.description}
+        actions={
+          <FollowButton
+            target={`${kind}:${slug}`}
+            following={await isFollowing(db(), principal.user.id, vault.id, `${kind}:${slug}`)}
+            name={term.title}
+          />
+        }
       >
         {term.aliases.length ? (
           <p className="mt-3 text-[13px] text-faint">Also called {term.aliases.join(", ")}</p>

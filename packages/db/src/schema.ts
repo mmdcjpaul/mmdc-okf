@@ -571,6 +571,17 @@ export const follows = pgTable(
   (t) => [primaryKey({ columns: [t.userId, t.vaultId, t.target] })],
 );
 
+/** What a person wants by email. A missing row means everything is on. */
+export const userPrefs = pgTable("user_prefs", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => users.id, { onDelete: "cascade" }),
+  emailNotifications: boolean("email_notifications").notNull().default(true),
+  emailDigest: boolean("email_digest").notNull().default(true),
+  /** When the last weekly digest went out, so a restart does not send it twice. */
+  digestSentAt: ts("digest_sent_at"),
+});
+
 export const notifications = pgTable(
   "notifications",
   {

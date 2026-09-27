@@ -11,6 +11,9 @@ import { loadConfig } from "./config.ts";
 import { indexVault } from "./indexer/index-vault.ts";
 import { processIngestItem, type IngestDeps } from "./ingest/process.ts";
 import { refreshHealth } from "./indexer/refresh-stale.ts";
+import { sendDigests } from "./notify/digest.ts";
+import { sendNotificationEmails } from "./notify/emails.ts";
+import { createMailer } from "./notify/mailer.ts";
 import {
   createRuntime,
   enqueueChangeset,
@@ -78,6 +81,20 @@ await boss.work<IngestJobData>(QUEUES.ingest, POLL, async ([job]) => {
   const outcome = await processIngestItem(ingestDeps, job.data.itemId);
   if (outcome.state === "done") await enqueueChangeset(boss, outcome.changesetId);
 });
+
+const mailer = createMailer(config);
+const mail = { db: rt.db, mailer, log: rt.log, publicUrl: config.PUBLIC_URL.replace(/\/$/, "") };
+if (!mailer.enabled) rt.log.info("SMTP_URL is not set: notifications stay in the app");
+await boss.work(QUEUES.digest, async () => {
+  rt.log.info(await sendDigests(mail), "weekly digest");
+});
+const emailer = setInterval(
+  () =>
+    void sendNotificationEmails(mail).catch((err) =>
+      rt.log.error({ err }, "notification emails failed"),
+    ),
+  60_000,
+);
 
 /** Picks up changesets whose job was never queued or was lost, so no write is dropped. */
 async function sweepChangesets(): Promise<void> {
@@ -150,6 +167,8 @@ async function shutdown(signal: string) {
   clearInterval(poller);
   clearInterval(sweeper);
   clearInterval(retrier);
+  clearInterval(emailer);
+  await mailer.close?.();
   server.close();
   await boss.stop({ graceful: true, timeout: 30_000 });
   await rt.close();

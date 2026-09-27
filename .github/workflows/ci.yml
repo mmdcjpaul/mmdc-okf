@@ -20,6 +20,10 @@ jobs:
         image: getmeili/meilisearch:v1.51.0
         env: { MEILI_MASTER_KEY: lore-dev-master-key, MEILI_NO_ANALYTICS: "true" }
         ports: ["7701:7700"]
+      # The digest test sends real email and reads it back.
+      mailpit:
+        image: axllent/mailpit:v1.27
+        ports: ["8025:8025", "1025:1025"]
     steps:
       - uses: actions/checkout@v4
       # Started by hand because service containers cannot take a command.

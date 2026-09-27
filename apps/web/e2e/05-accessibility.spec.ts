@@ -85,6 +85,15 @@ test.describe("accessibility (WCAG 2.2 AA)", () => {
         }
       });
 
+      test("Hygiene and notifications", async ({ page }) => {
+        await signIn(page, "bob");
+        for (const path of ["/hygiene", "/hygiene?problem=stale&mine=1", "/notifications"]) {
+          await page.goto(path);
+          await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+          await expectNoViolations(page);
+        }
+      });
+
       test("Admin", async ({ page }) => {
         await signIn(page, "dana");
         for (const path of [

@@ -7,6 +7,7 @@ import {
   FileUp,
   FolderClosed,
   Hash,
+  HeartPulse,
   Home,
   Layers,
   Lock,
@@ -144,6 +145,13 @@ export function SidebarNav({ namespaces, counts, onNavigate }: SidebarNavProps) 
         </NavLink>
         <NavLink href="/tags" icon={<Hash size={ICON} aria-hidden />} onNavigate={onNavigate}>
           Tags
+        </NavLink>
+        <NavLink
+          href="/hygiene"
+          icon={<HeartPulse size={ICON} aria-hidden />}
+          onNavigate={onNavigate}
+        >
+          Hygiene
         </NavLink>
       </div>
 

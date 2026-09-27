@@ -18,6 +18,8 @@ export const QUEUES = {
   changeset: "changeset",
   /** One job per upload or capture: extract, atomize, validate, hand over as a changeset. */
   ingest: "ingest",
+  /** The weekly owner digest, on a schedule. */
+  digest: "digest",
 } as const;
 
 export interface IngestJobData {
@@ -125,6 +127,9 @@ export async function startBoss(config: Config, log: Logger): Promise<PgBoss> {
   await boss.createQueue(QUEUES.changeset, { retryLimit: 3, retryDelay: 5, retryBackoff: true });
   // Not retried by the queue: a model call that failed is retried by the sweep, later.
   await boss.createQueue(QUEUES.ingest, { retryLimit: 0, expireInSeconds: 900 });
+  await boss.createQueue(QUEUES.digest, { policy: "stately", retryLimit: 2, retryDelay: 600 });
+  // Monday morning, in the organization's time zone.
+  await boss.schedule(QUEUES.digest, "0 8 * * 1", {}, { tz: config.TIME_ZONE });
   return boss;
 }
 

@@ -14,6 +14,7 @@ import {
   backlinks,
   feedbackFor,
   getNote,
+  isFollowing,
   linksAmong,
   linksFrom,
   linkTargets,
@@ -28,6 +29,7 @@ import { similarNotes } from "@lore/search";
 import { Banner, PanelSection, TrustBadge } from "@lore/ui";
 import { Chip } from "@/components/Chip";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { FollowButton } from "@/components/FollowButton";
 import { LinkList, type LinkListItem } from "@/components/LinkList";
 import { LocalGraph, type GraphNodeInput } from "@/components/LocalGraph";
 import { NoteActions } from "@/components/NoteActions";
@@ -133,7 +135,12 @@ export default async function NotePage({ params }: Props) {
     <div className="mx-auto max-w-[1180px] px-5 pb-20 pt-8 md:px-10">
       <div className="grid gap-x-12 lg:grid-cols-[minmax(0,1fr)_288px]">
         <article className="min-w-0 max-w-[740px]">
-          <NoteHeader note={note} nsTitle={ns?.title ?? null} owner={owner} />
+          <NoteHeader
+            note={note}
+            nsTitle={ns?.title ?? null}
+            owner={owner}
+            following={await isFollowing(db(), principal.user.id, vault.id, note.id)}
+          />
           <NoteActions
             note={{
               id: note.id,
@@ -281,10 +288,12 @@ function NoteHeader({
   note,
   nsTitle,
   owner,
+  following,
 }: {
   note: NoteRow;
   nsTitle: string | null;
   owner: string | null;
+  following: boolean;
 }) {
   const folders = note.folder ? note.folder.split("/") : [];
   return (
@@ -341,7 +350,10 @@ function NoteHeader({
           {note.lastChangedBy ? ` by ${note.lastChangedBy}` : ""}
         </span>
         {owner ? <span>Owner {owner}</span> : null}
-        <span className="ml-auto">
+        <span className="ml-auto flex items-center gap-2">
+          {note.hubKind ? null : (
+            <FollowButton target={note.id} following={following} name="this note" />
+          )}
           <CopyLinkButton />
         </span>
       </div>
