@@ -9,7 +9,8 @@
     "build": "next build",
     "start": "next start --port 3000",
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@lore/ai": "workspace:*",
@@ -40,11 +41,14 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/hast": "^3.0.4",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "graphology-types": "^0.24.8",
-    "tailwindcss": "^4.3.3"
+    "tailwindcss": "^4.3.3",
+    "postgres": "^3.4.9"
   }
 }

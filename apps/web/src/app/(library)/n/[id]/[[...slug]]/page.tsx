@@ -131,10 +131,13 @@ export default async function NotePage({ params }: Props) {
         >
           {headings.length > 2 ? (
             <PanelSection title="On this page">
-              <ul className="space-y-1 text-[13px]">
+              <ul className="text-[13px]">
                 {headings.map((h) => (
                   <li key={h.id} style={{ paddingLeft: (h.depth - 1) * 12 }}>
-                    <a href={`#${h.id}`} className="block truncate text-muted hover:text-ink">
+                    <a
+                      href={`#${h.id}`}
+                      className="block min-h-6 truncate py-[3px] text-muted hover:text-ink"
+                    >
                       {h.text}
                     </a>
                   </li>

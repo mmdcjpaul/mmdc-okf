@@ -1,7 +1,7 @@
 /**
  * `pnpm lore <command>`: local operations for the Library.
  *
- *   seed --vault <dir> [--principals <yaml>] [--slug <slug>] [--fresh]
+ *   seed --vault <dir> [--principals <yaml>] [--slug <slug>] [--fresh] [--web-env <file|none>]
  *       Create (or update) the bare repository from a vault folder, register the vault,
  *       load users, teams, and grants, and run a full index.
  *   reindex [--vault <slug>] [--all]
@@ -12,8 +12,15 @@
  *   migrate
  *       Apply database migrations.
  */
-import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { execFileSync, type ExecFileSyncOptionsWithStringEncoding } from "node:child_process";
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  realpathSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { basename, join, resolve } from "node:path";
 import { parseArgs } from "node:util";
@@ -52,11 +59,17 @@ function repoPathFor(slug: string): string {
   return join(config.DATA_DIR, "vaults", `${slug}.git`);
 }
 
+/** True when `dir` is the root of its own repository and has commits. */
 function hasCommits(dir: string): boolean {
   try {
-    execFileSync("git", ["-C", dir, "rev-parse", "--verify", "--quiet", "HEAD"], {
-      stdio: "ignore",
-    });
+    const opts: ExecFileSyncOptionsWithStringEncoding = {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    };
+    // A vault folder inside another repository (a fixture, say) has no history of its own.
+    const top = execFileSync("git", ["-C", dir, "rev-parse", "--show-toplevel"], opts).trim();
+    if (realpathSync(top) !== realpathSync(dir)) return false;
+    execFileSync("git", ["-C", dir, "rev-parse", "--verify", "--quiet", "HEAD"], opts);
     return true;
   } catch {
     return false;
@@ -64,12 +77,11 @@ function hasCommits(dir: string): boolean {
 }
 
 /** Writes the web app's local env file, including Meilisearch's search-only key. */
-async function writeWebEnv(cfg: Config, slug: string): Promise<void> {
+async function writeWebEnv(cfg: Config, slug: string, file: string): Promise<void> {
   const meili = new Meilisearch({ host: cfg.MEILI_URL, apiKey: cfg.MEILI_MASTER_KEY });
   const keys = await meili.getKeys();
   const search = keys.results.find((k) => k.actions.length === 1 && k.actions[0] === "search");
   if (!search) fail("Meilisearch has no search-only key");
-  const file = join(cfg.repoRoot, "apps/web/.env.local");
   const existing = existsSync(file) ? readFileSync(file, "utf8") : "";
   const secret = /^APP_SECRET=(.+)$/m.exec(existing)?.[1] ?? crypto.randomUUID().replace(/-/g, "");
   writeFileSync(
@@ -120,6 +132,7 @@ async function seed(args: string[]) {
       title: { type: "string" },
       branch: { type: "string", default: "main" },
       fresh: { type: "boolean", default: false },
+      "web-env": { type: "string" },
     },
   });
   if (!values.vault) fail("seed needs --vault <dir>");
@@ -177,8 +190,11 @@ async function seed(args: string[]) {
     }
     const result = await indexVault(rt.deps, slug);
     console.log(`Indexed ${slug}: ${summary(result)}`);
-    await writeWebEnv(config, slug);
-    console.log(`Wrote apps/web/.env.local (LORE_VAULT=${slug})`);
+    const webEnv = values["web-env"] ?? join(config.repoRoot, "apps/web/.env.local");
+    if (webEnv !== "none") {
+      await writeWebEnv(config, slug, resolve(webEnv));
+      console.log(`Wrote ${webEnv} (LORE_VAULT=${slug})`);
+    }
   });
 }
 

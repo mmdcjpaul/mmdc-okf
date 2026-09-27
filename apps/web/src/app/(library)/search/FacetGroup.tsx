@@ -33,7 +33,7 @@ export function FacetGroup({ facet, label, distribution, selected, params }: Fac
             <li key={v}>
               <Link
                 href={hrefWith(params, facet, v, on)}
-                aria-pressed={on}
+                aria-current={on ? "true" : undefined}
                 className={cn(
                   "flex items-center gap-2 rounded-md px-1.5 py-1 text-[13px] hover:bg-hover",
                   on ? "text-ink" : "text-ink-2",
@@ -47,7 +47,10 @@ export function FacetGroup({ facet, label, distribution, selected, params }: Fac
                 >
                   {on ? <Check size={10} strokeWidth={3} aria-hidden /> : null}
                 </span>
-                <span className="min-w-0 flex-1 truncate">{v}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  {v}
+                  {on ? <span className="sr-only"> (selected, activate to remove)</span> : null}
+                </span>
                 <span className="text-xs tabular-nums text-faint">{distribution[v] ?? 0}</span>
               </Link>
             </li>
